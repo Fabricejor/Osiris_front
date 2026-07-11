@@ -5,7 +5,7 @@ import { Moon, Sun, Bell, ChevronDown, Globe } from 'lucide-react';
 
 export default function TopBar() {
   return (
-    <div className="h-[60px] w-full bg-white border-b border-gray-200 flex items-center justify-end px-6 flex-shrink-0 z-10">
+    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-40 sticky top-0">
       
       <div className="flex items-center gap-4">
         
@@ -46,6 +46,6 @@ export default function TopBar() {
         </button>
         
       </div>
-    </div>
+    </header>
   );
 }

@@ -9,6 +9,7 @@ const hours = ['8 AM', '10 AM', '12 PM', '2 PM', '4 PM', '6 PM', '8 PM'];
 // Generate random activity data (0-4 intensity)
 function generateData() {
   return rows.map(() =>
+    // eslint-disable-next-line
     columns.map(() => Math.floor(Math.random() * 5))
   );
 }
@@ -35,25 +36,25 @@ export default function OperatorActivityHeatmap() {
       <div className="flex-1 min-h-0 flex flex-col justify-between">
         {/* Column headers */}
         <div className="flex mb-1.5">
-          <div className="w-10 flex-shrink-0" />
+          <div className="w-10 shrink-0" />
           {columns.map((col, i) => (
-            <span key={`col-${i}`} className="flex-1 text-[10px] font-medium text-gray-500 text-center">
+            <span key={`col-${col}-${i}`} className="flex-1 text-[10px] font-medium text-gray-500 text-center">
               {col}
             </span>
           ))}
-          <div className="w-10 flex-shrink-0" />
+          <div className="w-10 shrink-0" />
         </div>
 
         {/* Rows */}
         <div className="flex-1 flex flex-col gap-[3px] justify-center min-h-0 py-1">
           {heatData.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex-1 flex items-stretch gap-[3px] min-h-0">
-              <span className="text-[10px] text-gray-500 w-10 text-right pr-2 flex-shrink-0 flex items-center justify-end">
+            <div key={`row-${rows[rowIndex]}-${rowIndex}`} className="flex-1 flex items-stretch gap-[3px] min-h-0">
+              <span className="text-[10px] text-gray-500 w-10 text-right pr-2 shrink-0 flex items-center justify-end">
                 {rows[rowIndex]}
               </span>
               {row.map((level, colIndex) => (
                 <div
-                  key={colIndex}
+                  key={`cell-${rowIndex}-${colIndex}`}
                   className={`flex-1 rounded-sm ${COLORS[level]} transition-colors duration-150 cursor-pointer hover:ring-1 hover:ring-gray-400`}
                   onMouseEnter={(e) => {
                     const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -68,7 +69,7 @@ export default function OperatorActivityHeatmap() {
                   onMouseLeave={() => setHover(null)}
                 />
               ))}
-              <span className="text-[10px] text-gray-400 w-10 pl-2 flex-shrink-0 flex items-center">
+              <span className="text-[10px] text-gray-400 w-10 pl-2 shrink-0 flex items-center">
                 {hours[rowIndex] || ''}
               </span>
             </div>

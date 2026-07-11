@@ -28,7 +28,7 @@ export default function SettingsPage() {
         {/* Banner & Header Section */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 pb-8">
           {/* Gradient Banner */}
-          <div className="h-40 bg-gradient-to-r from-emerald-100 via-[#65b741]/20 to-teal-50 rounded-t-3xl relative">
+          <div className="h-40 bg-linear-to-r from-emerald-100 via-[#65b741]/20 to-teal-50 rounded-t-3xl relative">
             {/* Avatar */}
             <div className="absolute -bottom-10 left-8">
               <div className="w-24 h-24 bg-white rounded-full p-1 shadow-sm">
@@ -165,7 +165,7 @@ export default function SettingsPage() {
         </div>
 
         {/* 2-Factor Authentication Section */}
-        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-[#65b741]/10 rounded-3xl p-6 border border-emerald-100 flex items-center justify-between">
+        <div className="bg-linear-to-r from-emerald-50 via-teal-50 to-[#65b741]/10 rounded-3xl p-6 border border-emerald-100 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-emerald-500">
               <Lock className="w-6 h-6" />

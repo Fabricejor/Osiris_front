@@ -193,12 +193,6 @@ export default function DataValidationPage() {
     });
   }, [search, statusFilter]);
 
-  const totalSize = useMemo(() => {
-    const bytes = filteredFolders.reduce((acc, f) => acc + f.sizeBytes, 0);
-    if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-    return `${(bytes / 1e6).toFixed(1)} MB`;
-  }, [filteredFolders]);
-
   const statusTag = selectedFolder ? STATUS_TAG[selectedFolder.status] : null;
 
   return (
@@ -207,7 +201,7 @@ export default function DataValidationPage() {
       <PageHeader title="Data Validation" />
 
       {/* Toolbar: Search + Filters + View Toggle */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -303,7 +297,7 @@ export default function DataValidationPage() {
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ type: 'spring', bounce: 0.1, duration: 0.4 }}
-              className="flex-shrink-0 h-full overflow-hidden"
+              className="shrink-0 h-full overflow-hidden"
             >
               <div className="w-[320px] h-full bg-white border border-gray-100 rounded-xl flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
                 {/* Open button at the very top */}

@@ -22,12 +22,13 @@ export default function LoginForm() {
 
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Adresse e-mail</label>
+            <label htmlFor="email" className="text-sm font-semibold text-gray-700">Adresse e-mail</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                 <Mail className="h-5 w-5" />
               </div>
               <input
+                id="email"
                 type="email"
                 placeholder="chercheur@aphrc.org"
                 className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50/50 text-foreground"
@@ -37,12 +38,13 @@ export default function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
+            <label htmlFor="password" className="text-sm font-semibold text-gray-700">Mot de passe</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                 <Lock className="h-5 w-5" />
               </div>
               <input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 className="w-full pl-11 pr-11 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50/50 text-foreground"
@@ -66,9 +68,9 @@ export default function LoginForm() {
               />
               <span className="group-hover:text-gray-800 transition-colors">Se souvenir de moi</span>
             </label>
-            <a href="#" className="font-semibold text-primary hover:text-primary/80 transition-colors">
+            <button type="button" className="font-semibold text-primary hover:text-primary/80 transition-colors">
               Mot de passe oublié ?
-            </a>
+            </button>
           </div>
 
           <button
@@ -81,9 +83,9 @@ export default function LoginForm() {
 
         <div className="mt-8 text-center text-sm text-gray-500">
           Besoin d'un compte ?{" "}
-          <a href="#" className="font-semibold text-primary hover:text-primary/80 transition-colors">
+          <button type="button" className="font-semibold text-primary hover:text-primary/80 transition-colors">
             Demander un accès
-          </a>
+          </button>
         </div>
       </motion.div>
     </div>

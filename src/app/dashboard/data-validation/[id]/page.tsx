@@ -10,7 +10,6 @@ import {
   Filter, 
   Pencil,
   CheckCircle2,
-  Circle,
   ArrowRight
 } from 'lucide-react';
 import Image from 'next/image';
@@ -41,17 +40,53 @@ const scannedPages = [
   { id: 14, name: 'Page 14', status: 'validated', statusText: 'Validated', confidence: 94, image: '/registres/Image (8).png' },
 ];
 
-export default function BatchDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const unwrappedParams = React.use(params);
   const [pageViewMode, setPageViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(null);
   // Use mock ID if dynamic routing isn't fully set up, or the passed one
   const batchId = unwrappedParams.id || '2026-0035';
 
+  const getStatusColorClass = (status: string) => {
+    if (status === 'review') return 'text-red-500';
+    if (status === 'validated') return 'text-[#65b741]';
+    return 'text-gray-500';
+  };
+
+  const renderStatusDot = (status: string, isGrid: boolean) => {
+    if (status === 'validated') {
+      return <CheckCircle2 className={`${isGrid ? 'w-4 h-4' : 'w-6 h-6'} text-[#65b741]`} />;
+    }
+    if (status === 'review') {
+      return <div className={`${isGrid ? 'w-2.5 h-2.5 mt-0.5' : 'w-3 h-3 mx-1.5'} rounded-full bg-red-500`} />;
+    }
+    return <div className={`${isGrid ? 'w-2.5 h-2.5 mt-0.5' : 'w-3 h-3 mx-1.5'} rounded-full bg-amber-400`} />;
+  };
+
+  const getStepTextColorClass = (isCompleted: boolean, isCurrent: boolean) => {
+    if (isCompleted) return 'text-gray-700';
+    if (isCurrent) return 'text-[#65b741]';
+    return 'text-gray-400';
+  };
+
+  const getStepNode = (isCompleted: boolean, isCurrent: boolean) => {
+    if (isCompleted) {
+      return (
+        <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
+          <CheckCircle2 className="w-5 h-5 text-[#65b741] bg-white rounded-full" />
+        </div>
+      );
+    }
+    if (isCurrent) {
+      return <div className="w-5 h-5 rounded-full border-2 border-[#65b741] bg-white" />;
+    }
+    return <div className="w-5 h-5 rounded-full bg-gray-100 border-2 border-white" />;
+  };
+
   return (
     <div className="h-full flex flex-col p-6 bg-gray-50/50 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
       {/* Header */}
-      <div className="flex-shrink-0 mb-6">
+      <div className="shrink-0 mb-6">
         <div className="flex items-center text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
           <span>Batches</span>
           <ChevronRight className="w-3.5 h-3.5 mx-1" />
@@ -83,7 +118,7 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
         <div className="flex-1 flex flex-col gap-6" style={{ scrollbarWidth: 'none' }}>
           
           {/* Metadata Bento Grid */}
-          <div className="grid grid-cols-3 gap-4 flex-shrink-0">
+          <div className="grid grid-cols-3 gap-4 shrink-0">
             {/* Document Type */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Document Type</span>
@@ -128,7 +163,7 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
 
           {/* Scanned Pages */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex-1 flex flex-col min-h-0">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Scanned Pages</h3>
               <div className="flex items-center gap-1.5 text-gray-500 bg-gray-100 p-0.5 rounded-lg">
                 <button 
@@ -161,7 +196,7 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
                 >
                   {/* Image Container */}
                   <div className={`relative bg-gray-100 overflow-hidden ${
-                    pageViewMode === 'grid' ? 'aspect-[3/4] w-full rounded-t-md' : 'w-24 h-32 rounded-md flex-shrink-0'
+                    pageViewMode === 'grid' ? 'aspect-3/4 w-full rounded-t-md' : 'w-24 h-32 rounded-md shrink-0'
                   }`}>
                     <Image 
                       src={page.image} 
@@ -180,14 +215,15 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
                     )}
 
                     {/* Hover Overlay */}
-                    <div 
-                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                    <button 
+                      type="button"
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer border-none"
                       onClick={() => setSelectedPageIndex(index)}
                     >
                       <div className="w-10 h-10 bg-[#65b741] rounded-full flex items-center justify-center text-white shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
                         <Pencil className="w-4 h-4" />
                       </div>
-                    </div>
+                    </button>
                   </div>
                   
                   {/* Card Footer / Details */}
@@ -196,11 +232,7 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
                   }`}>
                     <div className="flex flex-col">
                       <span className={`font-bold text-gray-900 mb-1 ${pageViewMode === 'grid' ? 'text-sm' : 'text-base'}`}>{page.name}</span>
-                      <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${
-                        page.status === 'review' ? 'text-red-500' :
-                        page.status === 'validated' ? 'text-[#65b741]' :
-                        'text-gray-500'
-                      }`}>
+                      <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(page.status)}`}>
                         {page.statusText}
                       </span>
                     </div>
@@ -218,23 +250,7 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
                       )}
 
                       {/* Status Dot/Icon */}
-                      {pageViewMode === 'grid' ? (
-                        page.status === 'validated' ? (
-                          <CheckCircle2 className="w-4 h-4 text-[#65b741]" />
-                        ) : page.status === 'review' ? (
-                          <div className="w-2.5 h-2.5 rounded-full bg-red-500 mt-0.5" />
-                        ) : (
-                          <div className="w-2.5 h-2.5 rounded-full bg-amber-400 mt-0.5" />
-                        )
-                      ) : (
-                        page.status === 'validated' ? (
-                          <CheckCircle2 className="w-6 h-6 text-[#65b741]" />
-                        ) : page.status === 'review' ? (
-                          <div className="w-3 h-3 rounded-full bg-red-500 mx-1.5" />
-                        ) : (
-                          <div className="w-3 h-3 rounded-full bg-amber-400 mx-1.5" />
-                        )
-                      )}
+                      {renderStatusDot(page.status, pageViewMode === 'grid')}
                     </div>
                   </div>
                 </div>
@@ -244,7 +260,7 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
         </div>
 
         {/* Right Column: Processing Timeline */}
-        <div className="w-[340px] flex-shrink-0 bg-white border border-gray-100 rounded-xl shadow-sm p-6 self-start sticky top-6">
+        <div className="w-[340px] shrink-0 bg-white border border-gray-100 rounded-xl shadow-sm p-6 self-start sticky top-6">
           <h2 className="text-xl font-bold text-gray-900 mb-8">Processing Timeline</h2>
           
           <div className="relative pl-3">
@@ -260,25 +276,13 @@ export default function BatchDetailsPage({ params }: { params: Promise<{ id: str
                 return (
                   <div key={step.id} className="relative flex gap-4 items-start">
                     {/* Timeline Node */}
-                    <div className="relative z-10 flex-shrink-0 mt-1">
-                      {isCompleted ? (
-                        <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
-                          <CheckCircle2 className="w-5 h-5 text-[#65b741] bg-white rounded-full" />
-                        </div>
-                      ) : isCurrent ? (
-                        <div className="w-5 h-5 rounded-full border-2 border-[#65b741] bg-white" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-gray-100 border-2 border-white" />
-                      )}
+                    <div className="relative z-10 shrink-0 mt-1">
+                      {getStepNode(isCompleted, isCurrent)}
                     </div>
                     
                     {/* Content */}
                     <div className="flex-col pb-2">
-                      <h4 className={`text-sm font-bold mb-1 ${
-                        isCompleted ? 'text-gray-700' :
-                        isCurrent ? 'text-[#65b741]' :
-                        'text-gray-400'
-                      }`}>
+                      <h4 className={`text-sm font-bold mb-1 ${getStepTextColorClass(isCompleted, isCurrent)}`}>
                         {step.title}
                       </h4>
                       

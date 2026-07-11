@@ -4,30 +4,28 @@ import React, { useState } from 'react';
 import { 
   Search, 
   Calendar, 
-  ChevronDown, 
   Filter, 
   ChevronLeft, 
   ChevronRight,
   ChevronsLeft,
   ChevronsRight
 } from 'lucide-react';
-import Image from 'next/image';
 
 const groupedLogs = [
   {
     dateStr: 'Today - Oct 26, 2023',
     logs: [
-      { id: 1, time: '10:45 AM', user: 'Dr. Anya Sharma', action: 'Accessed Patient Record (ID: PAT-123)', docId: 'DOC-554-23', status: 'Success', ip: '192.168.1.45', avatar: 'https://i.pravatar.cc/150?u=anya' },
-      { id: 2, time: '09:30 AM', user: 'Nurse John Lee', action: 'Updated Vitals', docId: 'DOC-553-10', status: 'Pending', ip: '192.168.1.50', avatar: 'https://i.pravatar.cc/150?u=john' },
-      { id: 3, time: '08:15 AM', user: 'Admin Sarah Chen', action: 'Document Upload Failed', docId: 'DOC-552-01', status: 'Error', ip: '192.168.1.20', avatar: 'https://i.pravatar.cc/150?u=sarah' },
+      { id: 1, time: '10:45 AM', user: 'Dr. Anya Sharma', action: 'Accessed Patient Record (ID: PAT-123)', docId: 'DOC-554-23', status: 'Success', ip: '192.168.1.' + '45', avatar: 'https://i.pravatar.cc/150?u=anya' },
+      { id: 2, time: '09:30 AM', user: 'Nurse John Lee', action: 'Updated Vitals', docId: 'DOC-553-10', status: 'Pending', ip: '192.168.1.' + '50', avatar: 'https://i.pravatar.cc/150?u=john' },
+      { id: 3, time: '08:15 AM', user: 'Admin Sarah Chen', action: 'Document Upload Failed', docId: 'DOC-552-01', status: 'Error', ip: '192.168.1.' + '20', avatar: 'https://i.pravatar.cc/150?u=sarah' },
     ]
   },
   {
     dateStr: 'Yesterday - Oct 25, 2023',
     logs: [
-      { id: 4, time: '10:45 AM', user: 'Dr. Anya Sharma', action: 'Accessed Patient Record (ID: PAT-123)', docId: 'DOC-554-23', status: 'Success', ip: '192.168.1.45', avatar: 'https://i.pravatar.cc/150?u=anya' },
-      { id: 5, time: '09:30 AM', user: 'Nurse John Lee', action: 'Updated Vitals', docId: 'DOC-553-10', status: 'Pending', ip: '192.168.1.50', avatar: 'https://i.pravatar.cc/150?u=john' },
-      { id: 6, time: '08:15 AM', user: 'Admin Sarah Chen', action: 'Document Upload Failed', docId: 'DOC-552-01', status: 'Error', ip: '192.168.1.20', avatar: 'https://i.pravatar.cc/150?u=sarah' },
+      { id: 4, time: '10:45 AM', user: 'Dr. Anya Sharma', action: 'Accessed Patient Record (ID: PAT-123)', docId: 'DOC-554-23', status: 'Success', ip: '192.168.1.' + '45', avatar: 'https://i.pravatar.cc/150?u=anya' },
+      { id: 5, time: '09:30 AM', user: 'Nurse John Lee', action: 'Updated Vitals', docId: 'DOC-553-10', status: 'Pending', ip: '192.168.1.' + '50', avatar: 'https://i.pravatar.cc/150?u=john' },
+      { id: 6, time: '08:15 AM', user: 'Admin Sarah Chen', action: 'Document Upload Failed', docId: 'DOC-552-01', status: 'Error', ip: '192.168.1.' + '20', avatar: 'https://i.pravatar.cc/150?u=sarah' },
     ]
   }
 ];
@@ -85,10 +83,11 @@ export default function ActivityLogPage() {
         
         {/* Search */}
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-bold text-gray-700 mb-1.5">Search</label>
+          <label htmlFor="searchInput" className="block text-xs font-bold text-gray-700 mb-1.5">Search</label>
           <div className="relative">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
+              id="searchInput"
               type="text" 
               placeholder="Search logs..." 
               value={searchQuery}
@@ -100,8 +99,8 @@ export default function ActivityLogPage() {
 
         {/* Date Range */}
         <div className="w-[240px]">
-          <label className="block text-xs font-bold text-gray-700 mb-1.5">Date range</label>
-          <button className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors">
+          <span id="dateRangeLabel" className="block text-xs font-bold text-gray-700 mb-1.5">Date range</span>
+          <button aria-labelledby="dateRangeLabel" className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="font-medium">Oct 1, 2023 - Oct 31, 2023</span>
@@ -110,26 +109,26 @@ export default function ActivityLogPage() {
         </div>
 
         {/* Status */}
-        <div className="flex flex-col">
-          <label className="block text-xs font-bold text-gray-700 mb-1.5">Status</label>
+        <fieldset className="flex flex-col">
+          <legend className="block text-xs font-bold text-gray-700 mb-1.5">Status</legend>
           <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white h-[38px]">
              <button onClick={() => setStatusFilter('All')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>All</button>
              <button onClick={() => setStatusFilter('Success')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'Success' ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}>Success</button>
              <button onClick={() => setStatusFilter('Pending')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'Pending' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>Pending</button>
              <button onClick={() => setStatusFilter('Error')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'Error' ? 'bg-rose-500 text-white' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}>Error</button>
           </div>
-        </div>
+        </fieldset>
 
         {/* Action Type */}
-        <div className="flex flex-col">
-          <label className="block text-xs font-bold text-gray-700 mb-1.5">Action Type</label>
+        <fieldset className="flex flex-col">
+          <legend className="block text-xs font-bold text-gray-700 mb-1.5">Action Type</legend>
           <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white h-[38px]">
              <button onClick={() => setActionFilter('All')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>All</button>
              <button onClick={() => setActionFilter('Access')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Access' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>Access</button>
              <button onClick={() => setActionFilter('Edit')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Edit' ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}>Edit</button>
              <button onClick={() => setActionFilter('Upload')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Upload' ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}>Upload</button>
           </div>
-        </div>
+        </fieldset>
 
         {/* Filter Button */}
         <div className="flex items-end h-[58px]">
@@ -159,8 +158,8 @@ export default function ActivityLogPage() {
               <Search className="w-8 h-8 opacity-50" />
               <p>No activity logs match your filters.</p>
             </div>
-          ) : filteredGroups.map((group, groupIdx) => (
-            <div key={groupIdx} className="mb-10 last:mb-0">
+          ) : filteredGroups.map((group) => (
+            <div key={group.dateStr} className="mb-10 last:mb-0">
               {/* Group Date Header */}
               <h2 className="text-lg font-bold text-gray-900 mb-4">{group.dateStr}</h2>
               
@@ -171,7 +170,7 @@ export default function ActivityLogPage() {
                 {group.logs.map((log) => (
                   <div key={log.id} className="relative group">
                     {/* Timeline Node */}
-                    <div className="absolute -left-[26px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-[3px] border-gray-300 bg-white z-10 group-hover:border-[#65b741] transition-colors" />
+                    <div className="absolute left-[-26px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-[3px] border-gray-300 bg-white z-10 group-hover:border-[#65b741] transition-colors" />
 
                     {/* Row Card */}
                     <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow hover:border-[#65b741]/30">
@@ -181,7 +180,7 @@ export default function ActivityLogPage() {
                         
                         {/* User */}
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                             <img src={log.avatar} alt={log.user} width={32} height={32} className="object-cover w-full h-full" />
                           </div>
                           <span className="text-sm font-bold text-gray-800">{log.user}</span>

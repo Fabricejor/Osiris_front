@@ -4,14 +4,16 @@ import { format } from 'date-fns';
 
 interface PageHeaderProps {
   title: string;
+  children?: React.ReactNode;
 }
 
-export default function PageHeader({ title }: PageHeaderProps) {
+export default function PageHeader({ title, children }: Readonly<PageHeaderProps>) {
   const currentDate = format(new Date(), 'MMM d, yyyy');
 
   return (
-    <div className="flex items-center justify-between flex-shrink-0">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2 shrink-0">
       <h1 className="text-xl font-bold text-gray-900 tracking-tight">{title}</h1>
+      {children}
       <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 shadow-sm cursor-default">
         <Calendar className="w-3.5 h-3.5 text-gray-500" />
         <span className="font-medium">{currentDate}</span>

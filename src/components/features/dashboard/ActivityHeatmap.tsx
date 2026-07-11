@@ -51,11 +51,11 @@ export default function ActivityHeatmap() {
         <div className="space-y-[3px]">
           {heatmapData.map((row, rowIndex) => (
             <div key={rowIndex} className="flex items-center gap-[3px]">
-              <span className="text-[9px] text-gray-400 w-5 text-right flex-shrink-0">{rowIndex + 1}</span>
+              <span className="text-[9px] text-gray-400 w-5 text-right flex-none">{rowIndex + 1}</span>
               {row.map((val, colIndex) => (
                 <div
                   key={colIndex}
-                  className={`flex-1 aspect-[2/1] rounded-[2px] ${INTENSITY_COLORS[getIntensity(val)]} transition-colors duration-150 cursor-pointer hover:ring-1 hover:ring-emerald-500`}
+                  className={`flex-1 w-3 h-3 rounded-[2px] ${INTENSITY_COLORS[getIntensity(val)]} transition-colors duration-150 cursor-pointer hover:ring-1 hover:ring-emerald-500`}
                   onMouseEnter={(e) => {
                     const rect = (e.target as HTMLElement).getBoundingClientRect();
                     const parent = (e.target as HTMLElement).closest('.relative')!.getBoundingClientRect();

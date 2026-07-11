@@ -10,10 +10,6 @@ import {
   LayoutDashboard,
   CheckSquare,
   FileScan,
-  FolderOpen,
-  Activity,
-  Download,
-  BarChart3,
   History,
   Settings,
   ChevronLeft,
@@ -120,11 +116,11 @@ function NavLink({
   item,
   isCollapsed,
   isActive,
-}: {
+}: Readonly<{
   item: NavItem;
   isCollapsed: boolean;
   isActive: boolean;
-}) {
+}>) {
   const linkContent = (
     <Link
       href={item.href}
@@ -156,13 +152,13 @@ function NavLink({
         {/* Icon wrapper */}
         <div
           className={cn(
-            'relative z-10 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 flex-shrink-0',
+            'relative z-10 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 shrink-0',
             isActive ? item.iconBg : 'group-hover:' + item.iconBg.replace('bg-', 'bg-')
           )}
         >
           <item.icon
             className={cn(
-              'w-4 h-4 transition-all duration-200 flex-shrink-0',
+              'w-4 h-4 transition-all duration-200 shrink-0',
               isActive ? item.color : cn('text-white/50 group-hover:' + item.color.replace('text-', 'text-'))
             )}
           />
@@ -191,7 +187,7 @@ function NavLink({
           <Tooltip.Content
             side="right"
             sideOffset={12}
-            className="bg-[#054e38] text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-xl z-[100] whitespace-nowrap animate-in fade-in-0 zoom-in-95 duration-150"
+            className="bg-[#054e38] text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-xl z-100 whitespace-nowrap animate-in fade-in-0 zoom-in-95 duration-150"
           >
             {item.name}
             <Tooltip.Arrow className="fill-[#054e38]" />
@@ -204,7 +200,7 @@ function NavLink({
   return linkContent;
 }
 
-function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed: boolean }) {
+function SectionLabel({ label, isCollapsed }: Readonly<{ label: string; isCollapsed: boolean }>) {
   return (
     <AnimatePresence>
       {!isCollapsed && (
@@ -232,7 +228,7 @@ export default function Sidebar() {
       variants={sidebarVariants}
       animate={isCollapsed ? 'closed' : 'open'}
       transition={{ type: 'spring', bounce: 0.1, duration: 0.4 }}
-      className="relative h-screen flex-shrink-0 flex flex-col z-50"
+      className="relative h-screen shrink-0 flex flex-col z-50"
       style={{
         background: 'linear-gradient(180deg, #08704F 0%, #065c41 60%, #054e38 100%)',
         borderRight: '1px solid rgba(255,255,255,0.08)',
@@ -256,7 +252,7 @@ export default function Sidebar() {
       </button>
 
       {/* Header */}
-      <div className={cn(' flex items-center h-[68px] px-4 flex-shrink-0', isCollapsed ? 'justify-center' : 'justify-center mt-2')}>
+      <div className={cn(' flex items-center h-[68px] px-4 shrink-0', isCollapsed ? 'justify-center' : 'justify-center mt-2')}>
         {isCollapsed ? (
           <div className="bg-white rounded-lg shadow-md flex items-center justify-center p-1">
             <Image
@@ -281,7 +277,7 @@ export default function Sidebar() {
       </div>
 
       {/* Divider */}
-      <div className="mx-4 h-px bg-white/10 flex-shrink-0" />
+      <div className="mx-4 h-px bg-white/10 shrink-0" />
 
       {/* Navigation principale */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5" style={{ scrollbarWidth: 'none' }}>
@@ -308,7 +304,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <div className="mx-4 h-px bg-white/10" />
         <div className="px-3 py-3 space-y-0.5">
           {bottomNavItems.map((item) => (

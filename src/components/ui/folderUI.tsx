@@ -63,12 +63,13 @@ const STATUS_CONFIG: Record<FolderStatus, {
   },
 };
 
-export default function FolderUI({ name, filesCount, size, status, isSelected, onClick }: FolderUIProps) {
+export default function FolderUI({ name, filesCount, size, status, isSelected, onClick }: Readonly<FolderUIProps>) {
   const cfg = STATUS_CONFIG[status];
 
   return (
-    <div
-      className={`group flex flex-col items-center cursor-pointer rounded-2xl p-4 transition-all duration-200 ${
+    <button
+      type="button"
+      className={`group flex flex-col items-center w-full cursor-pointer rounded-2xl p-4 transition-all duration-200 ${
         isSelected
           ? 'bg-gray-100 ring-2 ring-primary/40'
           : 'hover:bg-gray-50'
@@ -76,26 +77,26 @@ export default function FolderUI({ name, filesCount, size, status, isSelected, o
       onClick={onClick}
     >
       {/* Folder visual */}
-      <div className="file relative w-full max-w-[180px] h-[120px] origin-bottom [perspective:1500px]">
+      <div className="file relative w-full max-w-[180px] h-[120px] origin-bottom perspective-[1500px]">
         {/* Back of folder */}
         <div
           className={`${cfg.back} w-full h-full origin-top rounded-xl rounded-tl-none ${cfg.hoverShadow} transition-all ease duration-300 relative
             after:absolute after:content-[''] after:bottom-[99%] after:left-0 after:w-14 after:h-3 after:${cfg.back} after:rounded-t-xl
-            before:absolute before:content-[''] before:-top-[11px] before:left-[52px] before:w-3 before:h-3 before:${cfg.back} before:[clip-path:polygon(0_35%,0%_100%,50%_100%);]`}
+            before:absolute before:content-[''] before:top-[-11px] before:left-[52px] before:w-3 before:h-3 before:${cfg.back} before:[clip-path:polygon(0_35%,0%_100%,50%_100%);]`}
           style={{ ['--tw-folder-back' as string]: 'true' }}
         ></div>
         {/* Inner sheets */}
-        <div className="absolute inset-1 bg-zinc-400 rounded-xl transition-all ease duration-300 origin-bottom select-none group-hover:[transform:rotateX(-20deg)]"></div>
-        <div className="absolute inset-1 bg-zinc-300 rounded-xl transition-all ease duration-300 origin-bottom group-hover:[transform:rotateX(-30deg)]"></div>
-        <div className="absolute inset-1 bg-zinc-200 rounded-xl transition-all ease duration-300 origin-bottom group-hover:[transform:rotateX(-38deg)]"></div>
+        <div className="absolute inset-1 bg-zinc-400 rounded-xl transition-all ease duration-300 origin-bottom select-none group-hover:transform-[rotateX(-20deg)]"></div>
+        <div className="absolute inset-1 bg-zinc-300 rounded-xl transition-all ease duration-300 origin-bottom group-hover:transform-[rotateX(-30deg)]"></div>
+        <div className="absolute inset-1 bg-zinc-200 rounded-xl transition-all ease duration-300 origin-bottom group-hover:transform-[rotateX(-38deg)]"></div>
         {/* Front of folder */}
         <div
           className={`absolute bottom-0 ${cfg.front} w-full h-[calc(100%-4px)] rounded-xl rounded-tr-none
             after:absolute after:content-[''] after:bottom-[99%] after:right-0 after:w-[calc(100%-55px)] after:h-[12px] after:rounded-t-xl
-            before:absolute before:content-[''] before:-top-[8px] before:right-[calc(100%-59px)] before:size-2.5 before:[clip-path:polygon(100%_14%,50%_100%,100%_100%);]
+            before:absolute before:content-[''] before:top-[-8px] before:right-[calc(100%-59px)] before:size-2.5 before:[clip-path:polygon(100%_14%,50%_100%,100%_100%);]
             transition-all ease duration-300 origin-bottom flex items-end
             ${cfg.frontGradient}
-            group-hover:[transform:rotateX(-46deg)_translateY(1px)]`}
+            group-hover:transform-[rotateX(-46deg)_translateY(1px)]`}
           style={{
             ['--tw-after-bg' as string]: 'inherit',
             ['--tw-before-bg' as string]: 'inherit',
@@ -114,6 +115,6 @@ export default function FolderUI({ name, filesCount, size, status, isSelected, o
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

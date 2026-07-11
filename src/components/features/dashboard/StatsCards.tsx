@@ -75,7 +75,7 @@ export default function StatsCards() {
           key={stat.title}
           className="bg-white rounded-xl border border-gray-100 p-3 flex items-start gap-3 hover:shadow-md transition-shadow duration-200"
         >
-          <div className={`${stat.iconBg} p-2 rounded-lg flex-shrink-0`}>
+          <div className={`${stat.iconBg} p-2 rounded-lg shrink-0`}>
             <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
           </div>
           <div className="min-w-0">

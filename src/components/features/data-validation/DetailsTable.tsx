@@ -53,7 +53,20 @@ interface DetailsTableProps {
   statusFilter: FolderStatus | 'all';
 }
 
-export default function DetailsTable({ search, statusFilter }: DetailsTableProps) {
+const IdCell = (info: any) => <span className="font-medium text-gray-800">{info.getValue()}</span>;
+
+const StatusCell = (info: any) => {
+  const status = info.getValue() as FolderStatus;
+  const statusTag = STATUS_TAG[status];
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTag.bg} ${statusTag.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${statusTag.dot}`} />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+};
+
+export default function DetailsTable({ search, statusFilter }: Readonly<DetailsTableProps>) {
   const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -61,7 +74,7 @@ export default function DetailsTable({ search, statusFilter }: DetailsTableProps
     () => [
       columnHelper.accessor('id', {
         header: 'Patient ID (UUID)',
-        cell: (info) => <span className="font-medium text-gray-800">{info.getValue()}</span>,
+        cell: IdCell,
       }),
       columnHelper.accessor('age', {
         header: 'Age',
@@ -80,16 +93,7 @@ export default function DetailsTable({ search, statusFilter }: DetailsTableProps
       }),
       columnHelper.accessor('status', {
         header: 'Status',
-        cell: (info) => {
-          const status = info.getValue();
-          const statusTag = STATUS_TAG[status];
-          return (
-            <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTag.bg} ${statusTag.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusTag.dot}`} />
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-          );
-        },
+        cell: StatusCell,
       }),
     ],
     []
@@ -206,7 +210,7 @@ export default function DetailsTable({ search, statusFilter }: DetailsTableProps
       </div>
 
       {/* Right Info Panel for Details View */}
-      <aside className="flex-shrink-0 w-[320px] bg-white border border-gray-100 rounded-xl flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+      <aside className="shrink-0 w-[320px] bg-white border border-gray-100 rounded-xl flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
         {/* Open button at the very top */}
         <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
           <button 
@@ -251,8 +255,8 @@ export default function DetailsTable({ search, statusFilter }: DetailsTableProps
                 'Export activity at 10/24/2024',
                 'Export activities: 10/24/2024'
               ].map((activity, i) => (
-                <div key={i} className="flex items-start gap-2 relative z-10">
-                  <div className="w-2 h-2 rounded-full bg-emerald-300 mt-1 flex-shrink-0 ring-4 ring-white" />
+                <div key={`${activity}-${i}`} className="flex items-start gap-2 relative z-10">
+                  <div className="w-2 h-2 rounded-full bg-emerald-300 mt-1 shrink-0 ring-4 ring-white" />
                   <p className="text-xs text-gray-600">{activity}</p>
                 </div>
               ))}

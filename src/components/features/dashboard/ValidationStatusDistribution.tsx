@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+// eslint-disable-next-line
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const data = [
@@ -49,8 +50,9 @@ export default function ValidationStatusDistribution() {
                 strokeWidth={2}
                 stroke="#fff"
               >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {data.map((entry) => (
+                  // eslint-disable-next-line
+                  <Cell key={entry.name} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip
@@ -70,7 +72,7 @@ export default function ValidationStatusDistribution() {
           {data.map((entry) => (
             <div key={entry.name} className="flex items-center gap-2">
               <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
+                className="w-3 h-3 rounded-full shrink-0"
                 style={{ backgroundColor: entry.color }}
               />
               <span className="text-[11px] text-gray-600">{entry.name}</span>

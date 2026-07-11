@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Filter, 
   Search, 
   LayoutGrid, 
   List as ListIcon, 
@@ -158,7 +157,7 @@ export default function OCRProcessingPage() {
               >
                 {/* Image Section */}
                 <div className={`relative bg-gray-100 overflow-hidden ${
-                  pageViewMode === 'grid' ? 'aspect-[4/3] w-full rounded-t-xl' : 'w-32 h-24 rounded-lg flex-shrink-0'
+                  pageViewMode === 'grid' ? 'aspect-4/3 w-full rounded-t-xl' : 'w-32 h-24 rounded-lg shrink-0'
                 }`}>
                   <Image src={page.image} alt={page.name} fill className="object-cover" />
                   

@@ -19,12 +19,12 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard" />
 
       {/* Stats Cards */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <StatsCards />
       </div>
 
       {/* Row 2: Processing Efficiency (left) + OCR Performance & Confidence (right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-shrink-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
         <div className="h-[300px]">
           <ProcessingEfficiencyChart />
         </div>
@@ -35,7 +35,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 3: Data Processing Volumes + Activity Heatmap */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-shrink-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0">
         <div className="lg:col-span-2 h-[280px]">
           <DataProcessingVolumes />
         </div>
@@ -45,7 +45,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 4: Operator Comparison + Validation Status + Operator Activity Heatmap */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-shrink-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0">
         <div className="h-[300px]">
           <OperatorPerformanceComparison />
         </div>
@@ -58,7 +58,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 5: Operator Efficiency Table */}
-      <div className="flex-shrink-0 min-h-[320px]">
+      <div className="shrink-0 min-h-[320px]">
         <OperatorEfficiencyTable />
       </div>
     </div>

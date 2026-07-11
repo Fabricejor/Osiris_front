@@ -33,11 +33,11 @@ interface ScannedPage {
 interface ValidationPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  pages: ScannedPage[];
+  pages: readonly ScannedPage[];
   initialPageIndex: number;
 }
 
-export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex }: ValidationPopupProps) {
+export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex }: Readonly<ValidationPopupProps>) {
   const [currentIndex, setCurrentIndex] = useState(initialPageIndex);
 
   useEffect(() => {
@@ -149,7 +149,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
               <Panel defaultSize={60} minSize={30} className="bg-white flex flex-col">
                 
                 {/* Right Panel Header */}
-                <div className="p-6 border-b border-gray-100 flex items-start justify-between bg-white z-10 shadow-sm flex-shrink-0">
+                <div className="p-6 border-b border-gray-100 flex items-start justify-between bg-white z-10 shadow-sm shrink-0">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-1">Record Validation</h2>
                     <p className="text-sm text-gray-500">ANC Register Entry • Row 14</p>
@@ -184,38 +184,38 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                     <div className="space-y-4">
                       {/* Valid Input - Green */}
                       <div className="relative">
-                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">ANC Number</label>
+                        <label htmlFor="anc-number" className="block text-xs font-bold text-gray-500 mb-1 ml-4">ANC Number</label>
                         <div className="flex items-center">
                           <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                          <input type="text" defaultValue="ANC-2023-8492" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                          <input id="anc-number" type="text" defaultValue="ANC-2023-8492" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
                         </div>
                       </div>
 
                       {/* Valid Input - Green */}
                       <div className="relative">
-                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Patient Name</label>
+                        <label htmlFor="patient-name" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Patient Name</label>
                         <div className="flex items-center">
                           <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                          <input type="text" defaultValue="Fatoumata Diallo" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                          <input id="patient-name" type="text" defaultValue="Fatoumata Diallo" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         {/* Valid Input - Green */}
                         <div className="relative">
-                          <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Age</label>
+                          <label htmlFor="age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Age</label>
                           <div className="flex items-center">
                             <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input type="text" defaultValue="28" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                            <input id="age" type="text" defaultValue="28" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
                           </div>
                         </div>
 
                         {/* Blurry Input - Yellow */}
                         <div className="relative">
-                          <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Parity</label>
+                          <label htmlFor="parity" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Parity</label>
                           <div className="flex items-center">
                             <div className="w-1.5 h-10 bg-yellow-400 rounded-r-md absolute left-0" />
-                            <input type="text" defaultValue="G3P2" className="w-full ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
+                            <input id="parity" type="text" defaultValue="G3P2" className="w-full ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
                           </div>
                         </div>
                       </div>
@@ -232,19 +232,19 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       <div className="grid grid-cols-2 gap-4">
                         {/* Valid Input - Green */}
                         <div className="relative">
-                          <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Date of Visit</label>
+                          <label htmlFor="date-of-visit" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Date of Visit</label>
                           <div className="flex items-center">
                             <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input type="text" defaultValue="10/24/2023" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                            <input id="date-of-visit" type="text" defaultValue="10/24/2023" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
                           </div>
                         </div>
 
                         {/* Valid Input - Green */}
                         <div className="relative">
-                          <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Gest. Age (Weeks)</label>
+                          <label htmlFor="gest-age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Gest. Age (Weeks)</label>
                           <div className="flex items-center">
                             <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input type="text" defaultValue="24" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                            <input id="gest-age" type="text" defaultValue="24" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
                           </div>
                         </div>
                       </div>
@@ -253,13 +253,13 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       <div className="relative bg-red-50 p-4 rounded-xl border border-red-200 ml-4">
                         <div className="w-1.5 h-16 bg-red-500 rounded-r-md absolute left-0 top-1/2 -translate-y-1/2" />
                         <div className="flex items-center justify-between mb-2">
-                          <label className="flex items-center gap-1.5 text-xs font-bold text-red-600">
+                          <label htmlFor="weight" className="flex items-center gap-1.5 text-xs font-bold text-red-600">
                             <AlertTriangle className="w-3.5 h-3.5" /> Weight (kg)
                           </label>
                           <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase">Review Needed</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <input type="text" defaultValue="6?" className="w-full px-3 py-2 border-2 border-red-500 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm" />
+                          <input id="weight" type="text" defaultValue="6?" className="w-full px-3 py-2 border-2 border-red-500 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm" />
                           <button className="p-2 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                             <EyeOff className="w-5 h-5" />
                           </button>
@@ -274,12 +274,12 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                       {/* Blurry Input - Yellow */}
                       <div className="relative">
-                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Blood Pressure</label>
+                        <label htmlFor="bp-systolic" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Blood Pressure</label>
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-10 bg-yellow-400 rounded-r-md absolute left-0" />
-                          <input type="text" defaultValue="120" className="w-1/3 ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
+                          <input id="bp-systolic" type="text" defaultValue="120" className="w-1/3 ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
                           <span className="text-gray-400 font-bold text-lg">/</span>
-                          <input type="text" defaultValue="80" className="w-1/3 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                          <input type="text" aria-label="bp-diastolic" defaultValue="80" className="w-1/3 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
                         </div>
                       </div>
 
