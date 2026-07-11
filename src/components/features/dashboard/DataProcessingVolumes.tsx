@@ -77,7 +77,7 @@ export default function DataProcessingVolumes() {
                 fontSize: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
-              formatter={(value: number, name: string) => {
+              formatter={(value: any, name: any) => {
                 if (name === 'records') return [`${value.toLocaleString()} records`, 'Volume'];
                 return [`${value}%`, 'Rate'];
               }}

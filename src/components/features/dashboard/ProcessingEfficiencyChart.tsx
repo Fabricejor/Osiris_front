@@ -60,7 +60,7 @@ export default function ProcessingEfficiencyChart() {
                 fontSize: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
-              formatter={(value: number) => [`${value}s`, 'Processing Time']}
+              formatter={(value: any) => [`${value}s`, 'Avg Time']}
             />
             <Area
               type="monotone"

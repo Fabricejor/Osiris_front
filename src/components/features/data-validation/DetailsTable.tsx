@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   useReactTable,
   getCoreRowModel,
@@ -53,6 +54,7 @@ interface DetailsTableProps {
 }
 
 export default function DetailsTable({ search, statusFilter }: DetailsTableProps) {
+  const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const columns = useMemo(
@@ -205,15 +207,18 @@ export default function DetailsTable({ search, statusFilter }: DetailsTableProps
 
       {/* Right Info Panel for Details View */}
       <aside className="flex-shrink-0 w-[320px] bg-white border border-gray-100 rounded-xl flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+        {/* Open button at the very top */}
+        <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
+          <button 
+            onClick={() => router.push('/dashboard/data-validation/2026-0035')}
+            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
+          >
+            Open
+          </button>
+        </div>
+
         <div className="p-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-800">Data Summary</h3>
-        </div>
-        
-        {/* Open button */}
-        <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
-          <button className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
-            Open Folder Details
-          </button>
         </div>
 
         <div className="p-4 space-y-5">

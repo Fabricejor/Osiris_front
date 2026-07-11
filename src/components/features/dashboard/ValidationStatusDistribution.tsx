@@ -18,14 +18,7 @@ function renderCustomLabel({
   innerRadius,
   outerRadius,
   percent,
-}: {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  percent: number;
-}) {
+}: any) {
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -68,7 +61,7 @@ export default function ValidationStatusDistribution() {
                   fontSize: '12px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 }}
-                formatter={(value: number) => [`${value}%`, '']}
+                formatter={(value: any) => [`${value}%`, '']}
               />
             </PieChart>
           </ResponsiveContainer>

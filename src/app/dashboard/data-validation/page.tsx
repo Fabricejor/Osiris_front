@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import PageHeader from '@/components/ui/PageHeader';
 import FolderUI, { type FolderStatus } from '@/components/ui/folderUI';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import DetailsTable from '@/components/features/data-validation/DetailsTable';
 import {
   Search,
@@ -178,6 +179,7 @@ const STATUS_TAG: Record<FolderStatus, { bg: string; text: string; dot: string }
 };
 
 export default function DataValidationPage() {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'folders' | 'details'>('folders');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FolderStatus | 'all'>('all');
@@ -304,6 +306,16 @@ export default function DataValidationPage() {
               className="flex-shrink-0 h-full overflow-hidden"
             >
               <div className="w-[320px] h-full bg-white border border-gray-100 rounded-xl flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                {/* Open button at the very top */}
+                <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
+                  <button
+                    onClick={() => router.push(`/dashboard/data-validation/${selectedFolder.id}`)}
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
+                  >
+                    Open
+                  </button>
+                </div>
+
                 {/* Panel header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">
                   <h3 className="text-sm font-semibold text-gray-800">Info</h3>
@@ -312,16 +324,6 @@ export default function DataValidationPage() {
                     className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <X className="w-4 h-4 text-gray-400" />
-                  </button>
-                </div>
-
-                {/* Open button */}
-                <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
-                  <button
-                    onClick={() => setViewMode('details')}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
-                  >
-                    Open Folder Details
                   </button>
                 </div>
 
@@ -438,12 +440,22 @@ export default function DataValidationPage() {
                 <div className="mx-4 h-px bg-gray-100" />
 
                 {/* Quick actions */}
-                <div className="p-4 space-y-2 mt-auto">
+                <div className="p-4 space-y-2">
                   <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
                     <Pin className="w-3.5 h-3.5" /> Pinned items
                   </button>
                   <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
                     <Activity className="w-3.5 h-3.5" /> Activity
+                  </button>
+                </div>
+                
+                {/* Open button */}
+                <div className="p-4 mt-auto border-t border-gray-100">
+                  <button
+                    onClick={() => setViewMode('details')}
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
+                  >
+                    Open Folder Details
                   </button>
                 </div>
               </div>

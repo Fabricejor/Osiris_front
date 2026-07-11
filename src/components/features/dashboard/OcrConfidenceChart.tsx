@@ -41,7 +41,7 @@ export default function OcrConfidenceChart() {
                   fontSize: '12px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 }}
-                formatter={(value: number, name: string) => [`${value}%`, name]}
+                formatter={(value: any, name: any) => [`${value}%`, name]}
               />
             </PieChart>
           </ResponsiveContainer>

@@ -51,37 +51,37 @@ const mainNavItems: NavItem[] = [
     color: 'text-sky-300',
     iconBg: 'bg-sky-400/20',
   },
-  {
-    name: 'Patient Record',
-    href: '/dashboard/patient-record',
-    icon: FolderOpen,
-    color: 'text-violet-300',
-    iconBg: 'bg-violet-400/20',
-  },
-  {
-    name: 'Operator Performance',
-    href: '/dashboard/operator-performance',
-    icon: Activity,
-    color: 'text-rose-300',
-    iconBg: 'bg-rose-400/20',
-  },
+  // {
+  //   name: 'Patient Record',
+  //   href: '/dashboard/patient-record',
+  //   icon: FolderOpen,
+  //   color: 'text-violet-300',
+  //   iconBg: 'bg-violet-400/20',
+  // },
+  // {
+  //   name: 'Operator Performance',
+  //   href: '/dashboard/operator-performance',
+  //   icon: Activity,
+  //   color: 'text-rose-300',
+  //   iconBg: 'bg-rose-400/20',
+  // },
 ];
 
 const secondaryNavItems: NavItem[] = [
-  {
-    name: 'Data Export',
-    href: '/dashboard/data-export',
-    icon: Download,
-    color: 'text-amber-300',
-    iconBg: 'bg-amber-400/20',
-  },
-  {
-    name: 'Reports',
-    href: '/dashboard/reports',
-    icon: BarChart3,
-    color: 'text-cyan-300',
-    iconBg: 'bg-cyan-400/20',
-  },
+  // {
+  //   name: 'Data Export',
+  //   href: '/dashboard/data-export',
+  //   icon: Download,
+  //   color: 'text-amber-300',
+  //   iconBg: 'bg-amber-400/20',
+  // },
+  // {
+  //   name: 'Reports',
+  //   href: '/dashboard/reports',
+  //   icon: BarChart3,
+  //   color: 'text-cyan-300',
+  //   iconBg: 'bg-cyan-400/20',
+  // },
   {
     name: 'Activity Log',
     href: '/dashboard/activity-log',
@@ -256,36 +256,28 @@ export default function Sidebar() {
       </button>
 
       {/* Header */}
-      <div className={cn('flex items-center h-[68px] px-4 flex-shrink-0', isCollapsed ? 'justify-center' : 'gap-3')}>
-        <div
-          className="bg-white rounded-lg shadow-lg flex items-center justify-center flex-shrink-0"
-          style={{ width: 36, height: 36, padding: 4 }}
-        >
-          <Image
-            src="/images/OSIRIS LOGO.png"
-            alt="OSIRIS Logo"
-            width={28}
-            height={28}
-            className="object-contain"
-          />
-        </div>
-
-        <motion.div
-          variants={logoTextVariants}
-          animate={isCollapsed ? 'closed' : 'open'}
-          transition={{ duration: 0.2 }}
-          className="overflow-hidden"
-        >
-          <h1
-            className="text-xl font-bold tracking-[0.2em] text-white leading-none whitespace-nowrap"
-            style={{ fontFamily: '"Qurova", sans-serif', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}
-          >
-            OSIRIS
-          </h1>
-          <p className="text-[10px] text-white/40 tracking-widest uppercase leading-none mt-0.5">
-            Platform
-          </p>
-        </motion.div>
+      <div className={cn(' flex items-center h-[68px] px-4 flex-shrink-0', isCollapsed ? 'justify-center' : 'justify-center mt-2')}>
+        {isCollapsed ? (
+          <div className="bg-white rounded-lg shadow-md flex items-center justify-center p-1">
+            <Image
+              src="/images/Osiris Icon.PNG"
+              alt="OSIRIS Icon"
+              width={28}
+              height={28}
+              className="object-contain"
+            />
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-md flex items-center justify-center px-4 py-2">
+            <Image
+              src="/images/Osiris  icon+text.PNG"
+              alt="OSIRIS Logo"
+              width={140}
+              height={40}
+              className="object-contain"
+            />
+          </div>
+        )}
       </div>
 
       {/* Divider */}

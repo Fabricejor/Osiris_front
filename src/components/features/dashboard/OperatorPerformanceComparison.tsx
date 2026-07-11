@@ -48,7 +48,7 @@ export default function OperatorPerformanceComparison() {
                 fontSize: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
-              formatter={(value: number) => value.toLocaleString()}
+              formatter={(value: any) => value.toString()}
             />
             <Legend
               iconType="square"
