@@ -3,9 +3,16 @@
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push('/dashboard');
+  };
 
   return (
     <div className="flex flex-col justify-center items-center w-full h-full p-6 md:p-8">
@@ -20,7 +27,7 @@ export default function LoginForm() {
           <p className="text-gray-500 text-sm">Connectez-vous pour accéder au tableau de bord.</p>
         </div>
 
-        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-semibold text-gray-700">Adresse e-mail</label>
             <div className="relative">
