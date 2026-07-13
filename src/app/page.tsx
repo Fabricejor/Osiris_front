@@ -219,7 +219,7 @@ export default function Home() {
         <div className="hidden md:block md:w-[60%] relative h-full bg-gray-50">
           {/* Background image */}
           <Image
-            src="/images/Login pic.png"
+            src="/images/Healthcare App 3D Hero Illustration.png"
             alt="Osiris Healthcare Platform"
             fill
             className="object-cover"
@@ -229,28 +229,29 @@ export default function Home() {
           {/* Ambient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/40 via-transparent to-transparent pointer-events-none" />
 
-          {/* Glassmorphism Floating Card */}
-          <div className="absolute left-8 bottom-12 right-8 p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-white shadow-xl max-w-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded bg-white flex items-center justify-center p-0.5 shadow-sm">
+          {/* Glassmorphism Floating Widescreen Band */}
+          <div className="absolute left-6 bottom-6 right-6 p-4 bg-emerald-950/45 backdrop-blur-md rounded-2xl border border-white/10 text-white flex items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-1 shadow-sm shrink-0">
                 <Image
                   src="/images/Osiris Icon.PNG"
                   alt="Osiris Icon"
-                  width={20}
-                  height={20}
+                  width={38}
+                  height={38}
                   className="object-contain"
                 />
               </div>
-              <span className="text-[10px] font-bold tracking-widest uppercase text-white/90">
-                OSIRIS HEALTHCARE
-              </span>
+              <div>
+                <span className="text-[9px] font-black tracking-widest uppercase text-[#7BC148] block mb-0.5">
+                  OSIRIS HEALTHCARE
+                </span>
+                <h3 className="text-xs font-bold text-white leading-tight">
+                  {t("glass_title")}
+                </h3>
+              </div>
             </div>
             
-            <h3 className="text-lg font-bold text-primary mb-2 leading-snug">
-              {t("glass_title")}
-            </h3>
-            
-            <p className="text-xs text-white/80 leading-relaxed">
+            <p className="text-[11px] text-white/80 leading-relaxed max-w-sm hidden lg:block text-right">
               {t("glass_desc")}
             </p>
           </div>
