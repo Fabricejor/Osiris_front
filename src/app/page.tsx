@@ -61,10 +61,10 @@ export default function Home() {
       />
 
       {/* Main Split Container */}
-      <div className="w-full max-w-5xl h-[85vh] min-h-[580px] max-h-[750px] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-[0_24px_64px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col md:flex-row border border-white/60 relative z-10">
+      <div className="w-full max-w-6xl h-[85vh] min-h-[580px] max-h-[750px] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-[0_24px_64px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col md:flex-row border border-white/60 relative z-10">
         
         {/* LEFT COLUMN: Login Form */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-between h-full bg-white">
+        <div className="w-full md:w-[40%] p-8 md:p-12 flex flex-col justify-between h-full bg-white">
           
           {/* Header */}
           <div className="flex items-center justify-between shrink-0">
@@ -216,7 +216,7 @@ export default function Home() {
         </div>
 
         {/* RIGHT COLUMN: Image & Glassmorphism Card */}
-        <div className="hidden md:block w-1/2 relative h-full bg-gray-50">
+        <div className="hidden md:block md:w-[60%] relative h-full bg-gray-50">
           {/* Background image */}
           <Image
             src="/images/Login pic.png"
