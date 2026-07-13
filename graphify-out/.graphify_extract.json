@@ -1,0 +1,261 @@
+{
+  "nodes": [
+    {
+      "id": "src_app_dashboard_layout_dashboardlayout",
+      "label": "DashboardLayout",
+      "file_type": "code",
+      "source_file": "src/app/dashboard/layout.tsx",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_app_dashboard_settings_page_settingspage",
+      "label": "SettingsPage",
+      "file_type": "code",
+      "source_file": "src/app/dashboard/settings/page.tsx",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_app_layout_rootlayout",
+      "label": "RootLayout",
+      "file_type": "code",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L26",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_app_page_home",
+      "label": "Home",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_components_features_auth_loginhero_loginhero",
+      "label": "LoginHero",
+      "file_type": "code",
+      "source_file": "src/components/features/auth/LoginHero.tsx",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_components_ui_pageheader_pageheader",
+      "label": "PageHeader",
+      "file_type": "code",
+      "source_file": "src/components/ui/PageHeader.tsx",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_components_ui_topbar_topbar",
+      "label": "TopBar",
+      "file_type": "code",
+      "source_file": "src/components/ui/TopBar.tsx",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_components_ui_folderui_folderstatus",
+      "label": "FolderStatus",
+      "file_type": "code",
+      "source_file": "src/components/ui/folderUI.tsx",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_components_ui_folderui_folderui",
+      "label": "FolderUI",
+      "file_type": "code",
+      "source_file": "src/components/ui/folderUI.tsx",
+      "source_location": "L66",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_utils_cn",
+      "label": "cn",
+      "file_type": "code",
+      "source_file": "src/lib/utils.ts",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_services_apiclient_apiclient",
+      "label": "apiClient",
+      "file_type": "code",
+      "source_file": "src/services/apiClient.ts",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_types_index_user",
+      "label": "User",
+      "file_type": "code",
+      "source_file": "src/types/index.ts",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_types_index_authresponse",
+      "label": "AuthResponse",
+      "file_type": "code",
+      "source_file": "src/types/index.ts",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_types_index_apierror",
+      "label": "ApiError",
+      "file_type": "code",
+      "source_file": "src/types/index.ts",
+      "source_location": "L22",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "src_app_dashboard_data_validation_page",
+      "target": "src_components_ui_pageheader_pageheader",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/dashboard/data-validation/page.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_dashboard_data_validation_page",
+      "target": "src_components_ui_folderui_folderstatus",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/dashboard/data-validation/page.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_dashboard_data_validation_page",
+      "target": "src_components_ui_folderui_folderui",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/dashboard/data-validation/page.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_dashboard_layout",
+      "target": "src_components_ui_topbar_topbar",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/dashboard/layout.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_dashboard_page",
+      "target": "src_components_ui_pageheader_pageheader",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/dashboard/page.tsx",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_layout",
+      "target": "src_lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page",
+      "target": "src_components_features_auth_loginhero_loginhero",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_features_data_validation_detailstable",
+      "target": "src_components_ui_folderui_folderstatus",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/features/data-validation/DetailsTable.tsx",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_ui_sidebar",
+      "target": "src_lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ui/Sidebar.tsx",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_auth_service",
+      "target": "src_services_apiclient_apiclient",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/services/auth.service.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_auth_service",
+      "target": "src_types_index_user",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/services/auth.service.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_users_service",
+      "target": "src_services_apiclient_apiclient",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/services/users.service.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "src_services_users_service",
+      "target": "src_types_index_user",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/services/users.service.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_hp_documents_projet_perso_osiris_osiris_front_src_components_features_data_validation_detailstable_detailstableprops",
+      "target": "src_components_ui_folderui_folderstatus",
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/features/data-validation/DetailsTable.tsx",
+      "source_location": "L53",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

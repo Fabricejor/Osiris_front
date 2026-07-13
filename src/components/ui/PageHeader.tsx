@@ -1,6 +1,8 @@
-import React from 'react';
-import { Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+"use client";
+
+import React, { useEffect } from 'react';
+import { useTopBar } from './TopBarContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface PageHeaderProps {
   title: string;
@@ -8,16 +10,21 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ title, children }: Readonly<PageHeaderProps>) {
-  const currentDate = format(new Date(), 'MMM d, yyyy');
+  const { setBreadcrumb } = useTopBar();
+  const { t } = useTranslation();
+  const translationKey = title.toLowerCase().replace(' ', '_') as any;
+  const translatedTitle = t(translationKey) || title;
 
-  return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2 shrink-0">
-      <h1 className="text-xl font-bold text-gray-900 tracking-tight">{title}</h1>
-      {children}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 shadow-sm cursor-default">
-        <Calendar className="w-3.5 h-3.5 text-gray-500" />
-        <span className="font-medium">{currentDate}</span>
+  useEffect(() => {
+    setBreadcrumb(
+      <div className="flex items-center gap-2 min-w-0">
+        <h1 className="text-sm font-bold text-gray-900 tracking-tight whitespace-nowrap">{translatedTitle}</h1>
+        {children}
       </div>
-    </div>
-  );
+    );
+    return () => setBreadcrumb(null);
+  }, [translatedTitle, children, setBreadcrumb]);
+
+  // No longer renders anything inline — content is in the TopBar
+  return null;
 }

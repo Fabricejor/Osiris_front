@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -11,21 +11,31 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const data = [
-  { name: 'Prescription', value: 32 },
-  { name: 'Lab Report', value: 28 },
-  { name: 'Invoice', value: 22 },
-  { name: 'Consent', value: 18 },
-  { name: 'Other', value: 12 },
+const rawData = [
+  { labelEn: 'Prescription', labelFr: 'Prescription', value: 32 },
+  { labelEn: 'Lab Report', labelFr: 'Rapport Labo', value: 28 },
+  { labelEn: 'Invoice', labelFr: 'Facture', value: 22 },
+  { labelEn: 'Consent', labelFr: 'Consentement', value: 18 },
+  { labelEn: 'Other', labelFr: 'Autre', value: 12 },
 ];
 
 const COLORS = ['#08704F', '#7BC148', '#4ade80', '#86efac', '#bbf7d0'];
 
 export default function OcrPerformanceChart() {
+  const { t, language } = useTranslation();
+
+  const data = useMemo(() => {
+    return rawData.map(d => ({
+      ...d,
+      name: language === 'fr' ? d.labelFr : d.labelEn
+    }));
+  }, [language]);
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-2">OCR Performance by Document Type</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-2">{t("ocr_performance")}</h3>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>

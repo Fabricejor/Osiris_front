@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -10,26 +10,36 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const data = [
-  { name: 'Week 1', value: 22 },
-  { name: 'Week 2', value: 25 },
-  { name: 'Week 3', value: 28 },
-  { name: 'Week 4', value: 30 },
-  { name: 'Week 5', value: 29 },
-  { name: 'Week 6', value: 32 },
-  { name: 'Week 7', value: 35 },
-  { name: 'Week 8', value: 38 },
-  { name: 'Week 9', value: 40 },
-  { name: 'Week 10', value: 42 },
-  { name: 'Week 11', value: 44 },
-  { name: 'Week 12', value: 45 },
+const rawData = [
+  { nameKey: 1, value: 22 },
+  { nameKey: 2, value: 25 },
+  { nameKey: 3, value: 28 },
+  { nameKey: 4, value: 30 },
+  { nameKey: 5, value: 29 },
+  { nameKey: 6, value: 32 },
+  { nameKey: 7, value: 35 },
+  { nameKey: 8, value: 38 },
+  { nameKey: 9, value: 40 },
+  { nameKey: 10, value: 42 },
+  { nameKey: 11, value: 44 },
+  { nameKey: 12, value: 45 },
 ];
 
 export default function ProcessingEfficiencyChart() {
+  const { t, language } = useTranslation();
+
+  const data = useMemo(() => {
+    return rawData.map(d => ({
+      ...d,
+      name: language === 'fr' ? `Sem. ${d.nameKey}` : `Week ${d.nameKey}`
+    }));
+  }, [language]);
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">Processing Efficiency Over Time</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("processing_efficiency")}</h3>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
@@ -60,7 +70,7 @@ export default function ProcessingEfficiencyChart() {
                 fontSize: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
-              formatter={(value: any) => [`${value}s`, 'Avg Time']}
+              formatter={(value: any) => [`${value}s`, t("processing_time")]}
             />
             <Area
               type="monotone"

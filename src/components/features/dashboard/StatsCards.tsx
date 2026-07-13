@@ -9,10 +9,11 @@ import {
   FileCheck,
   AlertCircle,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const stats = [
   {
-    title: 'Data Validation Rate',
+    titleKey: 'data_validation_rate',
     value: '98.5%',
     change: '+2.1%',
     positive: true,
@@ -21,7 +22,7 @@ const stats = [
     iconColor: 'text-emerald-500',
   },
   {
-    title: 'Operator Performance Score',
+    titleKey: 'operator_performance_score',
     value: '92.0%',
     change: '+1.5%',
     positive: true,
@@ -30,7 +31,7 @@ const stats = [
     iconColor: 'text-emerald-500',
   },
   {
-    title: 'Avg. Processing Time',
+    titleKey: 'avg_processing_time',
     value: '45s',
     change: '-5s',
     positive: true,
@@ -39,7 +40,7 @@ const stats = [
     iconColor: 'text-emerald-500',
   },
   {
-    title: 'OCR Success Rate',
+    titleKey: 'ocr_success_rate',
     value: '96.8%',
     change: '+0.8%',
     positive: true,
@@ -48,7 +49,7 @@ const stats = [
     iconColor: 'text-emerald-500',
   },
   {
-    title: 'Daily Validations',
+    titleKey: 'daily_validations',
     value: '14,500',
     change: '+12%',
     positive: true,
@@ -57,7 +58,7 @@ const stats = [
     iconColor: 'text-emerald-500',
   },
   {
-    title: 'Pending Review',
+    titleKey: 'pending_review',
     value: '1,200',
     change: '-300',
     positive: false,
@@ -68,18 +69,20 @@ const stats = [
 ];
 
 export default function StatsCards() {
+  const { t } = useTranslation();
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {stats.map((stat) => (
         <div
-          key={stat.title}
+          key={stat.titleKey}
           className="bg-white rounded-xl border border-gray-100 p-3 flex items-start gap-3 hover:shadow-md transition-shadow duration-200"
         >
           <div className={`${stat.iconBg} p-2 rounded-lg shrink-0`}>
             <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-gray-500 truncate leading-tight">{stat.title}</p>
+            <p className="text-[11px] text-gray-500 truncate leading-tight">{t(stat.titleKey as any)}</p>
             <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{stat.value}</p>
             <span
               className={`text-[11px] font-medium ${

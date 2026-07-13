@@ -1,4 +1,5 @@
 import React from 'react';
+import { FileText, HardDrive } from 'lucide-react';
 
 export type FolderStatus = 'pending' | 'validated' | 'rejected' | 'anomaly';
 
@@ -20,6 +21,9 @@ const STATUS_CONFIG: Record<FolderStatus, {
   label: string;
   labelColor: string;
   labelBg: string;
+  ring: string;
+  cardBg: string;
+  dot: string;
 }> = {
   pending: {
     back: 'bg-amber-600',
@@ -30,6 +34,9 @@ const STATUS_CONFIG: Record<FolderStatus, {
     label: 'Pending',
     labelColor: 'text-amber-700',
     labelBg: 'bg-amber-100',
+    ring: 'ring-amber-400/60',
+    cardBg: 'bg-amber-50/40',
+    dot: 'bg-amber-500',
   },
   validated: {
     back: 'bg-emerald-700',
@@ -40,6 +47,9 @@ const STATUS_CONFIG: Record<FolderStatus, {
     label: 'Validated',
     labelColor: 'text-emerald-700',
     labelBg: 'bg-emerald-100',
+    ring: 'ring-emerald-400/60',
+    cardBg: 'bg-emerald-50/40',
+    dot: 'bg-emerald-500',
   },
   rejected: {
     back: 'bg-red-600',
@@ -50,6 +60,9 @@ const STATUS_CONFIG: Record<FolderStatus, {
     label: 'Rejected',
     labelColor: 'text-red-700',
     labelBg: 'bg-red-100',
+    ring: 'ring-red-400/60',
+    cardBg: 'bg-red-50/40',
+    dot: 'bg-red-500',
   },
   anomaly: {
     back: 'bg-blue-600',
@@ -60,6 +73,9 @@ const STATUS_CONFIG: Record<FolderStatus, {
     label: 'Anomaly',
     labelColor: 'text-blue-700',
     labelBg: 'bg-blue-100',
+    ring: 'ring-blue-400/60',
+    cardBg: 'bg-blue-50/40',
+    dot: 'bg-blue-500',
   },
 };
 
@@ -69,10 +85,10 @@ export default function FolderUI({ name, filesCount, size, status, isSelected, o
   return (
     <button
       type="button"
-      className={`group flex flex-col items-center w-full cursor-pointer rounded-2xl p-4 transition-all duration-200 ${
+      className={`group flex flex-col items-center w-full cursor-pointer rounded-2xl p-4 border transition-all duration-200 ${
         isSelected
-          ? 'bg-gray-100 ring-2 ring-primary/40'
-          : 'hover:bg-gray-50'
+          ? `${cfg.cardBg} ring-2 ${cfg.ring} border-transparent shadow-sm`
+          : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md hover:bg-gray-50/50'
       }`}
       onClick={onClick}
     >
@@ -105,12 +121,21 @@ export default function FolderUI({ name, filesCount, size, status, isSelected, o
       </div>
 
       {/* Folder info */}
-      <div className="w-full mt-3 space-y-1">
-        <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
-        <p className="text-xs text-gray-500">{filesCount} files</p>
+      <div className="w-full mt-3 space-y-1.5">
+        <p className="text-sm font-semibold text-gray-800 truncate text-left">{name}</p>
+
+        <div className="flex items-center gap-1 text-gray-400">
+          <FileText className="w-3 h-3 shrink-0" />
+          <span className="text-[11px]">{filesCount} files</span>
+        </div>
+
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-gray-400">{size}</span>
-          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${cfg.labelBg} ${cfg.labelColor}`}>
+          <span className="flex items-center gap-1 text-[11px] text-gray-400">
+            <HardDrive className="w-3 h-3 shrink-0" />
+            {size}
+          </span>
+          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.labelBg} ${cfg.labelColor}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
             {cfg.label}
           </span>
         </div>

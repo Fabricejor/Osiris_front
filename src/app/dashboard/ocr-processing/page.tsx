@@ -14,15 +14,17 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
+import PageHeader from '@/components/ui/PageHeader';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Mock data for the OCR Processing Queue
 const initialQueuePages = [
-  { id: 1, name: 'Page 5 - ANC Register', status: 'anomaly', statusText: 'Anomaly', confidence: 45, image: '/registres/Image (1).png', uploadDate: 'Oct 26, 2023', batch: '2026-0035' },
-  { id: 2, name: 'Page 8 - Delivery Log', status: 'pending', statusText: 'Pending', confidence: 62, image: '/registres/Image (2).png', uploadDate: 'Oct 26, 2023', batch: '2026-0036' },
-  { id: 3, name: 'Page 12 - OPD Register', status: 'anomaly', statusText: 'Anomaly', confidence: 38, image: '/registres/Image (3).png', uploadDate: 'Oct 25, 2023', batch: '2026-0032' },
-  { id: 4, name: 'Page 3 - ANC Register', status: 'pending', statusText: 'Pending', confidence: 71, image: '/registres/Image (4).png', uploadDate: 'Oct 25, 2023', batch: '2026-0031' },
-  { id: 5, name: 'Page 1 - Delivery Log', status: 'pending', statusText: 'Pending', confidence: 78, image: '/registres/Image (6).png', uploadDate: 'Oct 25, 2023', batch: '2026-0031' },
-  { id: 6, name: 'Page 7 - OPD Register', status: 'anomaly', statusText: 'Anomaly', confidence: 22, image: '/registres/Image (9).png', uploadDate: 'Oct 24, 2023', batch: '2026-0028' },
+  { id: 1, name: 'Page 5 - ANC Register', status: 'anomaly', confidence: 45, image: '/registres/Image (1).png', uploadDate: 'Oct 26, 2023', batch: '2026-0035' },
+  { id: 2, name: 'Page 8 - Delivery Log', status: 'pending', confidence: 62, image: '/registres/Image (2).png', uploadDate: 'Oct 26, 2023', batch: '2026-0036' },
+  { id: 3, name: 'Page 12 - OPD Register', status: 'anomaly', confidence: 38, image: '/registres/Image (3).png', uploadDate: 'Oct 25, 2023', batch: '2026-0032' },
+  { id: 4, name: 'Page 3 - ANC Register', status: 'pending', confidence: 71, image: '/registres/Image (4).png', uploadDate: 'Oct 25, 2023', batch: '2026-0031' },
+  { id: 5, name: 'Page 1 - Delivery Log', status: 'pending', confidence: 78, image: '/registres/Image (6).png', uploadDate: 'Oct 25, 2023', batch: '2026-0031' },
+  { id: 6, name: 'Page 7 - OPD Register', status: 'anomaly', confidence: 22, image: '/registres/Image (9).png', uploadDate: 'Oct 24, 2023', batch: '2026-0028' },
 ];
 
 export default function OCRProcessingPage() {
@@ -31,6 +33,7 @@ export default function OCRProcessingPage() {
   const [filterType, setFilterType] = useState('All');
   
   const [queuePages, setQueuePages] = useState(initialQueuePages);
+  const { t } = useTranslation();
   
   // State for Dropdown and Popup
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -74,9 +77,9 @@ export default function OCRProcessingPage() {
     <div className="h-full flex flex-col p-6 bg-gray-50/50 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
       
       {/* Header */}
+      <PageHeader title="OCR Processing" />
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">OCR Processing Hub</h1>
-        <p className="text-gray-500 text-sm">Manage and review pages that require human intervention.</p>
+        <p className="text-gray-500 text-sm">{t("ocr_hub_subtitle")}</p>
         
         {/* Quick Stats */}
         <div className="flex gap-4 mt-6">
@@ -85,7 +88,7 @@ export default function OCRProcessingPage() {
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Pending Review</p>
+              <p className="text-sm font-bold text-gray-500 uppercase">{t("pending_review")}</p>
               <p className="text-2xl font-black text-gray-900">{queuePages.filter(p => p.status === 'pending').length}</p>
             </div>
           </div>
@@ -94,7 +97,7 @@ export default function OCRProcessingPage() {
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Anomalies Detected</p>
+              <p className="text-sm font-bold text-gray-500 uppercase">{t("anomalies_detected")}</p>
               <p className="text-2xl font-black text-gray-900">{queuePages.filter(p => p.status === 'anomaly').length}</p>
             </div>
           </div>
@@ -108,7 +111,7 @@ export default function OCRProcessingPage() {
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
-              placeholder="Search by name or batch..." 
+              placeholder={t("search_name_batch")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#65b741] focus:border-transparent text-gray-700 font-medium"
@@ -116,8 +119,8 @@ export default function OCRProcessingPage() {
           </div>
           <div className="h-6 w-px bg-gray-200" />
           <div className="flex items-center gap-2">
-             <button onClick={() => setFilterType('All')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>All</button>
-             <button onClick={() => setFilterType('Anomalies')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'Anomalies' ? 'bg-rose-500 text-white' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}>Anomalies</button>
+             <button onClick={() => setFilterType('All')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t("all_filter")}</button>
+             <button onClick={() => setFilterType('Anomalies')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'Anomalies' ? 'bg-rose-500 text-white' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}>{t("anomalies_filter")}</button>
              <button onClick={() => setFilterType('Low Confidence')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'Low Confidence' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>Conf &lt; 50%</button>
           </div>
         </div>
@@ -166,7 +169,7 @@ export default function OCRProcessingPage() {
                     <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm ${
                       page.status === 'anomaly' ? 'bg-rose-500/90 text-white' : 'bg-amber-400/90 text-amber-900'
                     }`}>
-                      {page.statusText}
+                      {t(page.status as any)}
                     </span>
                   </div>
                 </div>
@@ -192,14 +195,14 @@ export default function OCRProcessingPage() {
                       {activeDropdown === page.id && (
                         <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-1 overflow-hidden">
                           <button onClick={() => handleAction('Validate', page.id, index)} className="w-full text-left px-4 py-2 text-sm font-bold text-emerald-600 hover:bg-emerald-50 flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4" /> Validate
+                            <CheckCircle2 className="w-4 h-4" /> {t("validate_action")}
                           </button>
                           <button onClick={() => handleAction('Edit', page.id, index)} className="w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                            <Pencil className="w-4 h-4" /> Edit
+                            <Pencil className="w-4 h-4" /> {t("edit_action")}
                           </button>
                           <div className="h-px bg-gray-100 my-1" />
                           <button onClick={() => handleAction('Reject', page.id, index)} className="w-full text-left px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2">
-                            <XCircle className="w-4 h-4" /> Reject
+                            <XCircle className="w-4 h-4" /> {t("reject_action")}
                           </button>
                         </div>
                       )}
@@ -208,13 +211,13 @@ export default function OCRProcessingPage() {
 
                   <div className={`flex items-center justify-between mt-auto ${pageViewMode === 'grid' ? 'pt-4 border-t border-gray-50' : ''}`}>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Confidence</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t("confidence_label")}</span>
                       <span className={`text-sm font-black ${page.confidence < 50 ? 'text-rose-500' : 'text-amber-500'}`}>
                         {page.confidence}%
                       </span>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Uploaded</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t("upload_date_label")}</span>
                       <span className="text-xs font-bold text-gray-600">{page.uploadDate}</span>
                     </div>
                   </div>
@@ -229,7 +232,10 @@ export default function OCRProcessingPage() {
       <ValidationPopup 
         isOpen={selectedPageIndex !== null}
         onClose={() => setSelectedPageIndex(null)}
-        pages={filteredPages}
+        pages={filteredPages.map(p => ({
+          ...p,
+          statusText: t(p.status as any)
+        }))}
         initialPageIndex={selectedPageIndex || 0}
       />
     </div>

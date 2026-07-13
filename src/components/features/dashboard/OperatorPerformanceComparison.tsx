@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const data = [
   { name: 'Sarah J.', processed: 22000, errors: 1200 },
@@ -21,9 +22,11 @@ const data = [
 ];
 
 export default function OperatorPerformanceComparison() {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">Operator Performance Comparison (Top 5)</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("operator_comparison_title")}</h3>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -55,8 +58,8 @@ export default function OperatorPerformanceComparison() {
               iconSize={10}
               wrapperStyle={{ fontSize: '11px', color: '#6b7280' }}
             />
-            <Bar dataKey="processed" name="Processed" fill="#1e40af" radius={[3, 3, 0, 0]} barSize={18} />
-            <Bar dataKey="errors" name="Errors" fill="#22c55e" radius={[3, 3, 0, 0]} barSize={18} />
+            <Bar dataKey="processed" name={t("processed")} fill="#1e40af" radius={[3, 3, 0, 0]} barSize={18} />
+            <Bar dataKey="errors" name={t("errors_label")} fill="#22c55e" radius={[3, 3, 0, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </div>

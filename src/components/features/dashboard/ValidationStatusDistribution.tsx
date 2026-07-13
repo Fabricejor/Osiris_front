@@ -1,13 +1,13 @@
 "use client";
 
-import React from 'react';
-// eslint-disable-next-line
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const data = [
-  { name: 'Verified', value: 75, color: '#22c55e' },
-  { name: 'Pending', value: 15, color: '#f59e0b' },
-  { name: 'Rejected', value: 10, color: '#ef4444' },
+const dataKeys = [
+  { key: 'validated', value: 75, color: '#22c55e' },
+  { key: 'pending', value: 15, color: '#f59e0b' },
+  { key: 'rejected', value: 10, color: '#ef4444' },
 ];
 
 const RADIAN = Math.PI / 180;
@@ -32,9 +32,18 @@ function renderCustomLabel({
 }
 
 export default function ValidationStatusDistribution() {
+  const { t } = useTranslation();
+
+  const data = useMemo(() => {
+    return dataKeys.map(item => ({
+      ...item,
+      name: t(item.key as any)
+    }));
+  }, [t]);
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-2">Validation Status Distribution</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-2">{t("validation_status_title")}</h3>
       <div className="flex-1 min-h-0 flex items-center">
         <div className="w-3/5 h-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -51,7 +60,6 @@ export default function ValidationStatusDistribution() {
                 stroke="#fff"
               >
                 {data.map((entry) => (
-                  // eslint-disable-next-line
                   <Cell key={entry.name} fill={entry.color} />
                 ))}
               </Pie>

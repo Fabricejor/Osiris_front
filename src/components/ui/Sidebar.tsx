@@ -16,6 +16,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type NavItem = {
   name: string;
@@ -47,37 +48,9 @@ const mainNavItems: NavItem[] = [
     color: 'text-sky-300',
     iconBg: 'bg-sky-400/20',
   },
-  // {
-  //   name: 'Patient Record',
-  //   href: '/dashboard/patient-record',
-  //   icon: FolderOpen,
-  //   color: 'text-violet-300',
-  //   iconBg: 'bg-violet-400/20',
-  // },
-  // {
-  //   name: 'Operator Performance',
-  //   href: '/dashboard/operator-performance',
-  //   icon: Activity,
-  //   color: 'text-rose-300',
-  //   iconBg: 'bg-rose-400/20',
-  // },
 ];
 
 const secondaryNavItems: NavItem[] = [
-  // {
-  //   name: 'Data Export',
-  //   href: '/dashboard/data-export',
-  //   icon: Download,
-  //   color: 'text-amber-300',
-  //   iconBg: 'bg-amber-400/20',
-  // },
-  // {
-  //   name: 'Reports',
-  //   href: '/dashboard/reports',
-  //   icon: BarChart3,
-  //   color: 'text-cyan-300',
-  //   iconBg: 'bg-cyan-400/20',
-  // },
   {
     name: 'Activity Log',
     href: '/dashboard/activity-log',
@@ -121,6 +94,10 @@ function NavLink({
   isCollapsed: boolean;
   isActive: boolean;
 }>) {
+  const { t } = useTranslation();
+  const nameKey = item.name.toLowerCase().replace(' ', '_') as any;
+  const displayName = t(nameKey) || item.name;
+
   const linkContent = (
     <Link
       href={item.href}
@@ -171,7 +148,7 @@ function NavLink({
           transition={{ duration: 0.2 }}
           className="relative z-10 whitespace-nowrap overflow-hidden text-ellipsis"
         >
-          {item.name}
+          {displayName}
         </motion.span>
       </div>
     </Link>
@@ -189,7 +166,7 @@ function NavLink({
             sideOffset={12}
             className="bg-[#054e38] text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-xl z-100 whitespace-nowrap animate-in fade-in-0 zoom-in-95 duration-150"
           >
-            {item.name}
+            {displayName}
             <Tooltip.Arrow className="fill-[#054e38]" />
           </Tooltip.Content>
         </Tooltip.Portal>
@@ -201,6 +178,10 @@ function NavLink({
 }
 
 function SectionLabel({ label, isCollapsed }: Readonly<{ label: string; isCollapsed: boolean }>) {
+  const { t } = useTranslation();
+  const labelKey = label.toLowerCase() as any;
+  const translatedLabel = t(labelKey) || label;
+
   return (
     <AnimatePresence>
       {!isCollapsed && (
@@ -211,7 +192,7 @@ function SectionLabel({ label, isCollapsed }: Readonly<{ label: string; isCollap
           transition={{ duration: 0.2 }}
           className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/35 overflow-hidden"
         >
-          {label}
+          {translatedLabel}
         </motion.p>
       )}
     </AnimatePresence>

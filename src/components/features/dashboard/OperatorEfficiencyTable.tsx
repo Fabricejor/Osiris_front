@@ -11,6 +11,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Operator = {
   name: string;
@@ -38,38 +39,44 @@ const statusStyles: Record<string, string> = {
 
 export default function OperatorEfficiencyTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const { t } = useTranslation();
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'Inactive') return t('efficiency_status_inactive');
+    return t('efficiency_status_active');
+  };
 
   const columns = useMemo(
     () => [
       columnHelper.accessor('name', {
-        header: 'Operator Name',
+        header: t("efficiency_column_operator"),
         cell: (info) => <span className="font-medium text-gray-800">{info.getValue()}</span>,
       }),
       columnHelper.accessor('totalValidations', {
-        header: 'Total Validations',
+        header: t("efficiency_column_validated"),
         cell: (info) => info.getValue().toLocaleString(),
       }),
       columnHelper.accessor('avgTime', {
-        header: 'Avg. Time/Doc',
+        header: t("efficiency_column_time"),
       }),
       columnHelper.accessor('efficiencyScore', {
-        header: 'Efficiency Score',
+        header: t("efficiency_column_accuracy"),
         cell: (info) => info.getValue(),
       }),
       columnHelper.accessor('status', {
-        header: 'Status',
+        header: t("efficiency_column_status"),
         cell: (info) => {
           const status = info.getValue();
           return (
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${statusStyles[status]}`}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              {status}
+              {getStatusLabel(status)}
             </span>
           );
         },
       }),
     ],
-    []
+    [t]
   );
 
   const table = useReactTable({
@@ -87,7 +94,7 @@ export default function OperatorEfficiencyTable() {
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">Operator Efficiency</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("efficiency_table_title")}</h3>
       <div className="flex-1 min-h-0 overflow-auto">
         <table className="w-full text-sm">
           <thead>

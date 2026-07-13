@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const data = [
   { date: 'Mar 18', records: 4500, rate: 18 },
@@ -35,9 +36,11 @@ const data = [
 const BAR_COLORS = ['#08704F', '#0a8a63', '#7BC148', '#4ade80', '#08704F', '#0a8a63'];
 
 export default function DataProcessingVolumes() {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">Data Processing Volumes</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("data_volumes_title")}</h3>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -78,8 +81,8 @@ export default function DataProcessingVolumes() {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
               formatter={(value: any, name: any) => {
-                if (name === 'records') return [`${value.toLocaleString()} records`, 'Volume'];
-                return [`${value}%`, 'Rate'];
+                if (name === 'records') return [`${value.toLocaleString()} ${t("records").toLowerCase()}`, t("volume_scanned")];
+                return [`${value}%`, t("efficiency")];
               }}
               labelFormatter={(label) => `${label}, 2024`}
             />

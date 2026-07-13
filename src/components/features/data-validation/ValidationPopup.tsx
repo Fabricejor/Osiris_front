@@ -4,22 +4,25 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { 
-  X, 
-  ZoomIn, 
-  ZoomOut, 
-  Maximize, 
-  RotateCcw, 
-  ChevronLeft, 
-  ChevronRight, 
-  User, 
-  Activity, 
-  AlertTriangle, 
+import {
+  X,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  Activity,
+  AlertTriangle,
   CheckCircle2,
   Flag,
-  EyeOff
+  EyeOff,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ScannedPage {
   id: number;
@@ -39,6 +42,7 @@ interface ValidationPopupProps {
 
 export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex }: Readonly<ValidationPopupProps>) {
   const [currentIndex, setCurrentIndex] = useState(initialPageIndex);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +53,9 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   if (!isOpen) return null;
 
   const currentPage = pages[currentIndex];
+  const confidenceColor = currentPage.confidence < 80 ? 'text-red-500' : 'text-emerald-600';
+  const confidenceBg = currentPage.confidence < 80 ? 'bg-red-500' : 'bg-emerald-500';
+  const confidenceRing = currentPage.confidence < 80 ? 'border-red-200' : 'border-emerald-200';
 
   const handleNext = () => {
     if (currentIndex < pages.length - 1) {
@@ -74,10 +81,10 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
             className="bg-white w-full h-full rounded-2xl shadow-2xl overflow-hidden flex flex-col"
           >
             <PanelGroup orientation="horizontal" className="flex-1 w-full h-full">
-              
-              {/* LEFT PANEL - IMAGE VIEWER */}
-              <Panel defaultSize={40} minSize={30} className="bg-[#1e1e1e] flex flex-col relative">
-                
+
+              {/* ── LEFT PANEL — IMAGE VIEWER ──────────────── */}
+              <Panel defaultSize={40} minSize={30} className="bg-[#1a1a2e] flex flex-col relative">
+
                 <div className="flex-1 overflow-hidden relative flex items-center justify-center">
                   <TransformWrapper
                     initialScale={1}
@@ -87,15 +94,31 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                   >
                     {({ zoomIn, zoomOut, resetTransform, centerView }) => (
                       <>
-                        <div className="absolute top-4 left-4 z-10 flex items-center bg-black/50 backdrop-blur-md rounded-lg p-1 text-gray-300 gap-1">
-                          <button onClick={() => zoomIn()} className="p-2 hover:bg-white/20 rounded transition-colors" title="Zoom In"><ZoomIn className="w-4 h-4" /></button>
-                          <button onClick={() => zoomOut()} className="p-2 hover:bg-white/20 rounded transition-colors" title="Zoom Out"><ZoomOut className="w-4 h-4" /></button>
-                          <button onClick={() => centerView()} className="p-2 hover:bg-white/20 rounded transition-colors" title="Fit to Screen"><Maximize className="w-4 h-4" /></button>
-                          <button onClick={() => resetTransform()} className="p-2 hover:bg-white/20 rounded transition-colors" title="Reset Zoom"><RotateCcw className="w-4 h-4" /></button>
+                        {/* Zoom controls */}
+                        <div className="absolute top-4 left-4 z-10 flex items-center bg-black/40 backdrop-blur-md rounded-xl p-1 text-gray-300 gap-0.5">
+                          {[
+                            { action: () => zoomIn(), icon: ZoomIn, label: 'Zoom In' },
+                            { action: () => zoomOut(), icon: ZoomOut, label: 'Zoom Out' },
+                            { action: () => centerView(), icon: Maximize, label: 'Fit' },
+                            { action: () => resetTransform(), icon: RotateCcw, label: 'Reset' },
+                          ].map(({ action, icon: Icon, label }) => (
+                            <button
+                              key={label}
+                              onClick={action}
+                              className="p-2 hover:bg-white/15 rounded-lg transition-colors group/btn"
+                              title={label}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </button>
+                          ))}
                         </div>
-                        
-                        <div className="absolute top-4 right-4 z-10 bg-black/50 backdrop-blur-md rounded-lg px-3 py-1.5 text-gray-300 text-xs font-bold">
-                          {currentPage.confidence}%
+
+                        {/* Confidence badge */}
+                        <div className={`absolute top-4 right-4 z-10 flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-xl px-3 py-1.5 border ${confidenceRing}`}>
+                          <div className={`w-2 h-2 rounded-full ${confidenceBg}`} />
+                          <span className={`text-xs font-bold ${confidenceColor}`}>
+                            {currentPage.confidence}%
+                          </span>
                         </div>
 
                         <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -119,104 +142,130 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                 </div>
 
                 {/* Bottom Navigation */}
-                <div className="h-16 bg-[#161616] border-t border-white/10 flex items-center justify-center gap-4 text-white p-4">
-                  <button 
-                    onClick={handlePrev} 
+                <div className="h-14 bg-[#141425] border-t border-white/10 flex items-center justify-center gap-3 text-white px-4">
+                  <button
+                    onClick={handlePrev}
                     disabled={currentIndex === 0}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-sm font-semibold"
+                    className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-sm font-bold text-gray-300">
-                    Page {currentIndex + 1} of {pages.length}
-                  </span>
-                  <button 
-                    onClick={handleNext} 
+
+                  <div className="flex items-center gap-1.5">
+                    {pages.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentIndex(i)}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                          i === currentIndex ? 'bg-emerald-400 w-4' : 'bg-white/30 hover:bg-white/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleNext}
                     disabled={currentIndex === pages.length - 1}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-sm font-semibold"
+                    className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
+
+                  <div className="ml-auto text-[11px] font-semibold text-gray-400">
+                    {currentPage.name} · {currentIndex + 1}/{pages.length}
+                  </div>
                 </div>
               </Panel>
 
-              {/* RESIZE HANDLE */}
-              <PanelResizeHandle className="w-2 bg-gray-100 hover:bg-gray-200 transition-colors flex flex-col justify-center items-center cursor-col-resize z-10">
+              {/* ── RESIZE HANDLE ──────────────────────────── */}
+              <PanelResizeHandle className="w-2 bg-gray-100 hover:bg-emerald-100 transition-colors flex flex-col justify-center items-center cursor-col-resize z-10">
                 <div className="w-1 h-8 bg-gray-300 rounded-full" />
               </PanelResizeHandle>
 
-              {/* RIGHT PANEL - FORM */}
+              {/* ── RIGHT PANEL — FORM ─────────────────────── */}
               <Panel defaultSize={60} minSize={30} className="bg-white flex flex-col">
-                
-                {/* Right Panel Header */}
-                <div className="p-6 border-b border-gray-100 flex items-start justify-between bg-white z-10 shadow-sm shrink-0">
+
+                {/* Header */}
+                <div className="p-6 border-b border-gray-100 flex items-start justify-between shrink-0">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">Record Validation</h2>
-                    <p className="text-sm text-gray-500">ANC Register Entry • Row 14</p>
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">{t("record_validation")}</h2>
+                    <p className="text-sm text-gray-500">{t("anc_register_entry")}</p>
                   </div>
                   <div className="flex items-center gap-4">
+                    {/* Confidence indicator */}
                     <div className="flex flex-col items-end">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Confidence</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t("confidence")}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-2xl font-bold ${currentPage.confidence < 80 ? 'text-red-500' : 'text-[#65b741]'}`}>
+                        <span className={`text-2xl font-bold ${confidenceColor}`}>
                           {currentPage.confidence}%
                         </span>
-                        <div className="w-6 h-6 border-2 border-dashed border-red-200 rounded-sm flex items-center justify-center">
-                          <div className={`w-3 h-3 rounded-full ${currentPage.confidence < 80 ? 'bg-red-500' : 'bg-[#65b741]'}`} />
+                        <div className={`w-7 h-7 rounded-full border-2 ${confidenceRing} flex items-center justify-center`}>
+                          <div className={`w-3.5 h-3.5 rounded-full ${confidenceBg}`} />
                         </div>
                       </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600">
-                      <X className="w-6 h-6" />
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600">
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
 
-                {/* Form Scrollable Content */}
+                {/* Form Content */}
                 <div className="flex-1 overflow-y-auto p-8 space-y-8" style={{ scrollbarWidth: 'thin' }}>
-                  
+
                   {/* Section 1: Patient Information */}
                   <section>
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
-                      <User className="w-4 h-4" /> Patient Information
+                    <h3 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 pb-2 border-b border-gray-100">
+                      <div className="w-6 h-6 rounded-md bg-violet-50 flex items-center justify-center">
+                        <User className="w-3.5 h-3.5 text-violet-500" />
+                      </div>
+                      {t("patient_info")}
                     </h3>
-                    
+
                     <div className="space-y-4">
-                      {/* Valid Input - Green */}
+                      {/* Valid field — ANC Number */}
                       <div className="relative">
-                        <label htmlFor="anc-number" className="block text-xs font-bold text-gray-500 mb-1 ml-4">ANC Number</label>
+                        <label htmlFor="anc-number" className="block text-xs font-bold text-gray-500 mb-1 ml-4">{t("anc_number")}</label>
                         <div className="flex items-center">
-                          <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                          <input id="anc-number" type="text" defaultValue="ANC-2023-8492" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                          <div className="w-1.5 h-10 bg-emerald-500 rounded-r-md absolute left-0" />
+                          <input id="anc-number" type="text" defaultValue="ANC-2023-8492" className="w-full ml-4 pl-3 pr-10 py-2 border border-gray-200 rounded-xl text-gray-800 font-medium focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 outline-none transition-all" />
+                          <Check className="w-4 h-4 text-emerald-500 absolute right-3" />
                         </div>
                       </div>
 
-                      {/* Valid Input - Green */}
+                      {/* Valid field — Patient Name */}
                       <div className="relative">
-                        <label htmlFor="patient-name" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Patient Name</label>
+                        <label htmlFor="patient-name" className="block text-xs font-bold text-gray-500 mb-1 ml-4">{t("patient_name")}</label>
                         <div className="flex items-center">
-                          <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                          <input id="patient-name" type="text" defaultValue="Fatoumata Diallo" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                          <div className="w-1.5 h-10 bg-emerald-500 rounded-r-md absolute left-0" />
+                          <input id="patient-name" type="text" defaultValue="Fatoumata Diallo" className="w-full ml-4 pl-3 pr-10 py-2 border border-gray-200 rounded-xl text-gray-800 font-medium focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 outline-none transition-all" />
+                          <Check className="w-4 h-4 text-emerald-500 absolute right-3" />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Valid Input - Green */}
+                        {/* Valid field — Age */}
                         <div className="relative">
-                          <label htmlFor="age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Age</label>
+                          <label htmlFor="age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">{t("age")}</label>
                           <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input id="age" type="text" defaultValue="28" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                            <div className="w-1.5 h-10 bg-emerald-500 rounded-r-md absolute left-0" />
+                            <input id="age" type="text" defaultValue="28" className="w-full ml-4 pl-3 pr-10 py-2 border border-gray-200 rounded-xl text-gray-800 font-medium focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 outline-none transition-all" />
+                            <Check className="w-4 h-4 text-emerald-500 absolute right-3" />
                           </div>
                         </div>
 
-                        {/* Blurry Input - Yellow */}
+                        {/* Warning field — Parity */}
                         <div className="relative">
-                          <label htmlFor="parity" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Parity</label>
+                          <label htmlFor="parity" className="flex items-center gap-1 text-xs font-bold text-amber-600 mb-1 ml-4">
+                            <AlertCircle className="w-3 h-3" /> {t("parity")}
+                          </label>
                           <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-yellow-400 rounded-r-md absolute left-0" />
-                            <input id="parity" type="text" defaultValue="G3P2" className="w-full ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
+                            <div className="w-1.5 h-10 bg-amber-400 rounded-r-md absolute left-0" />
+                            <input id="parity" type="text" defaultValue="G3P2" className="w-full ml-4 pl-3 pr-4 py-2 border border-amber-300 rounded-xl text-gray-800 font-medium bg-amber-50/30 focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 outline-none transition-all" />
                           </div>
+                          <p className="text-[10px] text-amber-600 ml-4 mt-1 font-medium flex items-center gap-1">
+                            <AlertCircle className="w-2.5 h-2.5" /> {t("low_confidence_warning")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -224,89 +273,101 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                   {/* Section 2: Clinical Data */}
                   <section>
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
-                      <Activity className="w-4 h-4" /> Clinical Data
+                    <h3 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 pb-2 border-b border-gray-100">
+                      <div className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center">
+                        <Activity className="w-3.5 h-3.5 text-sky-500" />
+                      </div>
+                      {t("clinical_data")}
                     </h3>
-                    
-                    <div className="space-y-6">
+
+                    <div className="space-y-5">
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Valid Input - Green */}
+                        {/* Valid field — Date of Visit */}
                         <div className="relative">
-                          <label htmlFor="date-of-visit" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Date of Visit</label>
+                          <label htmlFor="date-of-visit" className="block text-xs font-bold text-gray-500 mb-1 ml-4">{t("date_of_visit")}</label>
                           <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input id="date-of-visit" type="text" defaultValue="10/24/2023" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                            <div className="w-1.5 h-10 bg-emerald-500 rounded-r-md absolute left-0" />
+                            <input id="date-of-visit" type="text" defaultValue="10/24/2023" className="w-full ml-4 pl-3 pr-10 py-2 border border-gray-200 rounded-xl text-gray-800 font-medium focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 outline-none transition-all" />
+                            <Check className="w-4 h-4 text-emerald-500 absolute right-3" />
                           </div>
                         </div>
 
-                        {/* Valid Input - Green */}
+                        {/* Valid field — Gest. Age */}
                         <div className="relative">
-                          <label htmlFor="gest-age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Gest. Age (Weeks)</label>
+                          <label htmlFor="gest-age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">{t("gest_age")}</label>
                           <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input id="gest-age" type="text" defaultValue="24" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                            <div className="w-1.5 h-10 bg-emerald-500 rounded-r-md absolute left-0" />
+                            <input id="gest-age" type="text" defaultValue="24" className="w-full ml-4 pl-3 pr-10 py-2 border border-gray-200 rounded-xl text-gray-800 font-medium focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 outline-none transition-all" />
+                            <Check className="w-4 h-4 text-emerald-500 absolute right-3" />
                           </div>
                         </div>
                       </div>
 
-                      {/* Error Input - Red */}
-                      <div className="relative bg-red-50 p-4 rounded-xl border border-red-200 ml-4">
+                      {/* Error field — Weight */}
+                      <div className="relative bg-red-50 p-4 rounded-2xl border border-red-200 ml-4">
                         <div className="w-1.5 h-16 bg-red-500 rounded-r-md absolute left-0 top-1/2 -translate-y-1/2" />
                         <div className="flex items-center justify-between mb-2">
                           <label htmlFor="weight" className="flex items-center gap-1.5 text-xs font-bold text-red-600">
-                            <AlertTriangle className="w-3.5 h-3.5" /> Weight (kg)
+                            <AlertTriangle className="w-3.5 h-3.5" /> {t("weight")}
                           </label>
-                          <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase">Review Needed</span>
+                          <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            {t("review_needed")}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <input id="weight" type="text" defaultValue="6?" className="w-full px-3 py-2 border-2 border-red-500 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm" />
-                          <button className="p-2 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <input id="weight" type="text" defaultValue="6?" className="w-full px-3 py-2 border-2 border-red-400 rounded-xl text-gray-900 font-bold focus:ring-2 focus:ring-red-500/30 focus:border-red-500 outline-none bg-white" />
+                          <button className="p-2 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0">
                             <EyeOff className="w-5 h-5" />
                           </button>
-                          <button className="flex items-center gap-1 px-3 py-2 bg-transparent text-red-500 hover:bg-red-50 rounded-lg transition-colors text-xs font-bold whitespace-nowrap">
-                            <Maximize className="w-3.5 h-3.5" /> Locating...
+                          <button className="flex items-center gap-1 px-3 py-2 bg-transparent text-red-500 hover:bg-red-100 rounded-xl transition-colors text-xs font-bold whitespace-nowrap shrink-0">
+                            <Maximize className="w-3.5 h-3.5" /> {t("locate")}
                           </button>
                         </div>
                         <p className="text-[11px] text-red-500 mt-2 font-medium flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> System read "6?" - please verify against original scan.
+                          <AlertTriangle className="w-3 h-3" /> {t("system_read_warning")}
                         </p>
                       </div>
 
-                      {/* Blurry Input - Yellow */}
+                      {/* Warning field — Blood Pressure */}
                       <div className="relative">
-                        <label htmlFor="bp-systolic" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Blood Pressure</label>
+                        <label htmlFor="bp-systolic" className="flex items-center gap-1 text-xs font-bold text-amber-600 mb-1 ml-4">
+                          <AlertCircle className="w-3 h-3" /> {t("blood_pressure")}
+                        </label>
                         <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-10 bg-yellow-400 rounded-r-md absolute left-0" />
-                          <input id="bp-systolic" type="text" defaultValue="120" className="w-1/3 ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
+                          <div className="w-1.5 h-10 bg-amber-400 rounded-r-md absolute left-0" />
+                          <input id="bp-systolic" type="text" defaultValue="120" className="w-1/3 ml-4 pl-3 pr-4 py-2 border border-amber-300 rounded-xl text-gray-800 font-medium bg-amber-50/30 focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 outline-none transition-all" />
                           <span className="text-gray-400 font-bold text-lg">/</span>
-                          <input type="text" aria-label="bp-diastolic" defaultValue="80" className="w-1/3 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                          <input type="text" aria-label="bp-diastolic" defaultValue="80" className="w-1/3 pl-3 pr-10 py-2 border border-gray-200 rounded-xl text-gray-800 font-medium focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 outline-none transition-all relative" />
                         </div>
                       </div>
-
                     </div>
                   </section>
-                  
-                  {/* Padding for sticky footer */}
-                  <div className="h-10" />
 
+                  {/* Spacer for footer */}
+                  <div className="h-10" />
                 </div>
 
-                {/* Sticky Footer */}
-                <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
-                  <div className="flex items-center gap-3">
-                    <Flag className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-bold text-gray-700">1 field requires review</span>
+                {/* ── Sticky Footer ────────────────────────── */}
+                <div className="p-5 bg-white border-t border-gray-100 flex items-center justify-between shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.06)] z-20">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center">
+                      <Flag className="w-3.5 h-3.5 text-red-500" />
+                    </div>
+                    <span className="text-sm font-bold text-gray-700">
+                      {t("fields_require_review", { count: 1 })}
+                    </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
-                    <button className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm">
-                      Save Draft
+                    <button className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                      {t("save_draft")}
                     </button>
-                    <button 
+                    <button
                       onClick={onClose}
-                      className="px-6 py-2.5 bg-[#65b741] hover:bg-[#5aa43a] text-white rounded-xl text-sm font-bold transition-colors shadow-md flex items-center gap-2"
+                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-200 flex items-center gap-2"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Validate Record
+                      <CheckCircle2 className="w-4 h-4" /> {t("validate_record")}
                     </button>
                   </div>
                 </div>
