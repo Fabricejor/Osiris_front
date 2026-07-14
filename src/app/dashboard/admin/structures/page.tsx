@@ -9,6 +9,7 @@ import { StructuresService } from '@/services/structures.service';
 export default function StructuresPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nom_structure: '',
     district_sanitaire: '',
@@ -33,6 +34,19 @@ export default function StructuresPage() {
     onError: (error) => {
       console.error("Error creating structure", error);
       alert("Erreur lors de la création de la structure");
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => StructuresService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['structures'] });
+      setActiveDropdownId(null);
+      alert("Structure supprimée avec succès !");
+    },
+    onError: (error) => {
+      console.error("Error deleting structure", error);
+      alert("Erreur lors de la suppression de la structure");
     }
   });
 
@@ -126,10 +140,34 @@ export default function StructuresPage() {
                         {structure.statut || 'Active'}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
-                      <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
+                    <td className="p-4 text-right relative">
+                      <button 
+                        onClick={() => setActiveDropdownId(activeDropdownId === structure.id ? null : (structure.id ?? null))}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                      >
                         <MoreVertical className="w-4 h-4" />
                       </button>
+
+                      {activeDropdownId === structure.id && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setActiveDropdownId(null)}
+                          />
+                          <div className="absolute right-12 top-10 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 text-left">
+                            <button
+                              onClick={() => {
+                                if (structure.id && window.confirm('Voulez-vous vraiment supprimer cette structure ?')) {
+                                  deleteMutation.mutate(structure.id);
+                                }
+                              }}
+                              className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-50"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))
