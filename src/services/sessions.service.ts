@@ -50,5 +50,50 @@ export const SessionsService = {
       method: 'POST',
       body: JSON.stringify({ type_registre, annee_version, libelle_session })
     });
+  },
+
+  /**
+   * Récupère les détails d'une session
+   */
+  getSessionById: async (sessionId: string) => {
+    return apiClient<any>(`/v1/sessions/${sessionId}`, {
+      method: "GET",
+    });
+  },
+
+  /**
+   * Récupère la timeline d'une session
+   */
+  getSessionTimeline: async (sessionId: string) => {
+    return apiClient<any[]>(`/v1/sessions/${sessionId}/timeline`, {
+      method: "GET",
+    });
+  },
+
+  /**
+   * Récupère la file d'attente globale des pages nécessitant une vérification OCR
+   */
+  getPagesQueue: async (limit: number = 50, offset: number = 0) => {
+    return apiClient<ListResponse<any>>(`/v1/pages/queue?limit=${limit}&offset=${offset}`, {
+      method: "GET",
+    });
+  },
+
+  /**
+   * Valide une page (OCR Processing)
+   */
+  validatePage: async (pageId: string) => {
+    return apiClient(`/v1/pages/${pageId}/validate`, {
+      method: "POST",
+    });
+  },
+
+  /**
+   * Rejette une page (OCR Processing)
+   */
+  rejectPage: async (pageId: string) => {
+    return apiClient(`/v1/pages/${pageId}/reject`, {
+      method: "POST",
+    });
   }
 };

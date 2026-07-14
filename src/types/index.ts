@@ -57,4 +57,7 @@ export interface AuditLog {
   id_utilisateur_acteur: string;
   details?: Record<string, any>;
   date_action: string;
+  status?: string;
+  ip_address?: string;
+  user_name?: string;
 }

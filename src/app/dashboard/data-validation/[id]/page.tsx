@@ -18,13 +18,7 @@ import ValidationPopup from '@/components/features/data-validation/ValidationPop
 import { useQuery } from '@tanstack/react-query';
 import { SessionsService } from '@/services/sessions.service';
 
-const timelineSteps = [
-  { id: 1, title: 'Batch Received', time: 'Oct 25, 2023 • 09:41 AM', status: 'completed' },
-  { id: 2, title: 'OCR Processing', subtitle: 'Completed in 2m 14s', details: 'Extracted 1,240 data points across 42 pages.', status: 'completed' },
-  { id: 3, title: 'Ready for Validation', subtitle: 'Awaiting clinical review.', action: 'Assign Reviewer', status: 'current' },
-  { id: 4, title: 'Validated', subtitle: 'Pending completion.', status: 'upcoming' },
-  { id: 5, title: 'Exported to DHIS2', subtitle: 'Pending completion.', status: 'upcoming' },
-];
+
 
 // Mock data removed
 export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
@@ -33,12 +27,24 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
   const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(null);
   const batchId = unwrappedParams.id || '2026-0035';
 
-  const { data: pagesData, isLoading, isError } = useQuery({
+  const { data: pagesData, isLoading: pagesLoading, isError: pagesError } = useQuery({
     queryKey: ['session-pages', batchId],
     queryFn: () => SessionsService.getPages(batchId),
   });
 
+  const { data: sessionData, isLoading: sessionLoading } = useQuery({
+    queryKey: ['session', batchId],
+    queryFn: () => SessionsService.getSessionById(batchId),
+  });
+
+  const { data: timelineData, isLoading: timelineLoading } = useQuery({
+    queryKey: ['session-timeline', batchId],
+    queryFn: () => SessionsService.getSessionTimeline(batchId),
+  });
+
   const pages = pagesData?.items || [];
+  const session = sessionData || {};
+  const timelineSteps = timelineData || [];
 
   const getStatusColorClass = (status: string) => {
     if (status === 'review') return 'text-red-500';
@@ -115,22 +121,28 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             {/* Document Type */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Document Type</span>
-              <span className="text-xl font-bold text-gray-800 leading-tight">ANC<br/>Register</span>
+              <span className="text-xl font-bold text-gray-800 leading-tight">
+                {sessionLoading ? '...' : (session.type_registre || 'Unknown')}
+              </span>
             </div>
             
             {/* Total Pages */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Pages</span>
-              <span className="text-3xl font-bold text-gray-800">42</span>
+              <span className="text-3xl font-bold text-gray-800">
+                {sessionLoading ? '...' : (session.nb_pages || 0)}
+              </span>
             </div>
             
             {/* Overall Confidence */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Overall Confidence</span>
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-gray-800">92%</span>
+                <span className="text-3xl font-bold text-gray-800">
+                  {sessionLoading ? '...' : `${session.score_confiance_moyen || 0}%`}
+                </span>
                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#65b741] rounded-full" style={{ width: '92%' }} />
+                  <div className="h-full bg-[#65b741] rounded-full" style={{ width: `${session.score_confiance_moyen || 0}%` }} />
                 </div>
               </div>
             </div>
@@ -138,19 +150,25 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             {/* Upload Date */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Upload Date</span>
-              <span className="text-base font-bold text-gray-800">Oct 25, 2023</span>
+              <span className="text-base font-bold text-gray-800">
+                {sessionLoading || !session.date_creation ? '...' : new Date(session.date_creation).toLocaleDateString()}
+              </span>
             </div>
             
             {/* Operator */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Operator</span>
-              <span className="text-base font-bold text-gray-800">Dr. Amina Diallo</span>
+              <span className="text-base font-bold text-gray-800">
+                {sessionLoading ? '...' : (session.operateur || 'N/A')}
+              </span>
             </div>
             
             {/* Clinic */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Clinic</span>
-              <span className="text-base font-bold text-gray-800">St. Jude's Medical</span>
+              <span className="text-base font-bold text-gray-800">
+                {sessionLoading ? '...' : (session.clinique || 'N/A')}
+              </span>
             </div>
           </div>
 
@@ -183,16 +201,16 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             </div>
             
             <div className={`p-5 overflow-y-auto flex-1 max-h-[640px] ${
-              isLoading || isError || pages.length === 0 
+              pagesLoading || pagesError || pages.length === 0 
                 ? 'flex items-center justify-center' 
                 : `grid gap-4 ${pageViewMode === 'grid' ? 'grid-cols-4' : 'grid-cols-1'}`
             }`} style={{ scrollbarWidth: 'thin', gridAutoRows: 'max-content' }}>
-              {isLoading ? (
+              {pagesLoading ? (
                 <div className="flex flex-col items-center gap-3 text-gray-500">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#65b741]" />
                   <span>Loading pages...</span>
                 </div>
-              ) : isError ? (
+              ) : pagesError ? (
                 <div className="text-red-500 text-center">Failed to load pages.</div>
               ) : pages.length === 0 ? (
                 <div className="text-gray-500 text-center">No pages found.</div>
@@ -281,7 +299,11 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             <div className="absolute top-2 bottom-6 left-[1.1rem] w-0.5 bg-gray-100" />
             
             <div className="space-y-8 relative">
-              {timelineSteps.map((step, index) => {
+              {timelineLoading ? (
+                <div className="text-sm text-gray-500">Loading timeline...</div>
+              ) : timelineSteps.length === 0 ? (
+                <div className="text-sm text-gray-500">No timeline data available.</div>
+              ) : timelineSteps.map((step: any, index: number) => {
                 const isCompleted = step.status === 'completed';
                 const isCurrent = step.status === 'current';
                 const isUpcoming = step.status === 'upcoming';

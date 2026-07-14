@@ -49,7 +49,7 @@ export default function ActivityLogPage() {
     return data.items.filter((log: AuditLog) => {
       const logUser = log.id_utilisateur_acteur || 'System';
       const logAction = log.type_action || '';
-      const logStatus = 'Success'; // Assuming Success for now as we don't have a status field in AuditLog
+      const logStatus = log.status || 'Success'; // Fallback if still missing
       
       const matchSearch = logUser.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           logAction.toLowerCase().includes(searchQuery.toLowerCase());
@@ -79,12 +79,12 @@ export default function ActivityLogPage() {
       groups[dateStr].push({
         id: log.id,
         time: format(date, 'hh:mm a'),
-        user: log.id_utilisateur_acteur || 'System',
+        user: log.user_name || log.id_utilisateur_acteur || 'System',
         action: log.type_action,
         docId: log.id_ressource || '-',
-        status: 'Success',
-        ip: '-', // Replace with real IP if available
-        avatar: `https://ui-avatars.com/api/?name=${log.id_utilisateur_acteur || 'Sys'}`
+        status: log.status || 'Success',
+        ip: log.ip_address || '-',
+        avatar: `https://ui-avatars.com/api/?name=${log.user_name || log.id_utilisateur_acteur || 'Sys'}`
       });
     });
 
@@ -192,8 +192,8 @@ export default function ActivityLogPage() {
                 {/* Vertical Timeline Line */}
                 <div className="absolute left-[19px] top-4 bottom-[-16px] w-[2px] bg-gray-200" />
 
-                {group.logs.map((log) => (
-                  <div key={log.id} className="relative group">
+                {group.logs.map((log, index) => (
+                  <div key={log.id || `log-${index}`} className="relative group">
                     {/* Timeline Node */}
                     <div className="absolute left-[-26px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-[3px] border-gray-300 bg-white z-10 group-hover:border-[#65b741] transition-colors" />
 

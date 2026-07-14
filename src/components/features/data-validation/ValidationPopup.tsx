@@ -135,10 +135,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                               className="object-contain p-4"
                               priority
                             />
-                            {/* Mock highlight bounding box */}
-                            {(currentPage.statut_traitement || currentPage.status) === 'review' && (
-                              <div className="absolute top-[40%] left-[30%] w-[20%] h-[5%] border-2 border-yellow-400 bg-yellow-400/20 rounded z-10" />
-                            )}
+
                           </div>
                         </TransformComponent>
                       </>
