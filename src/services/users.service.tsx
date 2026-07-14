@@ -26,10 +26,49 @@ export const UsersService = {
     });
   },
 
-  updateUser: async (userId: string, data: Partial<User>) => {
+  createUser: async (data: any) => {
+    // Format the payload according to backend schema expectations
+    const payload = {
+      email: data.email,
+      nom_prenom: data.nom_prenom || `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+      numero_telephone: data.numero_telephone,
+    };
+
+    const role = (data.role || '').toUpperCase();
+
+    if (role === 'ADMIN') {
+      return apiClient<any>("/v1/auth/admins", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          id_structure_sanitaire: data.id_structure_sanitaire
+        }),
+      });
+    } else if (role === 'VALIDEUR_MEDICAL' || role === 'VALIDEUR') {
+      return apiClient<any>("/v1/auth/valideurs-medicaux", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    } else {
+      // Default to AGENT_TERRAIN
+      return apiClient<any>("/v1/auth/agents-terrain", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    }
+  },
+
+
+  updateUser: async (userId: string, data: Partial<User> | { status: string, nom_prenom?: string, numero_telephone?: string }) => {
     return apiClient<User>(`/v1/auth/users/${userId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
+    });
+  },
+
+  resetPassword: async (userId: string) => {
+    return apiClient<{ temporary_password: string }>(`/v1/auth/users/${userId}/reset-password`, {
+      method: "POST",
     });
   },
 

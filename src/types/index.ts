@@ -10,6 +10,7 @@ export interface User {
   lastName?: string;
   role: 'AGENT_TERRAIN' | 'VALIDEUR_MEDICAL' | 'ADMIN' | 'SUPERADMIN';
   avatarUrl?: string;
+  status?: string;
   createdAt: string;
   updatedAt: string;
 }
