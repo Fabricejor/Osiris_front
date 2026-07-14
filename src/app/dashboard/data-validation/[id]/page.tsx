@@ -10,10 +10,13 @@ import {
   Filter, 
   Pencil,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  ShieldAlert
 } from 'lucide-react';
 import Image from 'next/image';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
+import { useQuery } from '@tanstack/react-query';
+import { SessionsService } from '@/services/sessions.service';
 
 const timelineSteps = [
   { id: 1, title: 'Batch Received', time: 'Oct 25, 2023 • 09:41 AM', status: 'completed' },
@@ -44,8 +47,15 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
   const unwrappedParams = React.use(params);
   const [pageViewMode, setPageViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(null);
-  // Use mock ID if dynamic routing isn't fully set up, or the passed one
   const batchId = unwrappedParams.id || '2026-0035';
+
+  const { data: pagesData = [], isLoading, isError } = useQuery({
+    queryKey: ['session-pages', batchId],
+    queryFn: () => SessionsService.getPages(batchId),
+  });
+
+  // Use backend data if available, fallback to mock data for layout purposes during testing
+  const pages = pagesData.length > 0 ? pagesData : scannedPages;
 
   const getStatusColorClass = (status: string) => {
     if (status === 'review') return 'text-red-500';
@@ -164,7 +174,12 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
           {/* Scanned Pages */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex-1 flex flex-col min-h-0">
             <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-              <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Scanned Pages</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Scanned Pages</h3>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-bold border border-purple-100">
+                  <ShieldAlert className="w-3.5 h-3.5" /> PII Review Pending
+                </div>
+              </div>
               <div className="flex items-center gap-1.5 text-gray-500 bg-gray-100 p-0.5 rounded-lg">
                 <button 
                   onClick={() => setPageViewMode('grid')}
@@ -184,8 +199,22 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
               </div>
             </div>
             
-            <div className={`p-5 overflow-y-auto flex-1 grid gap-4 max-h-[640px] ${pageViewMode === 'grid' ? 'grid-cols-4' : 'grid-cols-1'}`} style={{ scrollbarWidth: 'thin', gridAutoRows: 'max-content' }}>
-              {scannedPages.map((page, index) => (
+            <div className={`p-5 overflow-y-auto flex-1 max-h-[640px] ${
+              isLoading || isError || pages.length === 0 
+                ? 'flex items-center justify-center' 
+                : `grid gap-4 ${pageViewMode === 'grid' ? 'grid-cols-4' : 'grid-cols-1'}`
+            }`} style={{ scrollbarWidth: 'thin', gridAutoRows: 'max-content' }}>
+              {isLoading ? (
+                <div className="flex flex-col items-center gap-3 text-gray-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#65b741]" />
+                  <span>Loading pages...</span>
+                </div>
+              ) : isError ? (
+                <div className="text-red-500 text-center">Failed to load pages.</div>
+              ) : pages.length === 0 ? (
+                <div className="text-gray-500 text-center">No pages found.</div>
+              ) : (
+                pages.map((page: any, index: number) => (
                 <div 
                   key={page.id} 
                   className={`group relative flex bg-white rounded-lg border-2 transition-all ${
@@ -199,8 +228,8 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                     pageViewMode === 'grid' ? 'aspect-3/4 w-full rounded-t-md' : 'w-24 h-32 rounded-md shrink-0'
                   }`}>
                     <Image 
-                      src={page.image} 
-                      alt={page.name}
+                      src={page.url_image || page.image} 
+                      alt={page.nom_fichier || page.name}
                       fill
                       className="object-cover"
                     />
@@ -208,8 +237,8 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                     {/* Confidence Badge (only in grid mode on image) */}
                     {pageViewMode === 'grid' && (
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm text-xs font-bold">
-                        <span className={page.confidence < 80 ? 'text-red-500' : 'text-[#65b741]'}>
-                          {page.confidence}%
+                        <span className={(page.score_confiance_moyen || page.confidence) < 80 ? 'text-red-500' : 'text-[#65b741]'}>
+                          {page.score_confiance_moyen || page.confidence}%
                         </span>
                       </div>
                     )}
@@ -231,9 +260,9 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                     pageViewMode === 'grid' ? 'p-3 flex-row rounded-b-md border border-t-0 border-gray-100 w-full' : 'p-4 flex-row flex-1 ml-4 items-center border-none'
                   }`}>
                     <div className="flex flex-col">
-                      <span className={`font-bold text-gray-900 mb-1 ${pageViewMode === 'grid' ? 'text-sm' : 'text-base'}`}>{page.name}</span>
-                      <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(page.status)}`}>
-                        {page.statusText}
+                      <span className={`font-bold text-gray-900 mb-1 ${pageViewMode === 'grid' ? 'text-sm' : 'text-base'}`}>{page.nom_fichier || page.name}</span>
+                      <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(page.statut_traitement || page.status)}`}>
+                        {page.statut_traitement || page.statusText}
                       </span>
                     </div>
                     
@@ -243,18 +272,19 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                       {pageViewMode === 'list' && (
                         <div className="flex flex-col items-end">
                           <span className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Confidence</span>
-                          <span className={`text-sm font-bold ${page.confidence < 80 ? 'text-red-500' : 'text-[#65b741]'}`}>
-                            {page.confidence}%
+                          <span className={`text-sm font-bold ${(page.score_confiance_moyen || page.confidence) < 80 ? 'text-red-500' : 'text-[#65b741]'}`}>
+                            {page.score_confiance_moyen || page.confidence}%
                           </span>
                         </div>
                       )}
 
                       {/* Status Dot/Icon */}
-                      {renderStatusDot(page.status, pageViewMode === 'grid')}
+                      {renderStatusDot(page.statut_traitement || page.status, pageViewMode === 'grid')}
                     </div>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -321,8 +351,9 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
       <ValidationPopup 
         isOpen={selectedPageIndex !== null} 
         onClose={() => setSelectedPageIndex(null)} 
-        pages={scannedPages} 
-        initialPageIndex={selectedPageIndex || 0} 
+        pages={pages} 
+        initialPageIndex={selectedPageIndex || 0}
+        sessionId={batchId}
       />
     </div>
   );

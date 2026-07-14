@@ -231,6 +231,7 @@ export default function OCRProcessingPage() {
         onClose={() => setSelectedPageIndex(null)}
         pages={filteredPages}
         initialPageIndex={selectedPageIndex || 0}
+        sessionId="mock-session"
       />
     </div>
   );

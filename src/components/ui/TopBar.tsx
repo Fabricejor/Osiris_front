@@ -1,11 +1,31 @@
 "use client";
 
-import React from 'react';
-import { Moon, Sun, Bell, ChevronDown, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { Moon, Sun, Bell, ChevronDown, Globe, LogOut } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { AuthService } from '@/services/auth.service';
+import { useRouter } from 'next/navigation';
 
 export default function TopBar() {
+  const { user, logout } = useAuthStore();
+  const router = useRouter();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleLogout = async () => {
+    // 1. Déconnexion côté backend (révoque la session et vide les cookies)
+    await AuthService.logout();
+    
+    // 2. Déconnexion côté frontend (vide le store Zustand)
+    logout();
+    
+    // 3. Redirection vers la page de login
+    router.push('/');
+  };
+
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-40 sticky top-0">
+      
+      <div className="flex-1" /> {/* Spacer */}
       
       <div className="flex items-center gap-4">
         
@@ -35,15 +55,38 @@ export default function TopBar() {
         <div className="w-px h-6 bg-gray-200 mx-1" />
 
         {/* User Profile */}
-        <button className="flex items-center gap-3 pl-1 pr-3 py-1 bg-white hover:bg-gray-50 rounded-full transition-colors">
-          <img 
-            src="https://i.pravatar.cc/150?u=jane" 
-            alt="User" 
-            className="w-8 h-8 rounded-full object-cover border border-gray-200"
-          />
-          <span className="text-sm font-bold text-gray-700 hidden md:block">Dr. Jane Doe</span>
-          <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center gap-3 pl-1 pr-3 py-1 bg-white hover:bg-gray-50 rounded-full transition-colors"
+          >
+            <img 
+              src={user?.avatarUrl || "https://ui-avatars.com/api/?name=" + (user?.firstName || 'A') + "+" + (user?.lastName || 'U') + "&background=random"} 
+              alt="User" 
+              className="w-8 h-8 rounded-full object-cover border border-gray-200"
+            />
+            <span className="text-sm font-bold text-gray-700 hidden md:block">
+              {user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.email || "Utilisateur")}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 hidden md:block transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Profile Dropdown */}
+          {isProfileOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+              <div className="px-4 py-2 border-b border-gray-50 mb-2">
+                <p className="text-sm font-bold text-gray-800 truncate">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              </div>
+              <button 
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium transition-colors"
+              >
+                <LogOut className="w-4 h-4" /> Déconnexion
+              </button>
+            </div>
+          )}
+        </div>
         
       </div>
     </header>
