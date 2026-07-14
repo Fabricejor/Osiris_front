@@ -24,6 +24,8 @@ import {
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { SessionsService } from '@/services/sessions.service';
+import { DonneesExtraitesService } from '@/services/donnees-extraites.service';
+import { PiiCellulesService } from '@/services/pii-cellules.service';
 
 interface ScannedPage {
   id: number;
@@ -49,14 +51,20 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   // Load clinical data
   const { data: clinicalData = [], isLoading: isLoadingClinical } = useQuery({
     queryKey: ['clinical-data', sessionId],
-    queryFn: () => SessionsService.getClinicalData(sessionId),
+    queryFn: async () => {
+      const res = await DonneesExtraitesService.getDonneesAValider(50, 0, 'a_valider', sessionId);
+      return res.items;
+    },
     enabled: isOpen && activeTab === 'clinical',
   });
 
   // Load PII data
   const { data: piiData = [], isLoading: isLoadingPii } = useQuery({
     queryKey: ['pii-data', sessionId],
-    queryFn: () => SessionsService.getPiiData(sessionId),
+    queryFn: async () => {
+      const res = await PiiCellulesService.getCellulesASaisir(50, 0, 'a_saisir', sessionId);
+      return res.items;
+    },
     enabled: isOpen && activeTab === 'pii',
   });
 
@@ -226,53 +234,15 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       ) : piiData.length > 0 ? (
                         piiData.map((pii) => (
                            <div key={pii.id} className="relative">
-                            <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">{pii.type_pii}</label>
+                            <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">{pii.nom_champ || 'Champ'}</label>
                             <div className="flex items-center">
                               <div className={`w-1.5 h-10 ${pii.score_confiance && pii.score_confiance < 80 ? 'bg-yellow-400' : 'bg-[#65b741]'} rounded-r-md absolute left-0`} />
-                              <input type="text" defaultValue={pii.valeur_texte} className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
+                              <input type="text" defaultValue={pii.valeur_saisie} className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                             </div>
                           </div>
                         ))
                       ) : (
-                      <>
-                      {/* Fallback to Mock Data Valid Input - Green */}
-                      <div className="relative">
-                        <label htmlFor="anc-number" className="block text-xs font-bold text-gray-500 mb-1 ml-4">ANC Number</label>
-                        <div className="flex items-center">
-                          <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                          <input id="anc-number" type="text" defaultValue="ANC-2023-8492" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
-                        </div>
-                      </div>
-
-                      {/* Error Input - Red */}
-                      <div className="relative bg-red-50 p-4 rounded-xl border border-red-200 ml-4">
-                        <div className="w-1.5 h-16 bg-red-500 rounded-r-md absolute left-0 top-1/2 -translate-y-1/2" />
-                        <div className="flex items-center justify-between mb-2">
-                          <label htmlFor="patient-name" className="flex items-center gap-1.5 text-xs font-bold text-red-600">
-                            <AlertTriangle className="w-3.5 h-3.5" /> Patient Name
-                          </label>
-                          <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase">Review Needed</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input id="patient-name" type="text" defaultValue="Fatoumata Di?llo" className="w-full px-3 py-2 border-2 border-red-500 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm" />
-                          <button className="p-2 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                            <EyeOff className="w-5 h-5" />
-                          </button>
-                        </div>
-                        <p className="text-[11px] text-red-500 mt-2 font-medium flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> System read "Di?llo" - verify spelling.
-                        </p>
-                      </div>
-
-                      {/* Valid Input - Green */}
-                      <div className="relative">
-                        <label htmlFor="village" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Village / Address</label>
-                        <div className="flex items-center">
-                          <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                          <input id="village" type="text" defaultValue="Keur Massar" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
-                        </div>
-                      </div>
-                      </>
+                        <div className="text-gray-500 text-center py-8">Aucune donnée PII extraite.</div>
                       )}
                     </div>
                   </section>
@@ -292,85 +262,13 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                           <div key={data.id} className="relative">
                             <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Extracted Value</label>
                             <div className="flex items-center">
-                              <div className={`w-1.5 h-10 ${data.score_confiance < 80 ? 'bg-red-500' : 'bg-[#65b741]'} rounded-r-md absolute left-0`} />
+                              <div className={`w-1.5 h-10 ${(data.score_confiance ?? 0) < 80 ? 'bg-red-500' : 'bg-[#65b741]'} rounded-r-md absolute left-0`} />
                               <input type="text" defaultValue={data.valeur_extraite} className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
                             </div>
                           </div>
                         ))
                       ) : (
-                      <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="relative">
-                          <label htmlFor="age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Age</label>
-                          <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input id="age" type="text" defaultValue="28" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
-                          </div>
-                        </div>
-
-                        <div className="relative">
-                          <label htmlFor="parity" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Parity</label>
-                          <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-yellow-400 rounded-r-md absolute left-0" />
-                            <input id="parity" type="text" defaultValue="G3P2" className="w-full ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* Valid Input - Green */}
-                        <div className="relative">
-                          <label htmlFor="date-of-visit" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Date of Visit</label>
-                          <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input id="date-of-visit" type="text" defaultValue="10/24/2023" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
-                          </div>
-                        </div>
-
-                        {/* Valid Input - Green */}
-                        <div className="relative">
-                          <label htmlFor="gest-age" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Gest. Age (Weeks)</label>
-                          <div className="flex items-center">
-                            <div className="w-1.5 h-10 bg-[#65b741] rounded-r-md absolute left-0" />
-                            <input id="gest-age" type="text" defaultValue="24" className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Error Input - Red */}
-                      <div className="relative bg-red-50 p-4 rounded-xl border border-red-200 ml-4">
-                        <div className="w-1.5 h-16 bg-red-500 rounded-r-md absolute left-0 top-1/2 -translate-y-1/2" />
-                        <div className="flex items-center justify-between mb-2">
-                          <label htmlFor="weight" className="flex items-center gap-1.5 text-xs font-bold text-red-600">
-                            <AlertTriangle className="w-3.5 h-3.5" /> Weight (kg)
-                          </label>
-                          <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase">Review Needed</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input id="weight" type="text" defaultValue="6?" className="w-full px-3 py-2 border-2 border-red-500 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm" />
-                          <button className="p-2 border border-red-200 bg-white text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                            <EyeOff className="w-5 h-5" />
-                          </button>
-                          <button className="flex items-center gap-1 px-3 py-2 bg-transparent text-red-500 hover:bg-red-50 rounded-lg transition-colors text-xs font-bold whitespace-nowrap">
-                            <Maximize className="w-3.5 h-3.5" /> Locating...
-                          </button>
-                        </div>
-                        <p className="text-[11px] text-red-500 mt-2 font-medium flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> System read "6?" - please verify against original scan.
-                        </p>
-                      </div>
-
-                      {/* Blurry Input - Yellow */}
-                      <div className="relative">
-                        <label htmlFor="bp-systolic" className="block text-xs font-bold text-gray-500 mb-1 ml-4">Blood Pressure</label>
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-10 bg-yellow-400 rounded-r-md absolute left-0" />
-                          <input id="bp-systolic" type="text" defaultValue="120" className="w-1/3 ml-4 pl-3 pr-4 py-2 border border-yellow-400 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none" />
-                          <span className="text-gray-400 font-bold text-lg">/</span>
-                          <input type="text" aria-label="bp-diastolic" defaultValue="80" className="w-1/3 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
-                        </div>
-                      </div>
-                      </>
+                        <div className="text-gray-500 text-center py-8">Aucune donnée clinique extraite.</div>
                       )}
                     </div>
                   </section>

@@ -1,65 +1,54 @@
 import { apiClient } from "./apiClient";
 
+export interface SessionScan {
+  id: string;
+  type_registre: string;
+  annee_version: number;
+  libelle_session: string;
+  statut: string;
+  date_creation: string;
+  nb_pages: number;
+}
+
 export interface ScannedPage {
-  id: string; // Or number, adjust based on actual API
-  nom_fichier: string;
-  statut_traitement: string;
-  score_confiance_moyen?: number;
-  url_image?: string;
-  // Computed for frontend mock
-  name?: string;
-  statusText?: string;
-  confidence?: number;
-  image?: string;
-  status?: string;
+  id: string; 
+  numero_page: number;
+  type_page: string;
+  statut: string;
+  object_key?: string;
 }
 
-export interface DonneeExtraite {
-  id: string;
-  valeur_extraite: string;
-  score_confiance: number;
-  statut_validation: string;
-  // ... other fields mapping to the clinical tab
-}
-
-export interface PiiCellule {
-  id: string;
-  valeur_texte: string;
-  type_pii: string; // e.g. NOM, PRENOM, TELEPHONE
-  statut_validation: string;
-  score_confiance?: number;
+interface ListResponse<T> {
+  items: T[];
+  total: number;
 }
 
 export const SessionsService = {
+  /**
+   * Récupère la liste des sessions
+   */
+  getSessions: async (limit: number = 50, offset: number = 0) => {
+    return apiClient<ListResponse<SessionScan>>(`/v1/sessions?limit=${limit}&offset=${offset}`, {
+      method: "GET",
+    });
+  },
+
+  /**
+   * Récupère les pages d'une session
+   */
   getPages: async (sessionId: string) => {
-    return apiClient<ScannedPage[]>(`/sessions/${sessionId}/pages`, {
+    return apiClient<ListResponse<ScannedPage>>(`/v1/sessions/${sessionId}/pages`, {
       method: "GET",
     });
   },
 
-  getClinicalData: async (sessionId: string) => {
-    return apiClient<DonneeExtraite[]>(`/donnees-extraites/session/${sessionId}`, {
-      method: "GET",
-    });
-  },
-
-  getPiiData: async (sessionId: string) => {
-    return apiClient<PiiCellule[]>(`/pii-cellules/session/${sessionId}`, {
-      method: "GET",
-    });
-  },
-
-  validateClinicalData: async (id: string, data: Partial<DonneeExtraite>) => {
-    return apiClient<DonneeExtraite>(`/donnees-extraites/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-
-  validatePiiData: async (id: string, data: Partial<PiiCellule>) => {
-    return apiClient<PiiCellule>(`/pii-cellules/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
+  /**
+   * Ouvre une nouvelle session de scan
+   */
+  createSession: async (type_registre: string, annee_version: number, libelle_session: string) => {
+    return apiClient<{ id_session_scan: string }>('/v1/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ type_registre, annee_version, libelle_session })
     });
   }
 };

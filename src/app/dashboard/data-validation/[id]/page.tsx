@@ -26,36 +26,19 @@ const timelineSteps = [
   { id: 5, title: 'Exported to DHIS2', subtitle: 'Pending completion.', status: 'upcoming' },
 ];
 
-const scannedPages = [
-  { id: 1, name: 'Page 01', status: 'pending', statusText: 'Pending', confidence: 94, image: '/registres/Image (1).png' },
-  { id: 2, name: 'Page 02', status: 'pending', statusText: 'Pending', confidence: 98, image: '/registres/Image (2).png' },
-  { id: 3, name: 'Page 03', status: 'review', statusText: 'Review Required', confidence: 72, image: '/registres/Image (3).png' },
-  { id: 4, name: 'Page 04', status: 'validated', statusText: 'Validated', confidence: 99, image: '/registres/Image (5).png' },
-  { id: 5, name: 'Page 05', status: 'pending', statusText: 'Pending', confidence: 91, image: '/registres/Image (6).png' },
-  { id: 6, name: 'Page 06', status: 'validated', statusText: 'Validated', confidence: 97, image: '/registres/Image (7).png' },
-  { id: 7, name: 'Page 07', status: 'validated', statusText: 'Validated', confidence: 95, image: '/registres/Image (8).png' },
-  { id: 8, name: 'Page 08', status: 'pending', statusText: 'Pending', confidence: 89, image: '/registres/Image (9).png' },
-  { id: 9, name: 'Page 09', status: 'review', statusText: 'Review Required', confidence: 45, image: '/registres/Image (1).png' },
-  { id: 10, name: 'Page 10', status: 'validated', statusText: 'Validated', confidence: 98, image: '/registres/Image (2).png' },
-  { id: 11, name: 'Page 11', status: 'validated', statusText: 'Validated', confidence: 96, image: '/registres/Image (5).png' },
-  { id: 12, name: 'Page 12', status: 'pending', statusText: 'Pending', confidence: 88, image: '/registres/Image (6).png' },
-  { id: 13, name: 'Page 13', status: 'validated', statusText: 'Validated', confidence: 99, image: '/registres/Image (7).png' },
-  { id: 14, name: 'Page 14', status: 'validated', statusText: 'Validated', confidence: 94, image: '/registres/Image (8).png' },
-];
-
+// Mock data removed
 export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const unwrappedParams = React.use(params);
   const [pageViewMode, setPageViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(null);
   const batchId = unwrappedParams.id || '2026-0035';
 
-  const { data: pagesData = [], isLoading, isError } = useQuery({
+  const { data: pagesData, isLoading, isError } = useQuery({
     queryKey: ['session-pages', batchId],
     queryFn: () => SessionsService.getPages(batchId),
   });
 
-  // Use backend data if available, fallback to mock data for layout purposes during testing
-  const pages = pagesData.length > 0 ? pagesData : scannedPages;
+  const pages = pagesData?.items || [];
 
   const getStatusColorClass = (status: string) => {
     if (status === 'review') return 'text-red-500';

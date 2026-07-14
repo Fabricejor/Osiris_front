@@ -11,29 +11,22 @@ import {
   ChevronsRight
 } from 'lucide-react';
 
-const groupedLogs = [
-  {
-    dateStr: 'Today - Oct 26, 2023',
-    logs: [
-      { id: 1, time: '10:45 AM', user: 'Dr. Anya Sharma', action: 'Accessed Patient Record (ID: PAT-123)', docId: 'DOC-554-23', status: 'Success', ip: '192.168.1.' + '45', avatar: 'https://i.pravatar.cc/150?u=anya' },
-      { id: 2, time: '09:30 AM', user: 'Nurse John Lee', action: 'Updated Vitals', docId: 'DOC-553-10', status: 'Pending', ip: '192.168.1.' + '50', avatar: 'https://i.pravatar.cc/150?u=john' },
-      { id: 3, time: '08:15 AM', user: 'Admin Sarah Chen', action: 'Document Upload Failed', docId: 'DOC-552-01', status: 'Error', ip: '192.168.1.' + '20', avatar: 'https://i.pravatar.cc/150?u=sarah' },
-    ]
-  },
-  {
-    dateStr: 'Yesterday - Oct 25, 2023',
-    logs: [
-      { id: 4, time: '10:45 AM', user: 'Dr. Anya Sharma', action: 'Accessed Patient Record (ID: PAT-123)', docId: 'DOC-554-23', status: 'Success', ip: '192.168.1.' + '45', avatar: 'https://i.pravatar.cc/150?u=anya' },
-      { id: 5, time: '09:30 AM', user: 'Nurse John Lee', action: 'Updated Vitals', docId: 'DOC-553-10', status: 'Pending', ip: '192.168.1.' + '50', avatar: 'https://i.pravatar.cc/150?u=john' },
-      { id: 6, time: '08:15 AM', user: 'Admin Sarah Chen', action: 'Document Upload Failed', docId: 'DOC-552-01', status: 'Error', ip: '192.168.1.' + '20', avatar: 'https://i.pravatar.cc/150?u=sarah' },
-    ]
-  }
-];
+import { AuditService } from '@/services/audit.service';
+import { useQuery } from '@tanstack/react-query';
+import { format, isToday, isYesterday } from 'date-fns';
+import type { AuditLog } from '@/types';
+
+// Mock data removed
 
 export default function ActivityLogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [actionFilter, setActionFilter] = useState('All');
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['audit-logs'],
+    queryFn: () => AuditService.getLogs(100, 0),
+  });
 
   const gridTemplate = "grid-cols-[100px_200px_minmax(250px,_1fr)_120px_100px_120px]";
 
@@ -50,24 +43,56 @@ export default function ActivityLogPage() {
     }
   };
 
-  const filteredGroups = groupedLogs.map(group => {
-    return {
-      ...group,
-      logs: group.logs.filter(log => {
-        const matchSearch = log.user.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            log.action.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            log.docId.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchStatus = statusFilter === 'All' || log.status.toLowerCase() === statusFilter.toLowerCase();
-        
-        let matchAction = true;
-        if (actionFilter !== 'All') {
-           matchAction = log.action.toLowerCase().includes(actionFilter.toLowerCase());
-        }
+  const filteredLogs = React.useMemo(() => {
+    if (!data?.items) return [];
+    
+    return data.items.filter((log: AuditLog) => {
+      const logUser = log.id_utilisateur_acteur || 'System';
+      const logAction = log.type_action || '';
+      const logStatus = 'Success'; // Assuming Success for now as we don't have a status field in AuditLog
+      
+      const matchSearch = logUser.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          logAction.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchStatus = statusFilter === 'All' || logStatus.toLowerCase() === statusFilter.toLowerCase();
+      
+      let matchAction = true;
+      if (actionFilter !== 'All') {
+         matchAction = logAction.toLowerCase().includes(actionFilter.toLowerCase());
+      }
 
-        return matchSearch && matchStatus && matchAction;
-      })
-    };
-  }).filter(group => group.logs.length > 0);
+      return matchSearch && matchStatus && matchAction;
+    });
+  }, [data, searchQuery, statusFilter, actionFilter]);
+
+  const groupedLogs = React.useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    
+    filteredLogs.forEach((log) => {
+      const date = new Date(log.date_action);
+      let dateStr = format(date, 'MMM d, yyyy');
+      
+      if (isToday(date)) dateStr = `Today - ${dateStr}`;
+      else if (isYesterday(date)) dateStr = `Yesterday - ${dateStr}`;
+      
+      if (!groups[dateStr]) groups[dateStr] = [];
+      groups[dateStr].push({
+        id: log.id,
+        time: format(date, 'hh:mm a'),
+        user: log.id_utilisateur_acteur || 'System',
+        action: log.type_action,
+        docId: log.id_ressource || '-',
+        status: 'Success',
+        ip: '-', // Replace with real IP if available
+        avatar: `https://ui-avatars.com/api/?name=${log.id_utilisateur_acteur || 'Sys'}`
+      });
+    });
+
+    return Object.entries(groups).map(([dateStr, logs]) => ({
+      dateStr,
+      logs
+    }));
+  }, [filteredLogs]);
 
   return (
     <div className="h-full flex flex-col p-6 bg-gray-50/50 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
@@ -153,12 +178,12 @@ export default function ActivityLogPage() {
 
         {/* Timeline List */}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-          {filteredGroups.length === 0 ? (
+          {groupedLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
               <Search className="w-8 h-8 opacity-50" />
               <p>No activity logs match your filters.</p>
             </div>
-          ) : filteredGroups.map((group) => (
+          ) : groupedLogs.map((group) => (
             <div key={group.dateStr} className="mb-10 last:mb-0">
               {/* Group Date Header */}
               <h2 className="text-lg font-bold text-gray-900 mb-4">{group.dateStr}</h2>

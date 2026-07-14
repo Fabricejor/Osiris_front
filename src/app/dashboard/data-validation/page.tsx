@@ -6,6 +6,9 @@ import FolderUI, { type FolderStatus } from '@/components/ui/folderUI';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import DetailsTable from '@/components/features/data-validation/DetailsTable';
+import { useQuery } from '@tanstack/react-query';
+import { SessionsService } from '@/services/sessions.service';
+import { Loader2 } from 'lucide-react';
 import {
   Search,
   Filter,
@@ -37,129 +40,7 @@ type FolderData = {
   description: string;
 };
 
-// ── Mock Data ──────────────────────────────────────────────────
-const folders: FolderData[] = [
-  {
-    id: '1',
-    name: 'Prescriptions Lot A',
-    filesCount: 233,
-    size: '116.9 MB',
-    sizeBytes: 116900000,
-    status: 'pending',
-    createdAt: '2024-12-03',
-    lastModified: '2024-06-12',
-    tags: ['Pharmacy', 'Urgent'],
-    description: 'Lot de prescriptions médicales scannées en attente de validation OCR.',
-  },
-  {
-    id: '2',
-    name: 'Lab Reports Q4',
-    filesCount: 39,
-    size: '180.2 MB',
-    sizeBytes: 180200000,
-    status: 'validated',
-    createdAt: '2024-11-15',
-    lastModified: '2024-06-10',
-    tags: ['Laboratory', 'Q4'],
-    description: 'Rapports de laboratoire du Q4 2024, validés et prêts pour archivage.',
-  },
-  {
-    id: '3',
-    name: 'Invoice Batch 12',
-    filesCount: 21,
-    size: '23.4 MB',
-    sizeBytes: 23400000,
-    status: 'rejected',
-    createdAt: '2024-10-20',
-    lastModified: '2024-06-08',
-    tags: ['Finance', 'Batch 12'],
-    description: 'Lot de factures rejeté pour qualité de scan insuffisante.',
-  },
-  {
-    id: '4',
-    name: 'Patient Records',
-    filesCount: 156,
-    size: '490 MB',
-    sizeBytes: 490000000,
-    status: 'validated',
-    createdAt: '2024-09-01',
-    lastModified: '2024-06-11',
-    tags: ['Medical', 'Confidential'],
-    description: 'Dossiers patients validés et conformes aux normes HIPAA.',
-  },
-  {
-    id: '5',
-    name: 'Consent Forms',
-    filesCount: 87,
-    size: '45.8 MB',
-    sizeBytes: 45800000,
-    status: 'anomaly',
-    createdAt: '2024-08-10',
-    lastModified: '2024-06-09',
-    tags: ['Legal', 'Compliance'],
-    description: 'Formulaires de consentement avec anomalies détectées lors de l\'OCR.',
-  },
-  {
-    id: '6',
-    name: 'Insurance Claims',
-    filesCount: 312,
-    size: '1.3 GB',
-    sizeBytes: 1300000000,
-    status: 'pending',
-    createdAt: '2024-07-22',
-    lastModified: '2024-06-12',
-    tags: ['Insurance', 'Priority'],
-    description: 'Demandes de remboursement en attente de traitement.',
-  },
-  {
-    id: '7',
-    name: 'Discharge Summaries',
-    filesCount: 64,
-    size: '78.5 MB',
-    sizeBytes: 78500000,
-    status: 'validated',
-    createdAt: '2024-06-15',
-    lastModified: '2024-06-07',
-    tags: ['Medical', 'Summaries'],
-    description: 'Résumés de sortie validés et intégrés au système.',
-  },
-  {
-    id: '8',
-    name: 'Radiology Reports',
-    filesCount: 45,
-    size: '2.1 GB',
-    sizeBytes: 2100000000,
-    status: 'anomaly',
-    createdAt: '2024-05-30',
-    lastModified: '2024-06-06',
-    tags: ['Radiology', 'Imaging'],
-    description: 'Rapports de radiologie avec des incohérences dans les métadonnées DICOM.',
-  },
-  {
-    id: '9',
-    name: 'Referral Letters',
-    filesCount: 28,
-    size: '12.7 MB',
-    sizeBytes: 12700000,
-    status: 'pending',
-    createdAt: '2024-05-10',
-    lastModified: '2024-06-05',
-    tags: ['Referral', 'External'],
-    description: 'Lettres de référence provenant de cliniques externes.',
-  },
-  {
-    id: '10',
-    name: 'Expired Documents',
-    filesCount: 15,
-    size: '8.2 MB',
-    sizeBytes: 8200000,
-    status: 'rejected',
-    createdAt: '2024-04-01',
-    lastModified: '2024-06-01',
-    tags: ['Archive', 'Expired'],
-    description: 'Documents expirés rejetés automatiquement par le système.',
-  },
-];
+// ── Mock Data Removed ──────────────────────────────────────────
 
 // ── Filters ────────────────────────────────────────────────────
 const STATUS_FILTERS: { value: FolderStatus | 'all'; label: string; color: string }[] = [
@@ -184,6 +65,27 @@ export default function DataValidationPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FolderStatus | 'all'>('all');
   const [selectedFolder, setSelectedFolder] = useState<FolderData | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['sessions'],
+    queryFn: () => SessionsService.getSessions(50, 0),
+  });
+
+  const folders: FolderData[] = useMemo(() => {
+    if (!data?.items) return [];
+    return data.items.map(session => ({
+      id: session.id,
+      name: session.libelle_session || `Session ${session.id}`,
+      filesCount: session.nb_pages || 0,
+      size: 'N/A', // Compute if available
+      sizeBytes: 0,
+      status: (session.statut?.toLowerCase() as FolderStatus) || 'pending',
+      createdAt: session.date_creation || new Date().toISOString(),
+      lastModified: session.date_creation || new Date().toISOString(),
+      tags: [session.type_registre, `Year ${session.annee_version}`],
+      description: `Type: ${session.type_registre}`,
+    }));
+  }, [data]);
 
   const filteredFolders = useMemo(() => {
     return folders.filter((f) => {
@@ -261,30 +163,38 @@ export default function DataValidationPage() {
           <>
             {/* Folders Grid */}
         <div className="flex-1 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {filteredFolders.map((folder) => (
-              <FolderUI
-                key={folder.id}
-                name={folder.name}
-                filesCount={folder.filesCount}
-                size={folder.size}
-                status={folder.status}
-                isSelected={selectedFolder?.id === folder.id}
-                onClick={() =>
-                  setSelectedFolder(
-                    selectedFolder?.id === folder.id ? null : folder
-                  )
-                }
-              />
-            ))}
-          </div>
-
-          {filteredFolders.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-60 text-gray-400">
-              <Folder className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-sm font-medium">No folders found</p>
-              <p className="text-xs mt-1">Try adjusting your search or filters</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-60">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {filteredFolders.map((folder) => (
+                  <FolderUI
+                    key={folder.id}
+                    name={folder.name}
+                    filesCount={folder.filesCount}
+                    size={folder.size}
+                    status={folder.status}
+                    isSelected={selectedFolder?.id === folder.id}
+                    onClick={() =>
+                      setSelectedFolder(
+                        selectedFolder?.id === folder.id ? null : folder
+                      )
+                    }
+                  />
+                ))}
+              </div>
+
+              {filteredFolders.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-60 text-gray-400">
+                  <Folder className="w-12 h-12 mb-3 opacity-30" />
+                  <p className="text-sm font-medium">No folders found</p>
+                  <p className="text-xs mt-1">Try adjusting your search or filters</p>
+                </div>
+              )}
+            </>
           )}
         </div>
 

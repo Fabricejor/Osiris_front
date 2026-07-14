@@ -301,7 +301,7 @@ export default function Sidebar() {
         ) : (
           <div className="bg-white rounded-xl shadow-md flex items-center justify-center px-4 py-2">
             <Image
-              src="/images/Osiris  icon+text.PNG"
+              src="/images/osiris-icon-text.png"
               alt="OSIRIS Logo"
               width={140}
               height={40}
