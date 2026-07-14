@@ -11,22 +11,31 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const data = [
-  { name: 'Week 1', value: 22 },
-  { name: 'Week 2', value: 25 },
-  { name: 'Week 3', value: 28 },
-  { name: 'Week 4', value: 30 },
-  { name: 'Week 5', value: 29 },
-  { name: 'Week 6', value: 32 },
-  { name: 'Week 7', value: 35 },
-  { name: 'Week 8', value: 38 },
-  { name: 'Week 9', value: 40 },
-  { name: 'Week 10', value: 42 },
-  { name: 'Week 11', value: 44 },
-  { name: 'Week 12', value: 45 },
-];
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 export default function ProcessingEfficiencyChart() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-processing-efficiency'],
+    queryFn: DashboardService.getProcessingEfficiency,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
+
+  if (isError || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
       <h3 className="text-sm font-semibold text-gray-800 mb-3">Processing Efficiency Over Time</h3>

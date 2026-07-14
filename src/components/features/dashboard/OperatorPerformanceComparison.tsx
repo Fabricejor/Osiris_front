@@ -12,15 +12,32 @@ import {
   Legend,
 } from 'recharts';
 
-const data = [
-  { name: 'Sarah J.', processed: 22000, errors: 1200 },
-  { name: 'Michael K.', processed: 19500, errors: 800 },
-  { name: 'Emily R.', processed: 17000, errors: 1500 },
-  { name: 'David L.', processed: 15000, errors: 900 },
-  { name: 'Jessica T.', processed: 12000, errors: 600 },
-];
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 export default function OperatorPerformanceComparison() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-operator-comparison'],
+    queryFn: DashboardService.getOperatorComparison,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
+
+  if (isError || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
       <h3 className="text-sm font-semibold text-gray-800 mb-3">Operator Performance Comparison (Top 5)</h3>

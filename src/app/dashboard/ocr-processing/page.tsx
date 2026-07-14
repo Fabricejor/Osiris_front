@@ -74,7 +74,7 @@ export default function OCRProcessingPage() {
     const pageName = page.nom_fichier || page.name || '';
     const pageBatch = page.id_session_scan || page.batch || '';
     const pageStatus = page.statut_traitement || page.status || '';
-    const pageConfidence = page.score_confiance_moyen ?? page.confidence ?? 0;
+    const pageConfidence = page.score_confiance ?? page.score_confiance_moyen ?? page.confidence ?? 0;
 
     const matchSearch = pageName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         pageBatch.toLowerCase().includes(searchQuery.toLowerCase());
@@ -171,7 +171,7 @@ export default function OCRProcessingPage() {
               const pageName = page.nom_fichier || page.name || 'Unnamed Page';
               const pageStatus = page.statut_traitement || page.status || 'unknown';
               const pageStatusText = pageStatus === 'anomaly' ? 'Anomaly' : (page.statusText || 'Pending');
-              const pageConfidence = page.score_confiance_moyen ?? page.confidence ?? 0;
+              const pageConfidence = page.score_confiance ?? page.score_confiance_moyen ?? page.confidence ?? 0;
               const pageBatch = page.id_session_scan || page.batch || 'N/A';
               const pageUploadDate = page.date_creation ? new Date(page.date_creation).toLocaleDateString() : (page.uploadDate || 'N/A');
               const pageImage = page.url_image || page.image || '';
@@ -259,7 +259,7 @@ export default function OCRProcessingPage() {
         onClose={() => setSelectedPageIndex(null)}
         pages={filteredPages}
         initialPageIndex={selectedPageIndex || 0}
-        sessionId="mock-session"
+        sessionId={selectedPageIndex !== null ? (filteredPages[selectedPageIndex]?.id_session_scan || filteredPages[selectedPageIndex]?.batch || '') : ''}
       />
     </div>
   );

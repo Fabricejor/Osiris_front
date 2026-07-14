@@ -5,26 +5,36 @@ import type { User } from "../types";
 
 export const UsersService = {
   getAllUsers: async () => {
-    return apiClient<User[]>("/users", {
+    const res = await apiClient<{items: any[], total: number}>("/v1/auth/users", {
       method: "GET",
     });
+    return (res.items || []).map((u: any) => ({
+      id: u.id_keycloak,
+      email: u.email,
+      firstName: u.nom_prenom?.split(' ')[0] || '',
+      lastName: u.nom_prenom?.split(' ').slice(1).join(' ') || '',
+      role: u.type_utilisateur,
+      status: u.status,
+      createdAt: u.created_at || new Date().toISOString(),
+      updatedAt: u.updated_at || new Date().toISOString(),
+    } as User));
   },
 
   getUserById: async (userId: string) => {
-    return apiClient<User>(`/users/${userId}`, {
+    return apiClient<User>(`/v1/auth/users/${userId}`, {
       method: "GET",
     });
   },
 
   updateUser: async (userId: string, data: Partial<User>) => {
-    return apiClient<User>(`/users/${userId}`, {
-      method: "PUT",
+    return apiClient<User>(`/v1/auth/users/${userId}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   },
 
   deleteUser: async (userId: string) => {
-    return apiClient(`/users/${userId}`, {
+    return apiClient(`/v1/auth/users/${userId}`, {
       method: "DELETE",
     });
   },

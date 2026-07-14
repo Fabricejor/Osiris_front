@@ -1,44 +1,45 @@
 import { apiClient } from "./apiClient";
-
-export interface StructureSanitaire {
-  id: string;
-  nom: string;
-  type_structure: string;
-  region: string;
-  district_sanitaire: string;
-  statut?: string; // Optional field for frontend mock display
-}
+import type { StructureSanitaire, CreateStructureDto, UpdateStructureDto } from "../types";
 
 export const StructuresService = {
   getAll: async () => {
-    // Note: Assuming API prefix handles /api/v1
-    return apiClient<StructureSanitaire[]>("/structures-sanitaires", {
+    const res = await apiClient<{items: StructureSanitaire[], total: number}>("/v1/structures", {
       method: "GET",
     });
+    
+    // Map backend properties to frontend expectations
+    return (res.items || []).map(item => ({
+      ...item,
+      id: item.id_structure_sanitaire,
+      nom: item.nom_structure,
+      region: 'N/A', // Assuming not returned by backend
+      type_structure: 'Standard', // Assuming not returned by backend
+      statut: 'Active'
+    }));
   },
 
   getById: async (id: string) => {
-    return apiClient<StructureSanitaire>(`/structures-sanitaires/${id}`, {
+    return apiClient<StructureSanitaire>(`/v1/structures/${id}`, {
       method: "GET",
     });
   },
 
-  create: async (data: Omit<StructureSanitaire, "id">) => {
-    return apiClient<StructureSanitaire>("/structures-sanitaires", {
+  create: async (data: CreateStructureDto) => {
+    return apiClient<StructureSanitaire>("/v1/structures", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  update: async (id: string, data: Partial<StructureSanitaire>) => {
-    return apiClient<StructureSanitaire>(`/structures-sanitaires/${id}`, {
+  update: async (id: string, data: UpdateStructureDto) => {
+    return apiClient<StructureSanitaire>(`/v1/structures/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
   delete: async (id: string) => {
-    return apiClient(`/structures-sanitaires/${id}`, {
+    return apiClient(`/v1/structures/${id}`, {
       method: "DELETE",
     });
   },

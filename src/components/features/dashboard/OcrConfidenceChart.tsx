@@ -4,15 +4,34 @@ import React from 'react';
 // eslint-disable-next-line
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
-const data = [
-  { name: 'High 75%', value: 75 },
-  { name: 'Medium 20%', value: 20 },
-  { name: 'Low 5%', value: 5 },
-];
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 const COLORS = ['#08704F', '#7BC148', '#d1fae5'];
 
 export default function OcrConfidenceChart() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-ocr-confidence'],
+    queryFn: DashboardService.getOcrConfidence,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
+
+  if (isError || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
       <h3 className="text-sm font-semibold text-gray-800 mb-1">OCR Confidence Score</h3>

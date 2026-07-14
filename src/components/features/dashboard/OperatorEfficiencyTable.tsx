@@ -12,6 +12,10 @@ import {
 } from '@tanstack/react-table';
 import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
+
 type Operator = {
   name: string;
   totalValidations: number;
@@ -19,14 +23,6 @@ type Operator = {
   efficiencyScore: number;
   status: 'Active' | 'On Track' | 'Inactive';
 };
-
-const operatorData: Operator[] = [
-  { name: 'L. Johnson', totalValidations: 9000, avgTime: '45s', efficiencyScore: 96, status: 'Active' },
-  { name: 'M. Lee', totalValidations: 14500, avgTime: '45s', efficiencyScore: 98, status: 'On Track' },
-  { name: 'K. Davis', totalValidations: 3000, avgTime: '45s', efficiencyScore: 80, status: 'On Track' },
-  { name: 'L. Johnson', totalValidations: 3000, avgTime: '45s', efficiencyScore: 84, status: 'Active' },
-  { name: 'A. Loure', totalValidations: 2700, avgTime: '20s', efficiencyScore: 78, status: 'Active' },
-];
 
 const columnHelper = createColumnHelper<Operator>();
 
@@ -38,6 +34,21 @@ const statusStyles: Record<string, string> = {
 
 export default function OperatorEfficiencyTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  
+  const { data: operatorData = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-operator-efficiency'],
+    queryFn: async () => {
+      const res = await DashboardService.getOperatorEfficiency();
+      // Map backend model to frontend model for the table
+      return res.map(op => ({
+        name: op.operator,
+        totalValidations: op.processed,
+        avgTime: op.avgTime,
+        efficiencyScore: op.accuracy,
+        status: op.status === 'Online' ? 'Active' : (op.status === 'Busy' ? 'On Track' : 'Inactive')
+      } as Operator));
+    },
+  });
 
   const columns = useMemo(
     () => [
@@ -108,16 +119,31 @@ export default function OperatorEfficiencyTable() {
               </tr>
             ))}
           </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="py-2.5 px-3 text-gray-600 text-[13px]">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+          <tbody className="divide-y divide-gray-100">
+            {isLoading ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#65b741] mx-auto mb-2" />
+                  Loading efficiency data...
+                </td>
               </tr>
-            ))}
+            ) : isError || operatorData.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-gray-500">
+                  No data available
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50/50 transition-colors">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap border-b border-gray-50">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

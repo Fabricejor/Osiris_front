@@ -61,3 +61,141 @@ export interface AuditLog {
   ip_address?: string;
   user_name?: string;
 }
+
+export interface DashboardStat {
+  title: string;
+  value: string | number;
+  change: string;
+  positive: boolean;
+  icon?: any; // Just for frontend mapping if needed, usually we don't return icon from backend
+}
+
+export interface ProcessingEfficiencyData {
+  name: string;
+  value: number;
+}
+
+export interface OcrPerformanceData {
+  name: string;
+  value: number;
+}
+
+export interface OcrConfidenceData {
+  name: string;
+  value: number;
+}
+
+export interface ActivityHeatmapData {
+  // 6 weeks x 12 months array for instance, or any structure
+  weeks: number[];
+  months: string[];
+  data: number[][]; // [weekIndex][monthIndex]
+}
+
+export interface ProcessingVolumesData {
+  date: string;
+  records: number;
+  rate: number;
+}
+
+export interface OperatorEfficiencyData {
+  id: string;
+  operator: string;
+  role: string;
+  processed: number;
+  accuracy: number;
+  avgTime: string;
+  status: 'Online' | 'Offline' | 'Busy';
+}
+
+export interface OperatorPerformanceComparisonData {
+  name: string;
+  processed: number;
+  errors: number;
+}
+
+export interface ValidationStatusData {
+  name: string;
+  value: number;
+}
+
+export interface OperatorActivityHeatmapData {
+  hours: string[];
+  days: string[];
+  data: number[][]; // [hourIndex][dayIndex]
+}
+
+export interface StructureSanitaire {
+  id_structure_sanitaire: string;
+  nom_structure: string;
+  district_sanitaire?: string | null;
+  localisation?: string | null;
+  date_creation: string;
+  // Fields used by frontend UI not directly matched by backend schema
+  id?: string;
+  nom?: string;
+  type_structure?: string;
+  region?: string;
+  statut?: string;
+}
+
+export interface CreateStructureDto {
+  nom_structure: string;
+  district_sanitaire?: string | null;
+  localisation?: string | null;
+}
+
+export interface UpdateStructureDto {
+  nom_structure?: string;
+  district_sanitaire?: string | null;
+  localisation?: string | null;
+}
+
+export interface CatalogueRegistre {
+  id_catalogue_registre: string;
+  type_registre: string;
+  annee_version: number;
+  libelle: string;
+  rangs_par_patient: number;
+  nombre_sections?: number;
+  nombre_champs?: number;
+  sections?: any[];
+  // Mapped for frontend UI
+  id?: string;
+  nom_registre?: string;
+  version?: string | number;
+  sectionsCount?: number;
+  fieldsCount?: number;
+  est_actif?: boolean;
+}
+
+export interface CreateCatalogueDto {
+  type_registre: string;
+  annee_version: number;
+  libelle: string;
+  rangs_par_patient: number;
+}
+
+export interface UpdateCatalogueDto {
+  type_registre?: string;
+  annee_version?: number;
+  libelle?: string;
+  rangs_par_patient?: number;
+}
+
+export type ExportFormat = 'csv' | 'pdf';
+
+export interface ExportRecord {
+  id: string;
+  fileName: string;
+  date: string;
+  status: string;
+  downloadUrl?: string;
+}
+
+export interface ExportFilterOptions {
+  structure_id?: string;
+  catalogue_id?: string;
+  date_debut?: string;
+  date_fin?: string;
+}

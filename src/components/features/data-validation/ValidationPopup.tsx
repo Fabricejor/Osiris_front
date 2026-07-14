@@ -177,7 +177,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                 <div className="p-6 border-b border-gray-100 flex items-start justify-between bg-white z-10 shadow-sm shrink-0">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-1">Record Validation</h2>
-                    <p className="text-sm text-gray-500">ANC Register Entry • Row 14</p>
+                    <p className="text-sm text-gray-500">{currentPage.nom_fichier || currentPage.name} • {currentPage.id_session_scan || currentPage.batch}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex flex-col items-end">
@@ -212,7 +212,11 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                   >
                     <ShieldAlert className="w-4 h-4" />
                     PII Data
-                    <span className="ml-1 bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full text-[10px]">1</span>
+                    {piiData.filter((p: any) => p.statut === 'A_SAISIR').length > 0 && (
+                      <span className="ml-1 bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full text-[10px]">
+                        {piiData.filter((p: any) => p.statut === 'A_SAISIR').length}
+                      </span>
+                    )}
                   </button>
                 </div>
 
@@ -280,7 +284,9 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                 <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
                   <div className="flex items-center gap-3">
                     <Flag className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-bold text-gray-700">1 field requires review</span>
+                    <span className="text-sm font-bold text-gray-700">
+                      {piiData.filter((p: any) => p.statut === 'A_SAISIR').length + clinicalData.filter((c: any) => c.statut === 'A_VALIDER').length} field(s) require review
+                    </span>
                   </div>
                   
                   <div className="flex items-center gap-3">

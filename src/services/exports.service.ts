@@ -1,41 +1,33 @@
 import { apiClient } from "./apiClient";
 
+import type { ExportFormat, ExportRecord, ExportFilterOptions } from "../types";
+
 export interface ExportRequest {
   structure_id?: string;
   catalogue_id?: string;
   date_debut?: string;
   date_fin?: string;
-  format_export: "csv" | "pdf";
-}
-
-export interface ExportRecord {
-  id: string;
-  file_name: string;
-  status: string;
-  created_at: string;
-  format: string;
-  url?: string;
+  format?: ExportFormat;
 }
 
 export const ExportsService = {
-  generateExport: async (data: ExportRequest) => {
-    return apiClient<{ message: string; export_id: string }>("/exports", {
+  generateExport: async (data: any) => {
+    return apiClient<{ message: string; export_id: string }>("/v1/exports", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
   getRecentExports: async () => {
-    return apiClient<ExportRecord[]>("/exports", {
+    const res = await apiClient<{items: ExportRecord[], total: number}>("/v1/exports", {
       method: "GET",
     });
+    return res.items || [];
   },
 
   downloadExport: async (id: string) => {
-    // Usually download endpoints might return a blob or a pre-signed URL
-    // Depending on the backend implementation, you might need to handle Blob specifically.
-    return apiClient<{ url: string }>(`/exports/${id}/download`, {
+    return apiClient<{ url: string }>(`/v1/exports/${id}/download`, {
       method: "GET",
     });
-  }
+  },
 };
