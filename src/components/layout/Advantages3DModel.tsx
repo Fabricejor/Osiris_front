@@ -5,10 +5,10 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 
 // Preload 3D Model outside component lifecycle
-useGLTF.preload("/3D-model/mother and baby 3d model.glb");
+useGLTF.preload("/3D-model/mother_baby_compressed.glb");
 
 function MotherBabyModel() {
-  const { scene } = useGLTF("/3D-model/mother and baby 3d model.glb");
+  const { scene } = useGLTF("/3D-model/mother_baby_compressed.glb");
   // Increased scale to make it fill the column height
   return <primitive object={scene} scale={3.8} position={[0, -1.5, 0]} />;
 }

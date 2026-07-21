@@ -5,10 +5,10 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 
 // Preload 3D Model outside component lifecycle
-useGLTF.preload("/3D-model/green leaf woman 3d model.glb");
+useGLTF.preload("/3D-model/green_leaf_compressed.glb");
 
 function GreenLeafModel() {
-  const { scene } = useGLTF("/3D-model/green leaf woman 3d model.glb");
+  const { scene } = useGLTF("/3D-model/green_leaf_compressed.glb");
   return <primitive object={scene} scale={3.2} position={[0, -1.6, 0]} />;
 }
 
