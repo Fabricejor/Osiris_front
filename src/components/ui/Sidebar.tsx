@@ -21,10 +21,11 @@ import { useTranslation } from '@/hooks/useTranslation';
 type NavItem = {
   name: string;
   href: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   iconBg: string;
 };
+
 
 const mainNavItems: NavItem[] = [
   {
@@ -127,19 +128,25 @@ function NavLink({
         )}
 
         {/* Icon wrapper */}
-        <div
-          className={cn(
-            'relative z-10 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 shrink-0',
-            isActive ? item.iconBg : 'group-hover:' + item.iconBg.replace('bg-', 'bg-')
-          )}
-        >
-          <item.icon
-            className={cn(
-              'w-4 h-4 transition-all duration-200 shrink-0',
-              isActive ? item.color : cn('text-white/50 group-hover:' + item.color.replace('text-', 'text-'))
-            )}
-          />
-        </div>
+        {(() => {
+          const Icon = item.icon;
+          return (
+            <div
+              className={cn(
+                'relative z-10 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 shrink-0',
+                isActive ? item.iconBg : 'group-hover:' + item.iconBg.replace('bg-', 'bg-')
+              )}
+            >
+              <Icon
+                className={cn(
+                  'w-4 h-4 transition-all duration-200 shrink-0',
+                  isActive ? item.color : cn('text-white/50 group-hover:' + item.color.replace('text-', 'text-'))
+                )}
+              />
+            </div>
+          );
+        })()}
+
 
         {/* Label */}
         <motion.span

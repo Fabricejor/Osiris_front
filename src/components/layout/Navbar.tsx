@@ -15,23 +15,41 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      const scrolled = window.scrollY > 20;
+      setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Scroll spy to update active link
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveLink(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: "-30% 0px -70% 0px" } // Triggers when section is around top third of screen
+    );
+
+    const sectionIds = ["features", "how-it-works", "data-secure", "advantages"];
+    sectionIds.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const navLinks = [
-    { id: "home", label: t("nav_home"), href: "#home" },
-    { id: "features", label: t("nav_features"), href: "#features" },
-    { id: "how-it-works", label: t("nav_how_it_works"), href: "#how-it-works" },
-    { id: "about", label: t("nav_about"), href: "#about" },
-    { id: "newsletter", label: t("nav_newsletter"), href: "#newsletter" },
+    { id: "features", label: t("footer_link_features"), href: "#features" },
+    { id: "how-it-works", label: t("footer_link_how_it_works"), href: "#how-it-works" },
+    { id: "data-secure", label: t("footer_link_security"), href: "#data-secure" },
+    { id: "advantages", label: t("footer_link_advantages"), href: "#advantages" },
   ];
 
   return (
@@ -64,7 +82,11 @@ export function Navbar() {
                 <a
                   key={link.id}
                   href={link.href}
-                  onClick={() => setActiveLink(link.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(link.id)?.scrollIntoView({ behavior: "smooth" });
+                    setActiveLink(link.id);
+                  }}
                   className={`px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium transition-all duration-200 ${
                     isActive
                       ? "bg-[#7BC148]/20 text-[#8CE34A] shadow-inner font-semibold border border-[#7BC148]/30"
@@ -170,7 +192,9 @@ export function Navbar() {
               <a
                 key={link.id}
                 href={link.href}
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById(link.id)?.scrollIntoView({ behavior: "smooth" });
                   setActiveLink(link.id);
                   setIsMobileMenuOpen(false);
                 }}

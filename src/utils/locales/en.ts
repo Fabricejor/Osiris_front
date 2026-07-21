@@ -229,5 +229,63 @@ export const en = {
   hero_title_line2: "Validation of Maternal",
   hero_title_line3: "Healthcare Data",
   hero_description: "A cutting-edge platform designed to digitize, validate and manage maternal health registers using automated OCR extraction and clinical review — powered by Quantum Soul.",
-  hero_learn_more: "Learn More"
+  hero_learn_more: "Learn More",
+
+  // Features Section
+  features_title: "Powerful features for better healthcare",
+  feature_offline_title: "Offline Data Collection",
+  feature_offline_desc: "Collect data offline and sync when connection is available.",
+  feature_ocr_title: "OCR Digitization",
+  feature_ocr_desc: "Extract data from paper registers with high accuracy using AI.",
+  feature_clinical_title: "Clinical Validation",
+  feature_clinical_desc: "Validate extracted data with human expertise.",
+  feature_secure_title: "Secure Data Management",
+  feature_secure_desc: "Enterprise-grade security for sensitive health information.",
+
+  // How it works Section
+  how_it_works_title: "How it works",
+  step_paper: "Paper Register",
+  step_ocr: "OCR Extraction",
+  step_validation: "Clinical Validation",
+  step_digital: "Digital Record",
+  step_dashboard: "Research Dashboard",
+  stat_registers: "Digitized Registers",
+  stat_accuracy: "OCR Accuracy",
+  stat_facilities: "Healthcare Facilities",
+  stat_offline: "Offline Ready",
+
+  // Data Secure Section
+  datasecure_title: "All your data are secure",
+  datasecure_desc: "Osiris is an app, developed by QuantumSoul, that provides you a centralized dashboard to manage batches, validate data and generate insights.",
+  datasecure_bullet1: "Track digitization progress in real-time",
+  datasecure_bullet2: "Validate data with ease",
+  datasecure_bullet3: "Export clean data for research",
+  datasecure_bullet4: "Role-based access and audit logs",
+
+  // Advantages Section
+  adv_title: "Better data. Better decisions. Better care.",
+  adv_bullet1: "Improve Data Quality",
+  adv_bullet2: "Accelerate Validation",
+  adv_bullet3: "Support Healthcare Research",
+  adv_bullet4: "Enhance Maternal Care",
+  adv_bullet5: "Secure Offline Synchronization",
+
+  // Launch Banner
+  launch_banner_title: "Ready to Transform Healthcare Records?",
+  launch_banner_subtitle: "Join healthcare organizations across Africa building a healthier future.",
+  launch_banner_button: "Launch Platform",
+
+  // Footer
+  footer_subtitle: "Digitizing maternal healthcare registers for a healthier Africa.",
+  footer_platform: "Platform",
+  footer_link_features: "Features",
+  footer_link_how_it_works: "How it works",
+  footer_link_security: "Security",
+  footer_link_advantages: "Advantages",
+  footer_contact: "Contact",
+  footer_copyright: "© 2024 Osiris. All rights reserved.",
+  footer_collab: "QuantumSoul X APhRC",
+  footer_privacy: "Privacy Policy",
+  footer_terms: "Terms of Service",
+  footer_cookies: "Cookies Policy",
 };

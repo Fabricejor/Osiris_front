@@ -229,5 +229,63 @@ export const fr = {
   hero_title_line2: "Validation des Données",
   hero_title_line3: "de Santé Maternelle",
   hero_description: "Une plateforme innovante conçue pour numériser, valider et gérer les registres de santé maternelle grâce à l'extraction OCR automatisée et la validation clinique — développée par Quantum Soul.",
-  hero_learn_more: "En savoir plus"
+  hero_learn_more: "En savoir plus",
+
+  // Features Section
+  features_title: "Fonctionnalités puissantes pour de meilleurs soins de santé",
+  feature_offline_title: "Collecte de données hors ligne",
+  feature_offline_desc: "Collectez des données hors ligne et synchronisez-les lorsque la connexion est disponible.",
+  feature_ocr_title: "Numérisation OCR",
+  feature_ocr_desc: "Extrayez les données des registres papier avec une haute précision grâce à l'IA.",
+  feature_clinical_title: "Validation clinique",
+  feature_clinical_desc: "Validez les données extraites avec l'expertise humaine.",
+  feature_secure_title: "Gestion sécurisée des données",
+  feature_secure_desc: "Sécurité de niveau entreprise pour les informations de santé sensibles.",
+
+  // How it works Section
+  how_it_works_title: "Comment ça marche",
+  step_paper: "Registre papier",
+  step_ocr: "Extraction OCR",
+  step_validation: "Validation clinique",
+  step_digital: "Dossier numérique",
+  step_dashboard: "Tableau de bord de recherche",
+  stat_registers: "Registres numérisés",
+  stat_accuracy: "Précision OCR",
+  stat_facilities: "Établissements de santé",
+  stat_offline: "Prêt hors ligne",
+
+  // Data Secure Section
+  datasecure_title: "Toutes vos données sont sécurisées",
+  datasecure_desc: "Osiris est une application développée par QuantumSoul, qui vous offre un tableau de bord centralisé pour gérer les lots, valider les données et générer des analyses.",
+  datasecure_bullet1: "Suivez la progression de la numérisation en temps réel",
+  datasecure_bullet2: "Validez les données en toute simplicité",
+  datasecure_bullet3: "Exportez des données fiables pour la recherche",
+  datasecure_bullet4: "Accès basé sur les rôles et journaux d'audit",
+
+  // Advantages Section
+  adv_title: "De meilleures données. De meilleures décisions. De meilleurs soins.",
+  adv_bullet1: "Améliorez la qualité des données",
+  adv_bullet2: "Accélérez la validation",
+  adv_bullet3: "Soutenez la recherche médicale",
+  adv_bullet4: "Améliorez les soins maternels",
+  adv_bullet5: "Synchronisation hors ligne sécurisée",
+
+  // Launch Banner
+  launch_banner_title: "Prêt à transformer la gestion des dossiers médicaux ?",
+  launch_banner_subtitle: "Rejoignez les organisations de santé à travers l'Afrique qui construisent un avenir plus sain.",
+  launch_banner_button: "Lancer la plateforme",
+
+  // Footer
+  footer_subtitle: "Numérisation des registres de santé maternelle pour une Afrique en meilleure santé.",
+  footer_platform: "Plateforme",
+  footer_link_features: "Fonctionnalités",
+  footer_link_how_it_works: "Comment ça marche",
+  footer_link_security: "Sécurité",
+  footer_link_advantages: "Avantages",
+  footer_contact: "Contact",
+  footer_copyright: "© 2024 Osiris. Tous droits réservés.",
+  footer_collab: "QuantumSoul X APhRC",
+  footer_privacy: "Politique de confidentialité",
+  footer_terms: "Conditions d'utilisation",
+  footer_cookies: "Politique relative aux cookies",
 };
