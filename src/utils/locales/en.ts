@@ -214,5 +214,20 @@ export const en = {
   device: "Device",
   time: "Time",
   active_now: "Active Now",
-  yesterday: "Yesterday"
+  yesterday: "Yesterday",
+
+  // Navbar
+  nav_home: "Home",
+  nav_features: "Features",
+  nav_how_it_works: "How it works",
+  nav_about: "About the app",
+  nav_newsletter: "Newsletter",
+  get_started: "Get Started",
+
+  // Hero Banner
+  hero_title_line1: "Osiris Healthcare",
+  hero_title_line2: "Validation of Maternal",
+  hero_title_line3: "Healthcare Data",
+  hero_description: "A cutting-edge platform designed to digitize, validate and manage maternal health registers using automated OCR extraction and clinical review — powered by Quantum Soul.",
+  hero_learn_more: "Learn More"
 };

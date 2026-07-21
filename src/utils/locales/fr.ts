@@ -214,5 +214,20 @@ export const fr = {
   device: "Appareil",
   time: "Heure",
   active_now: "Actif maintenant",
-  yesterday: "Hier"
+  yesterday: "Hier",
+
+  // Navbar
+  nav_home: "Accueil",
+  nav_features: "Fonctionnalités",
+  nav_how_it_works: "Comment ça marche",
+  nav_about: "À propos",
+  nav_newsletter: "Newsletter",
+  get_started: "Commencer",
+
+  // Hero Banner
+  hero_title_line1: "Osiris Healthcare",
+  hero_title_line2: "Validation des Données",
+  hero_title_line3: "de Santé Maternelle",
+  hero_description: "Une plateforme innovante conçue pour numériser, valider et gérer les registres de santé maternelle grâce à l'extraction OCR automatisée et la validation clinique — développée par Quantum Soul.",
+  hero_learn_more: "En savoir plus"
 };
