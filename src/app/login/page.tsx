@@ -8,6 +8,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { Toaster, toast } from "sonner";
 import { AuthService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/authStore";
+import { isLockedOut, recordFailedLoginAttempt, resetFailedLoginAttempts } from "@/utils/authLockout";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,10 +21,19 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isLockedOut()) {
+      toast.error("Trop de tentatives échouées. Veuillez patienter 15 minutes.");
+      return;
+    }
     
     const loginPromise = AuthService.login(email, password).then((data) => {
       login(data.user);
+      resetFailedLoginAttempts();
       return data;
+    }).catch((err) => {
+      recordFailedLoginAttempt(email);
+      throw err;
     });
 
     toast.promise(loginPromise, {

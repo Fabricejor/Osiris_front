@@ -6,13 +6,16 @@
  * interception des erreurs, etc.).
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+import { useAuthStore } from '@/store/authStore';
+import { env } from '@/utils/env';
+import { logger } from '@/utils/logger';
+import { logSecurityEventClient } from '@/utils/securityMonitor';
+
+const API_BASE_URL = env.NEXT_PUBLIC_API_URL;
 
 interface FetchOptions extends RequestInit {
   // Vous pouvez ajouter des options personnalisées ici (ex: requireAuth: boolean)
 }
-
-import { useAuthStore } from '@/store/authStore';
 
 export async function apiClient<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { headers, ...restOptions } = options;
@@ -41,9 +44,18 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
         // Handle 401 Unauthorized globally
         useAuthStore.getState().logout();
         // Optionnel : rediriger vers /login, mais le Guard s'en chargera généralement via l'état
-        if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-            window.location.href = '/';
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
         }
+      }
+
+      if (response.status === 403) {
+         logSecurityEventClient({
+            type: 'AUTH_FAILURE',
+            message: `Forbidden access attempt to ${endpoint}`,
+            severity: 'medium',
+            context: 'apiClient interceptor'
+         });
       }
       
       // Tentative de lecture du body JSON pour extraire le "detail"
@@ -57,7 +69,9 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
         // Le body n'est pas du JSON, on garde le message générique
       }
       
-      throw new Error(errorMessage);
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      throw error;
     }
     
     // Si la réponse est 204 No Content, on ne parse pas le JSON
@@ -70,7 +84,8 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
     return data as T;
     
   } catch (error) {
-    console.error(`[API Error] lors de l'appel vers ${endpoint}:`, error);
+    logger.error(`[API Error] lors de l'appel vers ${endpoint}:`, error);
     throw error;
   }
 }
+
