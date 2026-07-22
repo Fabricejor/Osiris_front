@@ -5,6 +5,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, Globe, ChevronDown } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { Toaster, toast } from "sonner";
+import { AuthService } from "@/services/auth.service";
+import { useAuthStore } from "@/store/authStore";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,15 +16,33 @@ export default function Login() {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const router = useRouter();
   const { language, setLanguage, t } = useTranslation();
+  const login = useAuthStore((state) => state.login);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/dashboard");
+    
+    const loginPromise = AuthService.login(email, password).then((data) => {
+      login(data.user);
+      return data;
+    });
+
+    toast.promise(loginPromise, {
+      loading: language === 'fr' ? "Connexion en cours..." : "Logging in...",
+      success: () => {
+        router.push("/dashboard");
+        return language === 'fr' ? "Connexion réussie !" : "Login successful!";
+      },
+      error: (err) => {
+        return err.message || t("login_error") || "Erreur de connexion";
+      },
+    });
   };
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-50 relative overflow-hidden">
-      {/* Grid Pattern overlay */}
+    <>
+      <Toaster position="top-center" richColors />
+      <main className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-50 relative overflow-hidden">
+        {/* Grid Pattern overlay */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#8080800d_1px,transparent_1px),linear-gradient(to_bottom,#8080800d_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
       {/* Main Split Container */}
@@ -224,5 +245,6 @@ export default function Login() {
 
       </div>
     </main>
+    </>
   );
 }
