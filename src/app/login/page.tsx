@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, Globe, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Login() {
@@ -21,44 +20,9 @@ export default function Login() {
   };
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-primary/15 via-background to-[#E1F2D9] relative overflow-hidden">
-      {/* Blurred Splash Screen background watermark */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center opacity-15 blur-3xl pointer-events-none scale-105"
-        style={{ backgroundImage: 'url("/images/Osiris Splash Screen.PNG")' }}
-      />
-
+    <main className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-50 relative overflow-hidden">
       {/* Grid Pattern overlay */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#8080800d_1px,transparent_1px),linear-gradient(to_bottom,#8080800d_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-
-      {/* Decorative ambient blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/25 blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] rounded-full bg-tertiary/15 blur-[140px] pointer-events-none" />
-
-      {/* Floating Animated Geometric Shapes (Quantum/Healthcare theme) */}
-      <motion.div
-        animate={{ y: [0, -20, 0], rotate: [0, 360, 0] }}
-        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        className="absolute top-[10%] right-[8%] w-48 h-48 rounded-full border-4 border-dashed border-primary/20 pointer-events-none hidden lg:block"
-      />
-      
-      <motion.div
-        animate={{ y: [0, 15, 0], x: [0, 10, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-[12%] left-[6%] w-40 h-40 bg-gradient-to-tr from-tertiary/20 to-transparent border border-tertiary/30 rounded-[40%_60%_70%_30%_/_40%_50%_60%_50%] backdrop-blur-xs pointer-events-none hidden lg:block"
-      />
-
-      <motion.div
-        animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-[35%] left-[45%] w-6 h-6 rounded-full bg-primary/40 pointer-events-none blur-xs"
-      />
-
-      <motion.div
-        animate={{ y: [0, -12, 0], rotate: [0, 45, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-[35%] right-[42%] w-10 h-10 border border-primary/30 rounded-xl pointer-events-none hidden md:block"
-      />
 
       {/* Main Split Container */}
       <div className="w-full max-w-6xl h-[85vh] min-h-[580px] max-h-[750px] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-[0_24px_64px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col md:flex-row border border-white/60 relative z-10">
