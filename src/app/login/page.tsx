@@ -70,7 +70,7 @@ export default function Login() {
           <div className="flex items-center justify-between shrink-0">
             <div className="flex items-center">
               <Image
-                src="/images/Osiris  icon+text.PNG"
+                src="/images/osiris-icon-text.png"
                 alt="OSIRIS Logo"
                 width={120}
                 height={36}
