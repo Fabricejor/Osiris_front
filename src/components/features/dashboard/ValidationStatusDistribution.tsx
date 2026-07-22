@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-// eslint-disable-next-line
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
@@ -36,6 +36,7 @@ function renderCustomLabel({
 }
 
 export default function ValidationStatusDistribution() {
+  const { t } = useTranslation();
   const { data = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-validation-status'],
     queryFn: DashboardService.getValidationStatus,
@@ -59,7 +60,7 @@ export default function ValidationStatusDistribution() {
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-2">Validation Status Distribution</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-2">{t("validation_status_title")}</h3>
       <div className="flex-1 min-h-0 flex items-center">
         <div className="w-3/5 h-full">
           <ResponsiveContainer width="100%" height="100%">

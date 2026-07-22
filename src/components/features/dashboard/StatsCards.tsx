@@ -50,7 +50,7 @@ export default function StatsCards() {
       {stats.map((stat) => {
         const iconConfig = iconMap[stat.title] || { icon: AlertCircle, bg: 'bg-gray-50', color: 'text-gray-500' };
         const IconComponent = iconConfig.icon;
-        
+
         return (
           <div
             key={stat.title}
@@ -63,9 +63,8 @@ export default function StatsCards() {
               <p className="text-[11px] text-gray-500 truncate leading-tight">{stat.title}</p>
               <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{stat.value}</p>
               <span
-                className={`text-[11px] font-medium ${
-                  stat.positive ? 'text-emerald-600' : 'text-orange-600'
-                }`}
+                className={`text-[11px] font-medium ${stat.positive ? 'text-emerald-600' : 'text-orange-600'
+                  }`}
               >
                 ({stat.change})
               </span>

@@ -1,11 +1,14 @@
 "use client";
 
+import { useTranslation } from '@/hooks/useTranslation';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
 import { Loader2 } from 'lucide-react';
 
-const LEVEL_LABELS = ['Very Low', 'Low', 'Moderate', 'High', 'Very High'];
+const levelsEn = ['Very Low', 'Low', 'Moderate', 'High', 'Very High'];
+const levelsFr = ['Très faible', 'Faible', 'Modérée', 'Élevée', 'Très élevée'];
+
 const COLORS = [
   'bg-green-100',   // 0 - Very Low
   'bg-yellow-200',  // 1 - Low
@@ -15,6 +18,8 @@ const COLORS = [
 ];
 
 export default function OperatorActivityHeatmap() {
+  const { t, language } = useTranslation();
+  const LEVEL_LABELS = language === 'fr' ? levelsFr : levelsEn;
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard-operator-activity-heatmap'],
     queryFn: DashboardService.getOperatorActivityHeatmap,
@@ -42,7 +47,7 @@ export default function OperatorActivityHeatmap() {
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col relative">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">Operator Activity by Hour & Day</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("operator_activity_title")}</h3>
       <div className="flex-1 min-h-0 flex flex-col justify-between">
         {/* Column headers */}
         <div className="flex mb-1.5">

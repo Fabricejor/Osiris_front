@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -10,12 +10,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
 import { Loader2 } from 'lucide-react';
 
 export default function ProcessingEfficiencyChart() {
+  const { t } = useTranslation();
   const { data = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-processing-efficiency'],
     queryFn: DashboardService.getProcessingEfficiency,
@@ -38,7 +40,7 @@ export default function ProcessingEfficiencyChart() {
   }
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">Processing Efficiency Over Time</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("processing_efficiency")}</h3>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
@@ -69,7 +71,7 @@ export default function ProcessingEfficiencyChart() {
                 fontSize: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
-              formatter={(value: any) => [`${value}s`, 'Avg Time']}
+              formatter={(value: any) => [`${value}s`, t("processing_time")]}
             />
             <Area
               type="monotone"

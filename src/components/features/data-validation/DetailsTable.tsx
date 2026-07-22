@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useRouter } from 'next/navigation';
 import {
   useReactTable,
@@ -11,7 +12,7 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
 import type { FolderStatus } from '@/components/ui/folderUI';
 import { useQuery } from '@tanstack/react-query';
 import { SessionsService, SessionScan } from '@/services/sessions.service';
@@ -44,6 +45,7 @@ const StatusCell = (info: any) => {
 };
 
 export default function DetailsTable({ search, statusFilter }: Readonly<DetailsTableProps>) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [selectedSessionId, setSelectedSessionId] = React.useState<string | null>(null);
@@ -80,14 +82,14 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
         cell: StatusCell,
       }),
     ],
-    []
+    [t, StatusCell]
   );
 
   const filteredData = useMemo(() => {
     const items = data?.items || [];
     return items.filter((s) => {
-      const matchesSearch = 
-        s.id.toLowerCase().includes(search.toLowerCase()) || 
+      const matchesSearch =
+        s.id.toLowerCase().includes(search.toLowerCase()) ||
         (s.libelle_session && s.libelle_session.toLowerCase().includes(search.toLowerCase()));
       const matchesStatus = statusFilter === 'all' || s.statut.toLowerCase() === statusFilter;
       return matchesSearch && matchesStatus;
@@ -126,28 +128,37 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
             </div>
           ) : null}
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 sticky top-0 z-10">
+            <thead className="bg-gray-50/80 sticky top-0 z-10 border-b border-gray-100">
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-gray-100">
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="text-left py-3 px-4 text-[12px] font-semibold text-gray-700 cursor-pointer select-none hover:text-gray-900 transition-colors"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center gap-1">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                      </div>
-                    </th>
-                  ))}
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    const sorted = header.column.getIsSorted();
+                    return (
+                      <th
+                        key={header.id}
+                        className="text-left py-3 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 hover:bg-gray-100/60 transition-colors"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {sorted === 'asc' ? (
+                            <ArrowUp className="w-3 h-3 text-emerald-500" />
+                          ) : sorted === 'desc' ? (
+                            <ArrowDown className="w-3 h-3 text-emerald-500" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-gray-300" />
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               ))}
             </thead>
             <tbody>
               {table.getRowModel().rows.map((row) => (
-                <tr 
-                  key={row.id} 
+                <tr
+                  key={row.id}
                   onClick={() => setSelectedSessionId(row.original.id)}
                   className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer ${selectedSessionId === row.original.id ? 'bg-emerald-50/50' : ''}`}
                 >
@@ -173,44 +184,46 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
           <span className="text-[12px] text-gray-500 mr-2">
             Page {table.getState().pagination.pageIndex + 1}
           </span>
-          <button
-            onClick={() => table.firstPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronsLeft className="w-4 h-4 text-gray-500" />
-          </button>
-          <button
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-500" />
-          </button>
-          <span className="w-7 h-7 flex items-center justify-center text-[12px] font-medium bg-gray-100 rounded text-gray-700">
-            {table.getState().pagination.pageIndex + 1}
-          </span>
-          <button
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-500" />
-          </button>
-          <button
-            onClick={() => table.lastPage()}
-            disabled={!table.getCanNextPage()}
-            className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronsRight className="w-4 h-4 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => table.firstPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="p-1.5 rounded-lg hover:bg-white hover:border hover:border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronsLeft className="w-3.5 h-3.5 text-gray-500" />
+            </button>
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="p-1.5 rounded-lg hover:bg-white hover:border hover:border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 text-gray-500" />
+            </button>
+            <span className="px-3 py-1 text-xs font-bold bg-gray-900 text-white rounded-lg min-w-[28px] text-center">
+              {table.getState().pagination.pageIndex + 1}
+            </span>
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="p-1.5 rounded-lg hover:bg-white hover:border hover:border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+            </button>
+            <button
+              onClick={() => table.lastPage()}
+              disabled={!table.getCanNextPage()}
+              className="p-1.5 rounded-lg hover:bg-white hover:border hover:border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronsRight className="w-3.5 h-3.5 text-gray-500" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Right Info Panel for Details View */}
       <aside className="shrink-0 w-[320px] bg-white border border-gray-100 rounded-xl flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
         <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
-          <button 
+          <button
             onClick={() => selectedSessionId ? router.push(`/dashboard/data-validation/${selectedSessionId}`) : null}
             disabled={!selectedSessionId}
             className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
@@ -225,7 +238,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
 
         <div className="p-4 space-y-5">
           {selectedSessionId ? (
-            <p className="text-sm text-gray-600">Selected Session ID: <br/><span className="font-mono text-xs">{selectedSessionId}</span></p>
+            <p className="text-sm text-gray-600">Selected Session ID: <br /><span className="font-mono text-xs">{selectedSessionId}</span></p>
           ) : (
             <p className="text-sm text-gray-500 italic">Select a session from the table to view details and open it.</p>
           )}
@@ -240,7 +253,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
           <div className="h-px bg-gray-100" />
 
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Tags</h4>
+            <h4 className="text-xs font-semibold text-gray-700 mb-2">{t("tags")}</h4>
             <div className="flex flex-wrap gap-1.5">
               {['OCR', 'Pending Validation'].map(tag => (
                 <span key={tag} className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">

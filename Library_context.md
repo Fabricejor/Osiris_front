@@ -327,3 +327,20 @@ Toujours privilégier une fonction utilitaire de type cn() qui combine clsx et t
 - Toujours utiliser Framer Motion pour les animations.
 - Toujours utiliser React Resizable Panels pour les interfaces à double panneau.
 - Ne jamais introduire une nouvelle bibliothèque sans justification.
+
+---
+
+# Three.js / React Three Fiber / Drei
+
+Utilisés pour l'affichage et la manipulation de modèles 3D (ex: .glb, .gltf) dans l'application.
+
+Bibliothèques :
+- `three` : Moteur 3D principal.
+- `@react-three/fiber` : Wrapper React pour Three.js.
+- `@react-three/drei` : Composants utilitaires pour faciliter la création de scènes 3D (contrôles de caméra, environnement, chargement de modèles, etc.).
+
+---
+
+# React Icons
+
+Utilisé pour avoir accès à une plus large variété de packs d'icônes (Material Design, FontAwesome, etc.), particulièrement pour obtenir des icônes exactes ou spécifiques à certaines maquettes lorsque Lucide React ne suffit pas.

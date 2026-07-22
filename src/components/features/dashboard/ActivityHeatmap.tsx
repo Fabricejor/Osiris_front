@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from '@/hooks/useTranslation';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
@@ -22,6 +23,7 @@ function getIntensity(val: number) {
 }
 
 export default function ActivityHeatmap() {
+  const { t, language } = useTranslation();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard-activity-heatmap'],
     queryFn: DashboardService.getActivityHeatmap,
@@ -49,7 +51,7 @@ export default function ActivityHeatmap() {
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col relative">
-      <h3 className="text-sm font-semibold text-gray-800 mb-2">Daily Activity Heatmap (October)</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-2">{t("activity_heatmap_title")}</h3>
       <div className="flex-1 min-h-0 flex flex-col justify-center">
         {/* Month headers */}
         <div className="flex mb-1 ml-5">
@@ -87,8 +89,10 @@ export default function ActivityHeatmap() {
           className="absolute z-50 bg-gray-900 text-white text-[11px] px-2.5 py-1.5 rounded-lg shadow-xl pointer-events-none whitespace-nowrap -translate-x-1/2 -translate-y-full"
           style={{ left: hover.x, top: hover.y }}
         >
-          <p className="font-medium">{months[hover.col]}, Week {hover.row + 1}</p>
-          <p className="text-gray-300">{heatmapData[hover.row][hover.col]} validations</p>
+          <p className="font-medium">
+            {months[hover.col]}, {language === 'fr' ? `Sem. ${hover.row + 1}` : `Week ${hover.row + 1}`}
+          </p>
+          <p className="text-gray-300">{heatmapData[hover.row][hover.col]} {t("records").toLowerCase()}</p>
           <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
         </div>
       )}

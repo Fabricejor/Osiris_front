@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
@@ -19,6 +20,7 @@ import { Loader2 } from 'lucide-react';
 const COLORS = ['#08704F', '#7BC148', '#4ade80', '#86efac', '#bbf7d0'];
 
 export default function OcrPerformanceChart() {
+  const { t } = useTranslation();
   const { data = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-ocr-performance'],
     queryFn: DashboardService.getOcrPerformance,
@@ -42,7 +44,7 @@ export default function OcrPerformanceChart() {
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-2">OCR Performance by Document Type</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-2">{t("ocr_performance")}</h3>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>

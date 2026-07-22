@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-// eslint-disable-next-line
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 const COLORS = ['#08704F', '#7BC148', '#d1fae5'];
 
 export default function OcrConfidenceChart() {
+  const { t } = useTranslation();
   const { data = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-ocr-confidence'],
     queryFn: DashboardService.getOcrConfidence,
@@ -34,7 +35,7 @@ export default function OcrConfidenceChart() {
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-1">OCR Confidence Score</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-1">{t("ocr_confidence")}</h3>
       <div className="flex-1 min-h-0 flex items-center">
         <div className="w-1/2 h-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -50,7 +51,6 @@ export default function OcrConfidenceChart() {
                 strokeWidth={0}
               >
                 {data.map((entry, index) => (
-                  // eslint-disable-next-line
                   <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
