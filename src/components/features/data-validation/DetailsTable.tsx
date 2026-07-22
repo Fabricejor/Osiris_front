@@ -7,10 +7,10 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getPaginationRowModel,
   flexRender,
   createColumnHelper,
   type SortingState,
+  type PaginationState,
 } from '@tanstack/react-table';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
 import type { FolderStatus } from '@/components/ui/folderUI';
@@ -49,10 +49,14 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
   const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [selectedSessionId, setSelectedSessionId] = React.useState<string | null>(null);
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sessions-table'],
-    queryFn: () => SessionsService.getSessions(50, 0),
+    queryKey: ['sessions-table', pagination.pageIndex, pagination.pageSize],
+    queryFn: () => SessionsService.getSessions(pagination.pageSize, pagination.pageIndex * pagination.pageSize),
   });
 
   const columns = useMemo(
@@ -99,14 +103,13 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { sorting },
+    pageCount: data?.total ? Math.ceil(data.total / pagination.pageSize) : -1,
+    state: { sorting, pagination },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: { pageSize: 10 },
-    },
+    manualPagination: true,
   });
 
   return (

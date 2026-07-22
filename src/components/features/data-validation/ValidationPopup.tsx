@@ -23,7 +23,8 @@ import {
   Loader2
 } from 'lucide-react';
 import Image from 'next/image';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { SessionsService } from '@/services/sessions.service';
 import { DonneesExtraitesService } from '@/services/donnees-extraites.service';
 import { PiiCellulesService } from '@/services/pii-cellules.service';
@@ -46,7 +47,8 @@ interface ValidationPopupProps {
 }
 
 export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex, sessionId }: Readonly<ValidationPopupProps>) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const queryClient = useQueryClient();
   const [currentIndex, setCurrentIndex] = useState(initialPageIndex);
   const [activeTab, setActiveTab] = useState<'clinical' | 'pii'>('clinical');
 
@@ -79,6 +81,26 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   if (!isOpen) return null;
 
   const currentPage = pages[currentIndex];
+
+  const validateMutation = useMutation({
+    mutationFn: () => SessionsService.validatePage(currentPage.id.toString()),
+    onSuccess: () => {
+      toast.success(language === 'fr' ? 'Page validée avec succès' : 'Page validated successfully');
+      queryClient.invalidateQueries({ queryKey: ['clinical-data', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['pii-data', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-table'] });
+      
+      if (currentIndex < pages.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        onClose();
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err.message || (language === 'fr' ? 'Erreur lors de la validation' : 'Error during validation'));
+    }
+  });
+
   const confidenceColor = currentPage.confidence < 80 ? 'text-red-500' : 'text-emerald-600';
   const confidenceBg = currentPage.confidence < 80 ? 'bg-red-500' : 'bg-emerald-500';
   const confidenceRing = currentPage.confidence < 80 ? 'border-red-200' : 'border-emerald-200';
@@ -328,10 +350,16 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       {t("save_draft")}
                     </button>
                     <button
-                      onClick={onClose}
-                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-200 flex items-center gap-2"
+                      onClick={() => validateMutation.mutate()}
+                      disabled={validateMutation.isPending}
+                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> {t("validate_record")}
+                      {validateMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                      {t("validate_record")}
                     </button>
                   </div>
                 </div>
