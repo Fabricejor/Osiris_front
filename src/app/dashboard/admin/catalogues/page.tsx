@@ -2,22 +2,66 @@
 
 import React, { useState } from 'react';
 import PageHeader from "@/components/ui/PageHeader";
-import { Search, Plus, Filter, MoreVertical, Library, FileText, Loader2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Search, Plus, Filter, MoreVertical, Library, FileText, Loader2, X } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CataloguesService } from '@/services/catalogues.service';
 
 export default function CataloguesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    type_registre: '',
+    annee_version: new Date().getFullYear(),
+    libelle: '',
+    rangs_par_patient: 1
+  });
+
+  const queryClient = useQueryClient();
 
   const { data: catalogues = [], isLoading, isError } = useQuery({
     queryKey: ['catalogues'],
     queryFn: CataloguesService.getAll,
   });
 
+  const createMutation = useMutation({
+    mutationFn: (data: any) => CataloguesService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalogues'] });
+      setIsAddModalOpen(false);
+      setFormData({ type_registre: '', annee_version: new Date().getFullYear(), libelle: '', rangs_par_patient: 1 });
+      alert("Catalogue créé avec succès !");
+    },
+    onError: (error) => {
+      console.error("Error creating catalogue", error);
+      alert("Erreur lors de la création du catalogue");
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => CataloguesService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalogues'] });
+      setActiveDropdownId(null);
+      alert("Catalogue supprimé avec succès !");
+    },
+    onError: (error) => {
+      console.error("Error deleting catalogue", error);
+      alert("Erreur lors de la suppression du catalogue");
+    }
+  });
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate(formData);
+  };
+
   return (
     <div className="h-full flex flex-col gap-4 p-5 overflow-y-auto bg-gray-50/50" style={{ scrollbarWidth: 'thin' }}>
       <PageHeader title="Catalogues & Modèles">
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#65b741] text-white rounded-lg text-sm font-semibold hover:bg-[#5aa43a] transition-colors shadow-sm">
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#65b741] text-white rounded-lg text-sm font-semibold hover:bg-[#5aa43a] transition-colors shadow-sm">
           <Plus className="w-4 h-4" /> Create Model
         </button>
       </PageHeader>
@@ -98,10 +142,34 @@ export default function CataloguesPage() {
                         {catalogue.est_actif ? 'Published' : 'Draft'}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
-                      <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md hover:bg-gray-100 transition-colors">
+                    <td className="p-4 text-right relative">
+                      <button 
+                        onClick={() => setActiveDropdownId(activeDropdownId === catalogue.id ? null : (catalogue.id ?? null))}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                      >
                         <MoreVertical className="w-4 h-4" />
                       </button>
+
+                      {activeDropdownId === catalogue.id && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setActiveDropdownId(null)}
+                          />
+                          <div className="absolute right-12 top-10 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 text-left">
+                            <button
+                              onClick={() => {
+                                if (catalogue.id && window.confirm('Voulez-vous vraiment supprimer ce catalogue ?')) {
+                                  deleteMutation.mutate(catalogue.id);
+                                }
+                              }}
+                              className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-50"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -110,6 +178,90 @@ export default function CataloguesPage() {
           </table>
         </div>
       </div>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900">Add New Catalogue</h2>
+              <button 
+                onClick={() => setIsAddModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddSubmit} className="p-6 space-y-4 text-left">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type Registre *</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
+                  placeholder="e.g. CONSULTATION"
+                  value={formData.type_registre}
+                  onChange={e => setFormData({...formData, type_registre: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Année / Version *</label>
+                <input 
+                  type="number" 
+                  required
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
+                  placeholder="e.g. 2024"
+                  value={formData.annee_version}
+                  onChange={e => setFormData({...formData, annee_version: parseInt(e.target.value) || new Date().getFullYear()})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Libellé *</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
+                  placeholder="e.g. Registre des Consultations"
+                  value={formData.libelle}
+                  onChange={e => setFormData({...formData, libelle: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rangs par patient *</label>
+                <input 
+                  type="number" 
+                  required
+                  min="1"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
+                  value={formData.rangs_par_patient}
+                  onChange={e => setFormData({...formData, rangs_par_patient: parseInt(e.target.value) || 1})}
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 py-2 px-4 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="flex-1 py-2 px-4 bg-[#65b741] text-white rounded-lg text-sm font-medium hover:bg-[#5aa43a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Create Catalogue
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
