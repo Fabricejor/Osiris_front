@@ -65,7 +65,7 @@ export function Navbar() {
           {/* LEFT: Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <Image
-              src="/images/Osiris  icon+text.PNG"
+              src="/images/osiris-icon-text.png"
               alt="OSIRIS Logo"
               width={130}
               height={38}

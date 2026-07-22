@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
@@ -18,11 +19,15 @@ import {
   CheckCircle2,
   Flag,
   EyeOff,
-  Check,
-  AlertCircle,
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
 import Image from 'next/image';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { SessionsService } from '@/services/sessions.service';
+import { DonneesExtraitesService } from '@/services/donnees-extraites.service';
+import { PiiCellulesService } from '@/services/pii-cellules.service';
 
 interface ScannedPage {
   id: number;
@@ -36,13 +41,36 @@ interface ScannedPage {
 interface ValidationPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  pages: readonly ScannedPage[];
+  pages: readonly any[];
   initialPageIndex: number;
+  sessionId: string;
 }
 
-export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex }: Readonly<ValidationPopupProps>) {
+export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex, sessionId }: Readonly<ValidationPopupProps>) {
+  const { t, language } = useTranslation();
+  const queryClient = useQueryClient();
   const [currentIndex, setCurrentIndex] = useState(initialPageIndex);
-  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'clinical' | 'pii'>('clinical');
+
+  // Load clinical data
+  const { data: clinicalData = [], isLoading: isLoadingClinical } = useQuery({
+    queryKey: ['clinical-data', sessionId],
+    queryFn: async () => {
+      const res = await DonneesExtraitesService.getDonneesAValider(50, 0, 'a_valider', sessionId);
+      return res.items;
+    },
+    enabled: isOpen && activeTab === 'clinical',
+  });
+
+  // Load PII data
+  const { data: piiData = [], isLoading: isLoadingPii } = useQuery({
+    queryKey: ['pii-data', sessionId],
+    queryFn: async () => {
+      const res = await PiiCellulesService.getCellulesASaisir(50, 0, 'a_saisir', sessionId);
+      return res.items;
+    },
+    enabled: isOpen && activeTab === 'pii',
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -53,6 +81,26 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   if (!isOpen) return null;
 
   const currentPage = pages[currentIndex];
+
+  const validateMutation = useMutation({
+    mutationFn: () => SessionsService.validatePage(currentPage.id.toString()),
+    onSuccess: () => {
+      toast.success(language === 'fr' ? 'Page validée avec succès' : 'Page validated successfully');
+      queryClient.invalidateQueries({ queryKey: ['clinical-data', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['pii-data', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-table'] });
+      
+      if (currentIndex < pages.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        onClose();
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err.message || (language === 'fr' ? 'Erreur lors de la validation' : 'Error during validation'));
+    }
+  });
+
   const confidenceColor = currentPage.confidence < 80 ? 'text-red-500' : 'text-emerald-600';
   const confidenceBg = currentPage.confidence < 80 ? 'bg-red-500' : 'bg-emerald-500';
   const confidenceRing = currentPage.confidence < 80 ? 'border-red-200' : 'border-emerald-200';
@@ -124,16 +172,13 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                         <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <div className="relative w-full h-full pointer-events-none p-4">
                             <Image
-                              src={currentPage.image}
-                              alt={currentPage.name}
+                              src={currentPage.url_image || currentPage.image}
+                              alt={currentPage.nom_fichier || currentPage.name}
                               fill
                               className="object-contain p-4"
                               priority
                             />
-                            {/* Mock highlight bounding box */}
-                            {currentPage.status === 'review' && (
-                              <div className="absolute top-[40%] left-[30%] w-[20%] h-[5%] border-2 border-yellow-400 bg-yellow-400/20 rounded z-10" />
-                            )}
+
                           </div>
                         </TransformComponent>
                       </>
@@ -156,9 +201,8 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       <button
                         key={i}
                         onClick={() => setCurrentIndex(i)}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${
-                          i === currentIndex ? 'bg-emerald-400 w-4' : 'bg-white/30 hover:bg-white/50'
-                        }`}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentIndex ? 'bg-emerald-400 w-4' : 'bg-white/30 hover:bg-white/50'
+                          }`}
                       />
                     ))}
                   </div>
@@ -188,8 +232,8 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 flex items-start justify-between shrink-0">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">{t("record_validation")}</h2>
-                    <p className="text-sm text-gray-500">{t("anc_register_entry")}</p>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">Record Validation</h2>
+                    <p className="text-sm text-gray-500">{currentPage.nom_fichier || currentPage.name} • {currentPage.id_session_scan || currentPage.batch}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     {/* Confidence indicator */}
@@ -210,216 +254,94 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                   </div>
                 </div>
 
-                {/* Form Content */}
+                {/* Tabs */}
+                <div className="flex px-6 border-b border-gray-100 bg-gray-50/50">
+                  <button
+                    onClick={() => setActiveTab('clinical')}
+                    className={`px-4 py-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'clinical' ? 'border-[#65b741] text-[#65b741]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  >
+                    <Activity className="w-4 h-4" />
+                    Clinical Data
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('pii')}
+                    className={`px-4 py-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'pii' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  >
+                    <ShieldAlert className="w-4 h-4" />
+                    PII Data
+                    {piiData.filter((p: any) => p.statut === 'A_SAISIR').length > 0 && (
+                      <span className="ml-1 bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full text-[10px]">
+                        {piiData.filter((p: any) => p.statut === 'A_SAISIR').length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Form Scrollable Content */}
                 <div className="flex-1 overflow-y-auto p-8 space-y-8" style={{ scrollbarWidth: 'thin' }}>
 
-                  {/* Section 1: Patient Information */}
-                  <section>
-                    <h3 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 pb-2 border-b border-gray-100">
-                      <div className="w-6 h-6 rounded-md bg-violet-50 flex items-center justify-center">
-                        <User className="w-3.5 h-3.5 text-violet-500" />
-                      </div>
-                      {t("patient_info")}
-                    </h3>
+                  {activeTab === 'pii' && (
+                    <section>
+                      <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        <User className="w-4 h-4" /> Patient Information (PII)
+                      </h3>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      {/* ANC Number */}
-                      <div className="col-span-2 bg-emerald-50/10 border border-emerald-100/80 rounded-2xl p-3 flex flex-col justify-between hover:shadow-xs transition-shadow focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[10px] font-bold text-emerald-700/80 uppercase tracking-wider">{t("anc_number")}</span>
-                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100/40 px-1.5 py-0.5 rounded-sm uppercase tracking-wide">{t("validated")}</span>
-                        </div>
-                        <div className="relative flex items-center mt-1">
-                          <input 
-                            id="anc-number" 
-                            type="text" 
-                            defaultValue="ANC-2023-8492" 
-                            className="w-full bg-transparent border-b border-transparent focus:border-b-emerald-500 py-0.5 text-sm font-bold text-gray-800 outline-none transition-all" 
-                          />
-                        </div>
+                      <div className="space-y-4">
+                        {isLoadingPii ? (
+                          <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>
+                        ) : piiData.length > 0 ? (
+                          piiData.map((pii) => (
+                            <div key={pii.id} className="relative">
+                              <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">{pii.nom_champ || 'Champ'}</label>
+                              <div className="flex items-center">
+                                <div className={`w-1.5 h-10 ${pii.score_confiance && pii.score_confiance < 80 ? 'bg-yellow-400' : 'bg-[#65b741]'} rounded-r-md absolute left-0`} />
+                                <input type="text" defaultValue={pii.valeur_saisie} className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-gray-500 text-center py-8">Aucune donnée PII extraite.</div>
+                        )}
                       </div>
+                    </section>
+                  )}
 
-                      {/* Age */}
-                      <div className="col-span-1 bg-emerald-50/10 border border-emerald-100/80 rounded-2xl p-3 flex flex-col justify-between hover:shadow-xs transition-shadow focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[10px] font-bold text-emerald-700/80 uppercase tracking-wider">{t("age")}</span>
-                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100/40 px-1.5 py-0.5 rounded-sm uppercase tracking-wide">28 y/o</span>
-                        </div>
-                        <div className="relative flex items-center mt-1">
-                          <input 
-                            id="age" 
-                            type="text" 
-                            defaultValue="28" 
-                            className="w-full bg-transparent border-b border-transparent focus:border-b-emerald-500 py-0.5 text-sm font-bold text-gray-800 outline-none transition-all text-center" 
-                          />
-                        </div>
+                  {activeTab === 'clinical' && (
+                    <section>
+                      <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        <Activity className="w-4 h-4" /> Clinical Data
+                      </h3>
+
+                      <div className="space-y-6">
+                        {isLoadingClinical ? (
+                          <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[#65b741]" /></div>
+                        ) : clinicalData.length > 0 ? (
+                          clinicalData.map((data) => (
+                            <div key={data.id} className="relative">
+                              <label className="block text-xs font-bold text-gray-500 mb-1 ml-4">Extracted Value</label>
+                              <div className="flex items-center">
+                                <div className={`w-1.5 h-10 ${(data.score_confiance ?? 0) < 80 ? 'bg-red-500' : 'bg-[#65b741]'} rounded-r-md absolute left-0`} />
+                                <input type="text" defaultValue={data.valeur_extraite} className="w-full ml-4 pl-3 pr-4 py-2 border border-gray-200 rounded-lg text-gray-800 font-medium focus:ring-2 focus:ring-[#65b741] focus:border-transparent outline-none" />
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-gray-500 text-center py-8">Aucune donnée clinique extraite.</div>
+                        )}
                       </div>
+                    </section>
+                  )}
 
-                      {/* Patient Name */}
-                      <div className="col-span-3 bg-emerald-50/10 border border-emerald-100/80 rounded-2xl p-3 flex flex-col justify-between hover:shadow-xs transition-shadow focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[10px] font-bold text-emerald-700/80 uppercase tracking-wider">{t("patient_name")}</span>
-                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100/40 px-1.5 py-0.5 rounded-sm uppercase tracking-wide">{t("validated")}</span>
-                        </div>
-                        <div className="relative flex items-center mt-1">
-                          <input 
-                            id="patient-name" 
-                            type="text" 
-                            defaultValue="Fatoumata Diallo" 
-                            className="w-full bg-transparent border-b border-transparent focus:border-b-emerald-500 py-0.5 text-sm font-bold text-gray-800 outline-none transition-all" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Parity (Warning card) */}
-                      <div className="col-span-3 bg-amber-50/10 border border-amber-200/70 rounded-2xl p-3.5 flex flex-col justify-between hover:shadow-xs transition-shadow focus-within:border-amber-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-amber-500/5">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <label htmlFor="parity" className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
-                            <AlertCircle className="w-3.5 h-3.5 text-amber-500" /> {t("parity")}
-                          </label>
-                          <span className="text-[10px] font-bold text-amber-600 uppercase bg-amber-100/50 px-2 py-0.5 rounded-md">
-                            {t("review")}
-                          </span>
-                        </div>
-                        <div className="relative flex items-center">
-                          <input 
-                            id="parity" 
-                            type="text" 
-                            defaultValue="G3P2" 
-                            className="w-full pl-3 pr-14 py-1.5 bg-amber-50/20 border border-amber-200/50 focus:border-amber-500 focus:bg-white rounded-xl text-sm font-bold text-gray-800 outline-none transition-all" 
-                          />
-                          <span className="text-[10px] font-bold text-amber-600 absolute right-3 pointer-events-none">G/P</span>
-                        </div>
-                        <p className="text-[10px] text-amber-600/90 mt-2 font-medium flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-500" /> {t("low_confidence_warning")}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Section 2: Clinical Data */}
-                  <section className="mt-6">
-                    <h3 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 pb-2 border-b border-gray-100">
-                      <div className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center">
-                        <Activity className="w-3.5 h-3.5 text-sky-500" />
-                      </div>
-                      {t("clinical_data")}
-                    </h3>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      {/* Date of Visit */}
-                      <div className="col-span-2 bg-emerald-50/10 border border-emerald-100/80 rounded-2xl p-3 flex flex-col justify-between hover:shadow-xs transition-shadow focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[10px] font-bold text-emerald-700/80 uppercase tracking-wider">{t("date_of_visit")}</span>
-                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100/40 px-1.5 py-0.5 rounded-sm uppercase tracking-wide">{t("validated")}</span>
-                        </div>
-                        <div className="relative flex items-center mt-1">
-                          <input 
-                            id="date-of-visit" 
-                            type="text" 
-                            defaultValue="10/24/2023" 
-                            className="w-full bg-transparent border-b border-transparent focus:border-b-emerald-500 py-0.5 text-sm font-bold text-gray-800 outline-none transition-all" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Gest. Age */}
-                      <div className="col-span-1 bg-emerald-50/10 border border-emerald-100/80 rounded-2xl p-3 flex flex-col justify-between hover:shadow-xs transition-shadow focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[10px] font-bold text-emerald-700/80 uppercase tracking-wider">{t("gest_age")}</span>
-                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100/40 px-1.5 py-0.5 rounded-sm uppercase tracking-wide">24 wks</span>
-                        </div>
-                        <div className="relative flex items-center mt-1">
-                          <input 
-                            id="gest-age" 
-                            type="text" 
-                            defaultValue="24" 
-                            className="w-full bg-transparent border-b border-transparent focus:border-b-emerald-500 py-0.5 text-sm font-bold text-gray-800 outline-none transition-all text-center" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Error field — Weight */}
-                      <div className="col-span-3 bg-rose-50/20 border border-rose-200/80 rounded-2xl p-3.5 flex flex-col justify-between hover:shadow-xs transition-shadow relative focus-within:border-rose-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-rose-500/5">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">{t("weight")}</span>
-                          <span className="text-[9px] font-bold text-rose-600 bg-rose-100/60 px-1.5 py-0.5 rounded-sm uppercase flex items-center gap-1 animate-pulse">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                            {t("review_needed")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="relative flex items-center flex-1">
-                            <input 
-                              id="weight" 
-                              type="text" 
-                              defaultValue="6?" 
-                              className="w-full bg-transparent border-b-2 border-rose-300 focus:border-rose-500 py-1 text-sm font-black text-rose-700 focus:text-gray-900 outline-none transition-all" 
-                            />
-                            <span className="text-[10px] font-bold text-rose-500 absolute right-1 pointer-events-none">kg</span>
-                          </div>
-                          <button className="p-2.5 border border-rose-200 bg-white hover:bg-rose-50 rounded-xl transition-colors text-rose-500 hover:border-rose-300 shrink-0 shadow-xs" title="Hide annotation">
-                            <EyeOff className="w-4 h-4" />
-                          </button>
-                          <button className="flex items-center gap-1 px-3.5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap shrink-0 shadow-sm shadow-rose-200">
-                            <Maximize className="w-3.5 h-3.5" /> {t("locate")}
-                          </button>
-                        </div>
-                        <p className="text-[10px] text-rose-600 mt-2 font-medium flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-rose-500" /> {t("system_read_warning")}
-                        </p>
-                      </div>
-
-                      {/* Warning field — Blood Pressure */}
-                      <div className="col-span-3 bg-amber-50/10 border border-amber-200/70 rounded-2xl p-3.5 flex flex-col justify-between hover:shadow-xs transition-shadow focus-within:border-amber-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-amber-500/5">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <label htmlFor="bp-systolic" className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
-                            <AlertCircle className="w-3.5 h-3.5 text-amber-500" /> {t("blood_pressure")}
-                          </label>
-                          <span className="text-[10px] font-bold text-amber-600 uppercase bg-amber-100/50 px-2 py-0.5 rounded-md">
-                            {t("review")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex items-center w-1/2">
-                            <input 
-                              id="bp-systolic" 
-                              type="text" 
-                              defaultValue="120" 
-                              className="w-full bg-transparent border-b border-transparent focus:border-amber-500 py-0.5 text-sm font-bold text-gray-800 outline-none transition-all text-center" 
-                            />
-                            <span className="text-[9px] font-bold text-amber-600 absolute right-3 pointer-events-none">sys</span>
-                          </div>
-                          <span className="text-gray-400 font-bold text-lg px-1">/</span>
-                          <div className="relative flex items-center w-1/2">
-                            <input 
-                              type="text" 
-                              aria-label="bp-diastolic" 
-                              defaultValue="80" 
-                              className="w-full bg-transparent border-b border-transparent focus:border-amber-500 py-0.5 text-sm font-bold text-gray-800 outline-none transition-all text-center" 
-                            />
-                            <span className="text-[9px] font-bold text-amber-600 absolute right-3 pointer-events-none">dia</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-amber-700 bg-amber-100/30 px-2.5 py-1.5 rounded-lg border border-amber-200/50 ml-1">
-                            mmHg
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Spacer for footer */}
+                  {/* Padding for sticky footer */}
                   <div className="h-10" />
                 </div>
 
-                {/* ── Sticky Footer ────────────────────────── */}
-                <div className="p-5 bg-white border-t border-gray-100 flex items-center justify-between shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.06)] z-20">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center">
-                      <Flag className="w-3.5 h-3.5 text-red-500" />
-                    </div>
+                {/* Sticky Footer */}
+                <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
+                  <div className="flex items-center gap-3">
+                    <Flag className="w-4 h-4 text-gray-400" />
                     <span className="text-sm font-bold text-gray-700">
-                      {t("fields_require_review", { count: 1 })}
+                      {piiData.filter((p: any) => p.statut === 'A_SAISIR').length + clinicalData.filter((c: any) => c.statut === 'A_VALIDER').length} field(s) require review
                     </span>
                   </div>
 
@@ -428,10 +350,16 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       {t("save_draft")}
                     </button>
                     <button
-                      onClick={onClose}
-                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-200 flex items-center gap-2"
+                      onClick={() => validateMutation.mutate()}
+                      disabled={validateMutation.isPending}
+                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> {t("validate_record")}
+                      {validateMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                      {t("validate_record")}
                     </button>
                   </div>
                 </div>

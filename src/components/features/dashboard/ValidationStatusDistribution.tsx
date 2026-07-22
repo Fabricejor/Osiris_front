@@ -4,13 +4,17 @@ import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useTranslation } from '@/hooks/useTranslation';
 
-const dataKeys = [
-  { key: 'validated', value: 75, color: '#22c55e' },
-  { key: 'pending', value: 15, color: '#f59e0b' },
-  { key: 'rejected', value: 10, color: '#ef4444' },
-];
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 const RADIAN = Math.PI / 180;
+
+const STATUS_COLORS: Record<string, string> = {
+  'Verified': '#22c55e',
+  'Pending': '#f59e0b',
+  'Rejected': '#ef4444',
+};
 
 function renderCustomLabel({
   cx,
@@ -33,13 +37,26 @@ function renderCustomLabel({
 
 export default function ValidationStatusDistribution() {
   const { t } = useTranslation();
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-validation-status'],
+    queryFn: DashboardService.getValidationStatus,
+  });
 
-  const data = useMemo(() => {
-    return dataKeys.map(item => ({
-      ...item,
-      name: t(item.key as any)
-    }));
-  }, [t]);
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
+
+  if (isError || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
@@ -52,15 +69,15 @@ export default function ValidationStatusDistribution() {
                 data={data}
                 cx="50%"
                 cy="50%"
-                outerRadius="80%"
-                dataKey="value"
                 labelLine={false}
                 label={renderCustomLabel}
-                strokeWidth={2}
-                stroke="#fff"
+                outerRadius="80%"
+                fill="#8884d8"
+                dataKey="value"
+                strokeWidth={0}
               >
-                {data.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
+                {data.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || '#9ca3af'} />
                 ))}
               </Pie>
               <Tooltip
@@ -81,7 +98,7 @@ export default function ValidationStatusDistribution() {
             <div key={entry.name} className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: entry.color }}
+                style={{ backgroundColor: STATUS_COLORS[entry.name] || '#9ca3af' }}
               />
               <span className="text-[11px] text-gray-600">{entry.name}</span>
             </div>

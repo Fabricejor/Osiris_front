@@ -12,31 +12,32 @@ import {
 } from 'recharts';
 import { useTranslation } from '@/hooks/useTranslation';
 
-const rawData = [
-  { nameKey: 1, value: 22 },
-  { nameKey: 2, value: 25 },
-  { nameKey: 3, value: 28 },
-  { nameKey: 4, value: 30 },
-  { nameKey: 5, value: 29 },
-  { nameKey: 6, value: 32 },
-  { nameKey: 7, value: 35 },
-  { nameKey: 8, value: 38 },
-  { nameKey: 9, value: 40 },
-  { nameKey: 10, value: 42 },
-  { nameKey: 11, value: 44 },
-  { nameKey: 12, value: 45 },
-];
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 export default function ProcessingEfficiencyChart() {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-processing-efficiency'],
+    queryFn: DashboardService.getProcessingEfficiency,
+  });
 
-  const data = useMemo(() => {
-    return rawData.map(d => ({
-      ...d,
-      name: language === 'fr' ? `Sem. ${d.nameKey}` : `Week ${d.nameKey}`
-    }));
-  }, [language]);
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
 
+  if (isError || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
       <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("processing_efficiency")}</h3>

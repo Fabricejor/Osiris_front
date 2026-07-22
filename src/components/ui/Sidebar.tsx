@@ -14,6 +14,10 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Users,
+  Building2,
+  Library,
+  Download,
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -58,6 +62,37 @@ const secondaryNavItems: NavItem[] = [
     icon: History,
     color: 'text-orange-300',
     iconBg: 'bg-orange-400/20',
+  },
+];
+
+const adminNavItems: NavItem[] = [
+  {
+    name: 'Users',
+    href: '/dashboard/admin/users',
+    icon: Users,
+    color: 'text-indigo-300',
+    iconBg: 'bg-indigo-400/20',
+  },
+  {
+    name: 'Structures',
+    href: '/dashboard/admin/structures',
+    icon: Building2,
+    color: 'text-pink-300',
+    iconBg: 'bg-pink-400/20',
+  },
+  {
+    name: 'Catalogues',
+    href: '/dashboard/admin/catalogues',
+    icon: Library,
+    color: 'text-yellow-300',
+    iconBg: 'bg-yellow-400/20',
+  },
+  {
+    name: 'Data Export',
+    href: '/dashboard/admin/exports',
+    icon: Download,
+    color: 'text-amber-300',
+    iconBg: 'bg-amber-400/20',
   },
 ];
 
@@ -254,7 +289,7 @@ export default function Sidebar() {
         ) : (
           <div className="bg-white rounded-xl shadow-md flex items-center justify-center px-4 py-2">
             <Image
-              src="/images/Osiris  icon+text.PNG"
+              src="/images/osiris-icon-text.png"
               alt="OSIRIS Logo"
               width={140}
               height={40}
@@ -287,6 +322,16 @@ export default function Sidebar() {
             item={item}
             isCollapsed={isCollapsed}
             isActive={pathname === item.href}
+          />
+        ))}
+
+        <SectionLabel label="Administration" isCollapsed={isCollapsed} />
+        {adminNavItems.map((item) => (
+          <NavLink
+            key={item.href}
+            item={item}
+            isCollapsed={isCollapsed}
+            isActive={pathname.startsWith(item.href)}
           />
         ))}
       </nav>

@@ -1,18 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-
-const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const monthsFr = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-const weeks = [1, 2, 3, 4, 5, 6];
-
-// Simulated activity values
-function generateHeatmapData() {
-  return weeks.map(() =>
-    monthsEn.map(() => Math.floor(Math.random() * 120))
-  );
-}
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 const INTENSITY_COLORS = [
   'bg-gray-100',
@@ -30,17 +22,32 @@ function getIntensity(val: number) {
   return 4;
 }
 
-const heatmapData = generateHeatmapData();
-
-type HoverInfo = { row: number; col: number; x: number; y: number } | null;
-
 export default function ActivityHeatmap() {
-  const [hover, setHover] = useState<HoverInfo>(null);
   const { t, language } = useTranslation();
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard-activity-heatmap'],
+    queryFn: DashboardService.getActivityHeatmap,
+  });
 
-  const months = useMemo(() => {
-    return language === 'fr' ? monthsFr : monthsEn;
-  }, [language]);
+  const [hover, setHover] = useState<{ row: number; col: number; x: number; y: number } | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
+
+  if (isError || !data || !data.data) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
+
+  const { months, data: heatmapData } = data;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col relative">

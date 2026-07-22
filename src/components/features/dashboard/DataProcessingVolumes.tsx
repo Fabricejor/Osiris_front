@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from '@/hooks/useTranslation';
 import React from 'react';
 import {
   ComposedChart,
@@ -12,31 +13,35 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { useTranslation } from '@/hooks/useTranslation';
 
-const data = [
-  { date: 'Mar 18', records: 4500, rate: 18 },
-  { date: 'Mar 19', records: 5200, rate: 20 },
-  { date: 'Mar 10', records: 4800, rate: 19 },
-  { date: 'Mar 11', records: 5500, rate: 22 },
-  { date: 'Mar 12', records: 6200, rate: 25 },
-  { date: 'Mar 13', records: 7000, rate: 28 },
-  { date: 'Mar 14', records: 6800, rate: 27 },
-  { date: 'Mar 15', records: 12500, rate: 50 },
-  { date: 'Mar 16', records: 8500, rate: 34 },
-  { date: 'Mar 17', records: 9000, rate: 36 },
-  { date: 'Mar 18', records: 7500, rate: 30 },
-  { date: 'Mar 19', records: 8200, rate: 33 },
-  { date: 'Mar 20', records: 7000, rate: 28 },
-  { date: 'Mar 23', records: 8800, rate: 35 },
-  { date: 'Mar 24', records: 9500, rate: 38 },
-  { date: 'Mar 25', records: 10000, rate: 40 },
-];
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 const BAR_COLORS = ['#08704F', '#0a8a63', '#7BC148', '#4ade80', '#08704F', '#0a8a63'];
 
 export default function DataProcessingVolumes() {
   const { t } = useTranslation();
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-processing-volumes'],
+    queryFn: DashboardService.getProcessingVolumes,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
+
+  if (isError || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">

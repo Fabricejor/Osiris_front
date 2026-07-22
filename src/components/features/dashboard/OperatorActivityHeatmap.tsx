@@ -1,18 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-
-const daysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const daysFr = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-const hours = ['8 AM', '10 AM', '12 PM', '2 PM', '4 PM', '6 PM', '8 PM'];
-
-// Generate random activity data (0-4 intensity)
-function generateData() {
-  return daysEn.map(() =>
-    daysEn.map(() => Math.floor(Math.random() * 5))
-  );
-}
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 const levelsEn = ['Very Low', 'Low', 'Moderate', 'High', 'Very High'];
 const levelsFr = ['Très faible', 'Faible', 'Modérée', 'Élevée', 'Très élevée'];
@@ -25,25 +17,33 @@ const COLORS = [
   'bg-red-500',     // 4 - Very High
 ];
 
-const heatData = generateData();
-
-type HoverInfo = { row: number; col: number; x: number; y: number } | null;
-
 export default function OperatorActivityHeatmap() {
-  const [hover, setHover] = useState<HoverInfo>(null);
   const { t, language } = useTranslation();
+  const LEVEL_LABELS = language === 'fr' ? levelsFr : levelsEn;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard-operator-activity-heatmap'],
+    queryFn: DashboardService.getOperatorActivityHeatmap,
+  });
 
-  const columns = useMemo(() => {
-    return language === 'fr' ? daysFr : daysEn;
-  }, [language]);
+  const [hover, setHover] = useState<{ row: number; col: number; x: number; y: number } | null>(null);
 
-  const rows = useMemo(() => {
-    return language === 'fr' ? daysFr : daysEn;
-  }, [language]);
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
 
-  const levelLabels = useMemo(() => {
-    return language === 'fr' ? levelsFr : levelsEn;
-  }, [language]);
+  if (isError || !data || !data.data) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
+
+  const { hours, days: columns, data: heatmapData } = data;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col relative">
@@ -62,10 +62,10 @@ export default function OperatorActivityHeatmap() {
 
         {/* Rows */}
         <div className="flex-1 flex flex-col gap-[3px] justify-center min-h-0 py-1">
-          {heatData.map((row, rowIndex) => (
-            <div key={`row-${rows[rowIndex]}-${rowIndex}`} className="flex-1 flex items-stretch gap-[3px] min-h-0">
+          {heatmapData.map((row, rowIndex) => (
+            <div key={`row-${hours[rowIndex]}-${rowIndex}`} className="flex-1 flex items-stretch gap-[3px] min-h-0">
               <span className="text-[10px] text-gray-500 w-10 text-right pr-2 shrink-0 flex items-center justify-end">
-                {rows[rowIndex]}
+                {hours[rowIndex]}
               </span>
               {row.map((level, colIndex) => (
                 <div
@@ -98,8 +98,8 @@ export default function OperatorActivityHeatmap() {
           className="absolute z-50 bg-gray-900 text-white text-[11px] px-2.5 py-1.5 rounded-lg shadow-xl pointer-events-none whitespace-nowrap -translate-x-1/2 -translate-y-full"
           style={{ left: hover.x, top: hover.y }}
         >
-          <p className="font-medium">{rows[hover.row]} — {columns[hover.col]}</p>
-          <p className="text-gray-300">Activity: {levelLabels[heatData[hover.row][hover.col]]}</p>
+          <p className="font-medium">{hours[hover.row]} — {columns[hover.col]}</p>
+          <p className="text-gray-300">Activity: {LEVEL_LABELS[heatmapData[hover.row][hover.col]]}</p>
           <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
         </div>
       )}

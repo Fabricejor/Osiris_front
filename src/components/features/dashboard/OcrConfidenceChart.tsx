@@ -4,23 +4,34 @@ import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useTranslation } from '@/hooks/useTranslation';
 
-const rawData = [
-  { labelEn: 'High 75%', labelFr: 'Haute 75%', value: 75 },
-  { labelEn: 'Medium 20%', labelFr: 'Moyenne 20%', value: 20 },
-  { labelEn: 'Low 5%', labelFr: 'Basse 5%', value: 5 },
-];
+import { useQuery } from '@tanstack/react-query';
+import { DashboardService } from '@/services/dashboard.service';
+import { Loader2 } from 'lucide-react';
 
 const COLORS = ['#08704F', '#7BC148', '#d1fae5'];
 
 export default function OcrConfidenceChart() {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ['dashboard-ocr-confidence'],
+    queryFn: DashboardService.getOcrConfidence,
+  });
 
-  const data = useMemo(() => {
-    return rawData.map(d => ({
-      ...d,
-      name: language === 'fr' ? d.labelFr : d.labelEn
-    }));
-  }, [language]);
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+      </div>
+    );
+  }
+
+  if (isError || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
+        <p className="text-gray-500 text-sm">No data available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
