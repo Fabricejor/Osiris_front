@@ -11,7 +11,7 @@ const ContentSecurityPolicy = [
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: blob: https://fonts.gstatic.com",
-  `connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://storage.googleapis.com`,
+  `connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://apiosiris.qsoul.africa https://*.qsoul.africa https://storage.googleapis.com`,
   "media-src 'self' blob: data:",
 ].join('; ');
 

@@ -31,10 +31,16 @@ export default function LauchPlateformBanner() {
 
           <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between h-full">
             
-            {/* Left: Image */}
-            <div className="shrink-0 relative w-full md:w-[35%] h-[25vh] md:h-[28vh] lg:h-[32vh]">
+            {/* Left: Image with horizontal gradient fade */}
+            <div 
+              className="shrink-0 relative w-full md:w-[35%] h-[25vh] md:h-[28vh] lg:h-[32vh]"
+              style={{
+                maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+              }}
+            >
               <Image
-                src="/images/Image 1 (1).png"
+                src="/images/banniere footer.png"
                 alt="Transform Healthcare"
                 fill
                 className="object-contain p-2 md:p-3"

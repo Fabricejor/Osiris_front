@@ -1,19 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Activity, ShieldCheck, HeartPulse, RefreshCw, BarChart } from "lucide-react";
-
-// Dynamically load the 3D model
-const Advantages3DModel = dynamic(() => import("./Advantages3DModel"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="w-12 h-12 rounded-full border-2 border-[#7BC148]/30 border-t-[#7BC148] animate-spin" />
-    </div>
-  ),
-});
 
 export default function Advantages() {
   const { t } = useTranslation();
@@ -39,14 +28,15 @@ export default function Advantages() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col lg:flex-row transform-gpu h-auto lg:min-h-[60vh]"
         >
-          {/* Left Column - 3D Model with slightly gray/green background */}
-          <div className="lg:w-1/2 bg-[#f4f7f5] flex items-center justify-center min-h-[350px] lg:min-h-full relative overflow-hidden">
-             {/* Optional decorative background circle */}
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-[#e9f2eb] rounded-full blur-3xl opacity-60"></div>
-             
-             <div className="absolute inset-0 w-full h-full z-10">
-               <Advantages3DModel />
-             </div>
+          {/* Left Column - Full Bleed Image */}
+          <div className="lg:w-1/2 min-h-[380px] sm:min-h-[440px] lg:min-h-full relative overflow-hidden group">
+            <img
+              src="/images/protection maternel sante.png"
+              alt="OSIRIS Protection Maternelle et Santé"
+              className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+            />
+            {/* Subtle overlay gradient for rich contrast */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
           </div>
 
           {/* Right Column - Text and bullets */}
