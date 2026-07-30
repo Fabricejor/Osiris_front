@@ -100,7 +100,7 @@ export default function DataSecure() {
             >
               <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-white/15">
                 <Image
-                  src="/images/Data-secure showcase dashboard .png"
+                  src="/images/Mockup mackbook osiriis.png"
                   alt="Osiris Dashboard - Secure Data Management"
                   width={1400}
                   height={900}
