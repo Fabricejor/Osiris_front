@@ -10,73 +10,76 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { useTranslation } from '@/hooks/useTranslation';
+import { ArrowUpDown, Stethoscope } from 'lucide-react';
 
 type Operator = {
   name: string;
+  role: string;
+  facility: string;
   totalValidations: number;
   avgTime: string;
   efficiencyScore: number;
-  status: 'Active' | 'On Track' | 'Inactive';
+  status: 'Actif' | 'En attente';
 };
 
 const operatorData: Operator[] = [
-  { name: 'L. Johnson', totalValidations: 9000, avgTime: '45s', efficiencyScore: 96, status: 'Active' },
-  { name: 'M. Lee', totalValidations: 14500, avgTime: '45s', efficiencyScore: 98, status: 'On Track' },
-  { name: 'K. Davis', totalValidations: 3000, avgTime: '45s', efficiencyScore: 80, status: 'On Track' },
-  { name: 'L. Johnson', totalValidations: 3000, avgTime: '45s', efficiencyScore: 84, status: 'Active' },
-  { name: 'A. Loure', totalValidations: 2700, avgTime: '20s', efficiencyScore: 78, status: 'Active' },
+  { name: 'Dr. Aissatou Diop', role: 'Médecin Superviseur', facility: 'CS Médina', totalValidations: 184, avgTime: '42s', efficiencyScore: 99.2, status: 'Actif' },
+  { name: 'Mme Fatou Ndiaye', role: 'Sage-femme Maîtresse', facility: 'PS Potou', totalValidations: 240, avgTime: '38s', efficiencyScore: 98.6, status: 'Actif' },
+  { name: 'Mme Aminata Diallo', role: 'Sage-femme d\'État', facility: 'HR Fatick', totalValidations: 195, avgTime: '45s', efficiencyScore: 97.4, status: 'Actif' },
+  { name: 'M. Ibrahima Sarr', role: 'Infirmier Chef de Poste', facility: 'PS Gandiol', totalValidations: 142, avgTime: '50s', efficiencyScore: 96.8, status: 'Actif' },
+  { name: 'Mme Khady Fall', role: 'Sage-femme', facility: 'CS Roi Baudouin', totalValidations: 110, avgTime: '40s', efficiencyScore: 98.0, status: 'Actif' },
 ];
 
 const columnHelper = createColumnHelper<Operator>();
 
-const statusStyles: Record<string, string> = {
-  Active: 'bg-emerald-50 text-emerald-700',
-  'On Track': 'bg-emerald-50 text-emerald-700',
-  Inactive: 'bg-gray-100 text-gray-600',
-};
-
 export default function OperatorEfficiencyTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const { t } = useTranslation();
-
-  const getStatusLabel = (status: string) => {
-    if (status === 'Inactive') return t('efficiency_status_inactive');
-    return t('efficiency_status_active');
-  };
 
   const columns = useMemo(
     () => [
       columnHelper.accessor('name', {
-        header: t("efficiency_column_operator"),
-        cell: (info) => <span className="font-medium text-gray-800">{info.getValue()}</span>,
+        header: 'Praticien / Validateur',
+        cell: (info) => (
+          <div>
+            <span className="font-bold text-gray-900 block">{info.getValue()}</span>
+            <span className="text-[11px] text-gray-500">{info.row.original.role}</span>
+          </div>
+        ),
+      }),
+      columnHelper.accessor('facility', {
+        header: 'Structure Sanitaire',
+        cell: (info) => <span className="font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded text-xs">{info.getValue()}</span>,
       }),
       columnHelper.accessor('totalValidations', {
-        header: t("efficiency_column_validated"),
-        cell: (info) => info.getValue().toLocaleString(),
+        header: 'Actes Validés',
+        cell: (info) => <span className="font-bold text-gray-800">{info.getValue()} actes</span>,
       }),
       columnHelper.accessor('avgTime', {
-        header: t("efficiency_column_time"),
+        header: 'Temps Moyen / Acte',
+        cell: (info) => <span className="text-gray-600 font-medium">{info.getValue()}</span>,
       }),
       columnHelper.accessor('efficiencyScore', {
-        header: t("efficiency_column_accuracy"),
-        cell: (info) => info.getValue(),
+        header: 'Conformité Clinique',
+        cell: (info) => (
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-emerald-600">{info.getValue()}%</span>
+            <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${info.getValue()}%` }} />
+            </div>
+          </div>
+        ),
       }),
       columnHelper.accessor('status', {
-        header: t("efficiency_column_status"),
-        cell: (info) => {
-          const status = info.getValue();
-          return (
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${statusStyles[status]}`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              {getStatusLabel(status)}
-            </span>
-          );
-        },
+        header: 'Statut',
+        cell: (info) => (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            {info.getValue()}
+          </span>
+        ),
       }),
     ],
-    [t]
+    []
   );
 
   const table = useReactTable({
@@ -93,17 +96,23 @@ export default function OperatorEfficiencyTable() {
   });
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("efficiency_table_title")}</h3>
+    <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col shadow-xs">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <Stethoscope className="w-4 h-4 text-emerald-600" />
+          Rendement et Suivi des Praticiens Validateurs
+        </h3>
+        <span className="text-xs text-gray-500">5 praticiens enregistrés</span>
+      </div>
       <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-gray-100">
+              <tr key={headerGroup.id} className="border-b border-gray-100 bg-gray-50/50">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="text-left py-2 px-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition-colors"
+                    className="text-left font-bold text-gray-600 p-2.5 cursor-pointer select-none"
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     <div className="flex items-center gap-1">
@@ -115,11 +124,11 @@ export default function OperatorEfficiencyTable() {
               </tr>
             ))}
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-50">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+              <tr key={row.id} className="hover:bg-emerald-50/20 transition-colors">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="py-2.5 px-3 text-gray-600 text-[13px]">
+                  <td key={cell.id} className="p-2.5">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -127,43 +136,6 @@ export default function OperatorEfficiencyTable() {
             ))}
           </tbody>
         </table>
-      </div>
-      {/* Pagination */}
-      <div className="flex items-center justify-end gap-1 pt-2 border-t border-gray-50 mt-auto">
-        <span className="text-[11px] text-gray-500 mr-2">
-          Page {table.getState().pagination.pageIndex + 1}
-        </span>
-        <button
-          onClick={() => table.firstPage()}
-          disabled={!table.getCanPreviousPage()}
-          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronsLeft className="w-3.5 h-3.5 text-gray-500" />
-        </button>
-        <button
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronLeft className="w-3.5 h-3.5 text-gray-500" />
-        </button>
-        <span className="w-6 h-6 flex items-center justify-center text-[11px] font-medium bg-gray-100 rounded text-gray-700">
-          {table.getState().pagination.pageIndex + 1}
-        </span>
-        <button
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
-        </button>
-        <button
-          onClick={() => table.lastPage()}
-          disabled={!table.getCanNextPage()}
-          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronsRight className="w-3.5 h-3.5 text-gray-500" />
-        </button>
       </div>
     </div>
   );

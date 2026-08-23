@@ -8,59 +8,60 @@ import {
   ScanLine,
   FileCheck,
   AlertCircle,
+  ShieldCheck,
+  BookOpen,
 } from 'lucide-react';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const stats = [
   {
-    titleKey: 'data_validation_rate',
-    value: '98.5%',
-    change: '+2.1%',
+    title: 'Taux de Validation Conforme',
+    value: '98.2%',
+    change: '+1.4%',
     positive: true,
     icon: CheckCircle,
     iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
+    iconColor: 'text-emerald-600',
   },
   {
-    titleKey: 'operator_performance_score',
-    value: '92.0%',
-    change: '+1.5%',
-    positive: true,
-    icon: TrendingUp,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
-  },
-  {
-    titleKey: 'avg_processing_time',
-    value: '45s',
-    change: '-5s',
-    positive: true,
-    icon: Clock,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
-  },
-  {
-    titleKey: 'ocr_success_rate',
-    value: '96.8%',
-    change: '+0.8%',
+    title: 'Précision Extraction OCR',
+    value: '97.6%',
+    change: '+2.1%',
     positive: true,
     icon: ScanLine,
     iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
+    iconColor: 'text-emerald-600',
   },
   {
-    titleKey: 'daily_validations',
-    value: '14,500',
-    change: '+12%',
+    title: 'Temps Moyen OCR / Page',
+    value: '3.4s',
+    change: '-0.8s',
     positive: true,
-    icon: FileCheck,
+    icon: Clock,
     iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
+    iconColor: 'text-emerald-600',
   },
   {
-    titleKey: 'pending_review',
-    value: '1,200',
-    change: '-300',
+    title: 'Recalage Géométrique (ECC)',
+    value: '0.88',
+    change: 'Optimal (>=0.55)',
+    positive: true,
+    icon: TrendingUp,
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+  },
+  {
+    title: 'Registres Numérisés (Lots)',
+    value: '14 lots',
+    change: '420 doubles pages',
+    positive: true,
+    icon: BookOpen,
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+  },
+  {
+    title: 'Alertes / À Réviser',
+    value: '3 lots',
+    change: 'Ratures & contrastes',
     positive: false,
     icon: AlertCircle,
     iconBg: 'bg-orange-50',
@@ -69,27 +70,25 @@ const stats = [
 ];
 
 export default function StatsCards() {
-  const { t } = useTranslation();
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {stats.map((stat) => (
         <div
-          key={stat.titleKey}
-          className="bg-white rounded-xl border border-gray-100 p-3 flex items-start gap-3 hover:shadow-md transition-shadow duration-200"
+          key={stat.title}
+          className="bg-white rounded-xl border border-gray-100 p-3.5 flex items-start gap-3 hover:shadow-md transition-shadow duration-200"
         >
           <div className={`${stat.iconBg} p-2 rounded-lg shrink-0`}>
             <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-gray-500 truncate leading-tight">{t(stat.titleKey as any)}</p>
+            <p className="text-[11px] font-semibold text-gray-500 truncate leading-tight">{stat.title}</p>
             <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{stat.value}</p>
             <span
-              className={`text-[11px] font-medium ${
+              className={`text-[10px] font-medium ${
                 stat.positive ? 'text-emerald-600' : 'text-orange-600'
               }`}
             >
-              ({stat.change})
+              {stat.change}
             </span>
           </div>
         </div>

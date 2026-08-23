@@ -11,37 +11,38 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const data = [
-  { name: 'Sarah J.', processed: 22000, errors: 1200 },
-  { name: 'Michael K.', processed: 19500, errors: 800 },
-  { name: 'Emily R.', processed: 17000, errors: 1500 },
-  { name: 'David L.', processed: 15000, errors: 900 },
-  { name: 'Jessica T.', processed: 12000, errors: 600 },
+  { name: 'PS Potou', processed: 126, errors: 4 },
+  { name: 'CS Médina', processed: 168, errors: 6 },
+  { name: 'HR Fatick', processed: 95, errors: 8 },
+  { name: 'Nabil Choucair', processed: 110, errors: 3 },
+  { name: 'Dalal Jamm', processed: 85, errors: 2 },
 ];
 
 export default function OperatorPerformanceComparison() {
-  const { t } = useTranslation();
-
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("operator_comparison_title")}</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-800">Validation par Structure Sanitaire</h3>
+        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+          Actes vs Alertes
+        </span>
+      </div>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 10, fill: '#6b7280' }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
             />
             <Tooltip
               contentStyle={{
@@ -51,15 +52,18 @@ export default function OperatorPerformanceComparison() {
                 fontSize: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
-              formatter={(value: any) => value.toString()}
+              formatter={(value: any, name: any) => {
+                if (name === 'processed') return [`${value} actes validés`, 'Validés'];
+                return [`${value} alertes résolues`, 'Alertes'];
+              }}
             />
             <Legend
               iconType="square"
-              iconSize={10}
+              iconSize={8}
               wrapperStyle={{ fontSize: '11px', color: '#6b7280' }}
             />
-            <Bar dataKey="processed" name={t("processed")} fill="#1e40af" radius={[3, 3, 0, 0]} barSize={18} />
-            <Bar dataKey="errors" name={t("errors_label")} fill="#22c55e" radius={[3, 3, 0, 0]} barSize={18} />
+            <Bar dataKey="processed" name="Actes validés" fill="#08704F" radius={[3, 3, 0, 0]} barSize={16} />
+            <Bar dataKey="errors" name="Alertes résolues" fill="#F59E0B" radius={[3, 3, 0, 0]} barSize={16} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -12,44 +12,38 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const data = [
-  { date: 'Mar 18', records: 4500, rate: 18 },
-  { date: 'Mar 19', records: 5200, rate: 20 },
-  { date: 'Mar 10', records: 4800, rate: 19 },
-  { date: 'Mar 11', records: 5500, rate: 22 },
-  { date: 'Mar 12', records: 6200, rate: 25 },
-  { date: 'Mar 13', records: 7000, rate: 28 },
-  { date: 'Mar 14', records: 6800, rate: 27 },
-  { date: 'Mar 15', records: 12500, rate: 50 },
-  { date: 'Mar 16', records: 8500, rate: 34 },
-  { date: 'Mar 17', records: 9000, rate: 36 },
-  { date: 'Mar 18', records: 7500, rate: 30 },
-  { date: 'Mar 19', records: 8200, rate: 33 },
-  { date: 'Mar 20', records: 7000, rate: 28 },
-  { date: 'Mar 23', records: 8800, rate: 35 },
-  { date: 'Mar 24', records: 9500, rate: 38 },
-  { date: 'Mar 25', records: 10000, rate: 40 },
+  { date: '01 Août', records: 18, rate: 94 },
+  { date: '03 Août', records: 24, rate: 95 },
+  { date: '05 Août', records: 22, rate: 96 },
+  { date: '07 Août', records: 30, rate: 95 },
+  { date: '09 Août', records: 28, rate: 97 },
+  { date: '11 Août', records: 35, rate: 98 },
+  { date: '13 Août', records: 42, rate: 96 },
+  { date: '15 Août', records: 38, rate: 97 },
+  { date: '17 Août', records: 45, rate: 98 },
+  { date: '19 Août', records: 32, rate: 97 },
+  { date: '21 Août', records: 40, rate: 98 },
+  { date: '23 Août', records: 48, rate: 99 },
 ];
 
-const BAR_COLORS = ['#08704F', '#0a8a63', '#7BC148', '#4ade80', '#08704F', '#0a8a63'];
+const BAR_COLORS = ['#08704F', '#0a8a63', '#7BC148', '#10B981', '#059669', '#34D399'];
 
 export default function DataProcessingVolumes() {
-  const { t } = useTranslation();
-
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-800 mb-3">{t("data_volumes_title")}</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-800">
+          Volumes de Pages Numérisées & Taux de Précision OCR
+        </h3>
+        <span className="text-xs text-gray-500 font-medium">
+          Moyenne : <strong className="text-emerald-700">33.5 pages / jour</strong> · Précision : <strong className="text-emerald-700">96.9%</strong>
+        </span>
+      </div>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-            <defs>
-              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#08704F" stopOpacity={1} />
-                <stop offset="100%" stopColor="#7BC148" stopOpacity={0.8} />
-              </linearGradient>
-            </defs>
+          <ComposedChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
             <XAxis
               dataKey="date"
@@ -62,7 +56,7 @@ export default function DataProcessingVolumes() {
               tick={{ fontSize: 10, fill: '#9ca3af' }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
+              domain={[0, 60]}
             />
             <YAxis
               yAxisId="right"
@@ -70,6 +64,7 @@ export default function DataProcessingVolumes() {
               tick={{ fontSize: 10, fill: '#9ca3af' }}
               axisLine={false}
               tickLine={false}
+              domain={[90, 100]}
               tickFormatter={(v) => `${v}%`}
             />
             <Tooltip
@@ -81,12 +76,11 @@ export default function DataProcessingVolumes() {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
               formatter={(value: any, name: any) => {
-                if (name === 'records') return [`${value.toLocaleString()} ${t("records").toLowerCase()}`, t("volume_scanned")];
-                return [`${value}%`, t("efficiency")];
+                if (name === 'records') return [`${value} pages scannées`, 'Volume'];
+                return [`${value}%`, 'Précision OCR'];
               }}
-              labelFormatter={(label) => `${label}, 2024`}
             />
-            <Bar yAxisId="left" dataKey="records" radius={[3, 3, 0, 0]} barSize={20}>
+            <Bar yAxisId="left" dataKey="records" radius={[3, 3, 0, 0]} barSize={18}>
               {data.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} opacity={0.85} />
               ))}
@@ -96,9 +90,8 @@ export default function DataProcessingVolumes() {
               type="monotone"
               dataKey="rate"
               stroke="#08704F"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4, fill: '#08704F', stroke: '#fff', strokeWidth: 2 }}
+              strokeWidth={2.5}
+              dot={{ r: 3, fill: '#08704F' }}
             />
           </ComposedChart>
         </ResponsiveContainer>

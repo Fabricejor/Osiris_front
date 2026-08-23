@@ -29,21 +29,116 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
 
-const scannedPages = [
-  { id: 1, name: 'Page 01', status: 'pending', confidence: 94, image: '/registres/Image (1).png' },
-  { id: 2, name: 'Page 02', status: 'pending', confidence: 98, image: '/registres/Image (2).png' },
-  { id: 3, name: 'Page 03', status: 'review', confidence: 72, image: '/registres/Image (3).png' },
-  { id: 4, name: 'Page 04', status: 'validated', confidence: 99, image: '/registres/Image (5).png' },
-  { id: 5, name: 'Page 05', status: 'pending', confidence: 91, image: '/registres/Image (6).png' },
-  { id: 6, name: 'Page 06', status: 'validated', confidence: 97, image: '/registres/Image (7).png' },
-  { id: 7, name: 'Page 07', status: 'validated', confidence: 95, image: '/registres/Image (8).png' },
-  { id: 8, name: 'Page 08', status: 'pending', confidence: 89, image: '/registres/Image (9).png' },
-  { id: 9, name: 'Page 09', status: 'review', confidence: 45, image: '/registres/Image (1).png' },
-  { id: 10, name: 'Page 10', status: 'validated', confidence: 98, image: '/registres/Image (2).png' },
-  { id: 11, name: 'Page 11', status: 'validated', confidence: 96, image: '/registres/Image (5).png' },
-  { id: 12, name: 'Page 12', status: 'pending', confidence: 88, image: '/registres/Image (6).png' },
-  { id: 13, name: 'Page 13', status: 'validated', confidence: 99, image: '/registres/Image (7).png' },
-  { id: 14, name: 'Page 14', status: 'validated', confidence: 94, image: '/registres/Image (8).png' },
+export interface ScannedPage {
+  id: number;
+  name: string;
+  category: 'ACC' | 'CPN' | 'CPON' | 'SAA';
+  categoryLabel: string;
+  status: 'validated' | 'pending' | 'review';
+  statusText: string;
+  confidence: number;
+  image: string;
+  doublePage: string;
+  dateScanned: string;
+}
+
+const scannedPages: ScannedPage[] = [
+  { 
+    id: 1, 
+    name: 'ACC-2026-P01 (Double Page 01)', 
+    category: 'ACC', 
+    categoryLabel: 'Accouchements (ACC)', 
+    status: 'pending', 
+    statusText: 'Prêt pour validation', 
+    confidence: 96, 
+    image: '/registres/registre exemple page 1.jpeg',
+    doublePage: 'Pages 01-02 (Gauche/Droite)',
+    dateScanned: '14 Août 2026'
+  },
+  { 
+    id: 2, 
+    name: 'ACC-2026-P02 (Double Page 02)', 
+    category: 'ACC', 
+    categoryLabel: 'Accouchements (ACC)', 
+    status: 'validated', 
+    statusText: 'Validé par Dr. Diop', 
+    confidence: 98, 
+    image: '/registres/Image (2).png',
+    doublePage: 'Pages 03-04',
+    dateScanned: '14 Août 2026'
+  },
+  { 
+    id: 3, 
+    name: 'CPN-2026-P01 (Consultation Prénatale)', 
+    category: 'CPN', 
+    categoryLabel: 'Consultation Prénatale (CPN)', 
+    status: 'review', 
+    statusText: 'Alerte MAD (Poids)', 
+    confidence: 74, 
+    image: '/registres/Image (3).png',
+    doublePage: 'Pages 01-02',
+    dateScanned: '14 Août 2026'
+  },
+  { 
+    id: 4, 
+    name: 'CPON-2026-P01 (Suivi Postnatal J6)', 
+    category: 'CPON', 
+    categoryLabel: 'Consultation Postnatale (CPON)', 
+    status: 'validated', 
+    statusText: 'Validé', 
+    confidence: 99, 
+    image: '/registres/Image (5).png',
+    doublePage: 'Pages 01-02',
+    dateScanned: '13 Août 2026'
+  },
+  { 
+    id: 5, 
+    name: 'SAA-2026-P01 (Soins Post-Avortement)', 
+    category: 'SAA', 
+    categoryLabel: 'Soins Après Avortement (SAA)', 
+    status: 'pending', 
+    confidence: 91, 
+    statusText: 'En attente', 
+    image: '/registres/Image (6).png',
+    doublePage: 'Pages 01-02',
+    dateScanned: '13 Août 2026'
+  },
+  { 
+    id: 6, 
+    name: 'ACC-2026-P03 (Double Page 03)', 
+    category: 'ACC', 
+    categoryLabel: 'Accouchements (ACC)', 
+    status: 'validated', 
+    confidence: 97, 
+    statusText: 'Validé', 
+    image: '/registres/Image (7).png',
+    doublePage: 'Pages 05-06',
+    dateScanned: '13 Août 2026'
+  },
+  { 
+    id: 7, 
+    name: 'CPN-2026-P02 (Consultation Prénatale)', 
+    category: 'CPN', 
+    categoryLabel: 'Consultation Prénatale (CPN)', 
+    status: 'validated', 
+    confidence: 95, 
+    statusText: 'Validé', 
+    image: '/registres/Image (8).png',
+    doublePage: 'Pages 03-04',
+    dateScanned: '12 Août 2026'
+  },
+  { 
+    id: 8, 
+    name: 'CPON-2026-P02 (Suivi Postnatal J14)', 
+    category: 'CPON', 
+    categoryLabel: 'Consultation Postnatale (CPON)', 
+    status: 'pending', 
+    confidence: 89, 
+    statusText: 'En attente', 
+    image: '/registres/Image (9).png',
+    doublePage: 'Pages 03-04',
+    dateScanned: '12 Août 2026'
+  },
 ];
 
 // ── Status helpers ──────────────────────────────────────────────
@@ -57,6 +152,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
   const unwrappedParams = React.use(params);
   const [pageViewMode, setPageViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'ACC' | 'CPN' | 'CPON' | 'SAA'>('ALL');
   const batchId = unwrappedParams.id || '2026-0035';
   const { setBreadcrumb } = useTopBar();
   const { t } = useTranslation();
@@ -76,6 +172,12 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
     );
     return () => setBreadcrumb(null);
   }, [batchId, setBreadcrumb, t]);
+
+  // Filtered pages
+  const filteredPages = useMemo(() => {
+    if (selectedCategory === 'ALL') return scannedPages;
+    return scannedPages.filter(p => p.category === selectedCategory);
+  }, [selectedCategory]);
 
   // Compute page stats
   const pageStats = useMemo(() => {
@@ -100,7 +202,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
       <div className="shrink-0 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Batch #{batchId}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Lot de Collecte #{batchId}</h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {t("ready_for_validation")}
@@ -111,8 +213,11 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
               <Download className="w-4 h-4" /> {t("export")}
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-emerald-200">
-              <Play className="w-4 h-4" /> {t("start_validation")}
+            <button 
+              onClick={() => setSelectedPageIndex(0)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-emerald-200"
+            >
+              <Play className="w-4 h-4" /> Ouvrir la Split-View
             </button>
           </div>
         </div>
@@ -143,118 +248,103 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             {/* Document Type */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center group">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t("document_type")}</span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type de Registre</span>
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
                   <FileText className="w-4 h-4 text-emerald-600" />
                 </div>
               </div>
-              <span className="text-lg font-bold text-gray-800 leading-tight">ANC Register</span>
+              <span className="text-lg font-bold text-gray-800 leading-tight">Accouchements (ACC)</span>
             </div>
 
             {/* Total Pages */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center group">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t("total_pages")}</span>
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                  <Layers className="w-4 h-4 text-blue-600" />
-                </div>
-              </div>
-              <span className="text-3xl font-bold text-gray-800">42</span>
-            </div>
-
-            {/* Overall Confidence */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center group">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t("overall_confidence")}</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                  <Gauge className="w-4 h-4 text-emerald-600" />
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-gray-800">92%</span>
-                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: '92%' }}
-                    transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Upload Date */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center group">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t("upload_date")}</span>
                 <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
-                  <CalendarDays className="w-4 h-4 text-amber-600" />
+                  <Layers className="w-4 h-4 text-amber-600" />
                 </div>
               </div>
-              <span className="text-base font-bold text-gray-800">Oct 25, 2023</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-gray-800">{scannedPages.length}</span>
+                <span className="text-xs text-gray-400">doubles pages</span>
+              </div>
             </div>
 
-            {/* Operator */}
+            {/* Avg Confidence */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center group">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t("operator")}</span>
-                <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
-                  <User className="w-4 h-4 text-violet-600" />
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Score de Confiance OCR</span>
+                <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                  <Gauge className="w-4 h-4 text-purple-600" />
                 </div>
               </div>
-              <span className="text-base font-bold text-gray-800">Dr. Amina Diallo</span>
-            </div>
-
-            {/* Clinic */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center group">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t("clinic")}</span>
-                <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center group-hover:bg-sky-100 transition-colors">
-                  <Building2 className="w-4 h-4 text-sky-600" />
-                </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-emerald-600">96.4%</span>
+                <span className="text-xs text-emerald-600 font-medium">Recalage optimal</span>
               </div>
-              <span className="text-base font-bold text-gray-800">St. Jude&#39;s Medical</span>
             </div>
           </div>
 
           {/* ── Scanned Pages ───────────────────────────────── */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex-1 flex flex-col min-h-0">
-            {/* Section header */}
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">{t("scanned_pages")}</h3>
-                <div className="flex items-center gap-2 ml-2">
-                  {[
-                    { label: pageStats.validated, color: 'bg-emerald-500' },
-                    { label: pageStats.pending, color: 'bg-amber-500' },
-                    { label: pageStats.review, color: 'bg-red-500' },
-                  ].map((s, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500">
-                      <span className={`w-1.5 h-1.5 rounded-full ${s.color}`} />
-                      {s.label}
-                    </span>
-                  ))}
+            {/* Section header & Category Tabs */}
+            <div className="p-4 border-b border-gray-100 flex flex-col gap-3 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Pages Scannées par Registre</h3>
+                  <div className="flex items-center gap-2 ml-2">
+                    {[
+                      { label: pageStats.validated, color: 'bg-emerald-500' },
+                      { label: pageStats.pending, color: 'bg-amber-500' },
+                      { label: pageStats.review, color: 'bg-red-500' },
+                    ].map((s, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                        <span className={`w-1.5 h-1.5 rounded-full ${s.color}`} />
+                        {s.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <div className="flex bg-gray-100 p-0.5 rounded-lg">
+                    <button
+                      onClick={() => setPageViewMode('grid')}
+                      className={`p-1.5 rounded-md transition-all ${pageViewMode === 'grid' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPageViewMode('list')}
+                      className={`p-1.5 rounded-md transition-all ${pageViewMode === 'list' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      <ListIcon className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <div className="flex bg-gray-100 p-0.5 rounded-lg">
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                {[
+                  { id: 'ALL', label: 'Tous les registres' },
+                  { id: 'ACC', label: 'Accouchements (ACC)' },
+                  { id: 'CPN', label: 'Consultations Prénatales (CPN)' },
+                  { id: 'CPON', label: 'Consultations Postnatales (CPON)' },
+                  { id: 'SAA', label: 'Soins Post-Avortement (SAA)' },
+                ].map(cat => (
                   <button
-                    onClick={() => setPageViewMode('grid')}
-                    className={`p-1.5 rounded-md transition-all ${pageViewMode === 'grid' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id as any)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                      selectedCategory === cat.id
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                   >
-                    <LayoutGrid className="w-4 h-4" />
+                    {cat.label}
                   </button>
-                  <button
-                    onClick={() => setPageViewMode('list')}
-                    className={`p-1.5 rounded-md transition-all ${pageViewMode === 'list' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                  >
-                    <ListIcon className="w-4 h-4" />
-                  </button>
-                </div>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600 ml-1">
-                  <Filter className="w-4 h-4" />
-                </button>
+                ))}
               </div>
             </div>
 
