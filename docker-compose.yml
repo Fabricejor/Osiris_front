@@ -4,13 +4,20 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Injectée au build (variable NEXT_PUBLIC_*)
+        # Injectée au build (variable NEXT_PUBLIC_*) — reconstruire après changement
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://apiosiris.qsoul.africa/api}
     image: osiris-front:latest
     container_name: osiris-front
     restart: unless-stopped
+    # Bind localhost only — reverse proxy Nginx sur l'hôte (osiris.qsoul.africa)
     ports:
-      - "${PORT:-3000}:3000"
+      - "127.0.0.1:${PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       SECURITY_WEBHOOK_URL: ${SECURITY_WEBHOOK_URL:-}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
