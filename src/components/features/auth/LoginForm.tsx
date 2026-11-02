@@ -162,6 +162,7 @@ export default function LoginForm() {
                     className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50/50 text-foreground disabled:opacity-50"
                     required
                     disabled={isLoading}
+                    autoComplete="username"
                   />
                 </div>
               </div>
@@ -180,6 +181,7 @@ export default function LoginForm() {
                     className="w-full pl-11 pr-11 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50/50 text-foreground disabled:opacity-50"
                     required
                     disabled={isLoading}
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
