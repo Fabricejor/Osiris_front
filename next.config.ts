@@ -10,7 +10,7 @@ const ContentSecurityPolicy = [
   `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: blob: https://fonts.gstatic.com",
+  "font-src 'self' data: blob: https://fonts.gstatic.com https://frontend-cdn.perplexity.ai",
   `connect-src 'self' data: blob: http://localhost:8000 http://127.0.0.1:8000 https://apiosiris.qsoul.africa https://*.qsoul.africa https://storage.googleapis.com`,
   "media-src 'self' blob: data:",
 ].join('; ');
@@ -55,6 +55,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Génère .next/standalone (serveur minimal) pour l'image Docker
+  output: 'standalone',
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
   },

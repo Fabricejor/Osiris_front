@@ -1,0 +1,16 @@
+services:
+  osiris-front:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Injectée au build (variable NEXT_PUBLIC_*)
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://apiosiris.qsoul.africa/api}
+    image: osiris-front:latest
+    container_name: osiris-front
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      SECURITY_WEBHOOK_URL: ${SECURITY_WEBHOOK_URL:-}
