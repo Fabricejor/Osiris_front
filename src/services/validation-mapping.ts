@@ -35,7 +35,7 @@ export interface ChampAffiche {
   libelle: string;
   type_champ: string;
   unite: string | null;
-  /** Valeur éditable affichée dans le champ de saisie. */
+  /** Valeur éditable affichée dans le champ de saisie (format lisible). */
   valeur: string;
   /** true si l'OCR a produit une valeur pour ce champ. */
   lu: boolean;
@@ -66,7 +66,29 @@ export function niveauConfiance(confiance: number | null): 'basse' | 'moyenne' |
   return 'haute';
 }
 
-/** Valeur typée → texte éditable. */
+/** « 2026-02-03 » → « 03/02/2026 » (autres formats laissés tels quels). */
+export function dateLisible(valeur: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(valeur.trim());
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : valeur;
+}
+
+/** « 08:30:00 » → « 08:30 ». */
+export function heureLisible(valeur: string): string {
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(valeur.trim());
+  return m ? `${m[1].padStart(2, '0')}:${m[2]}` : valeur;
+}
+
+/** Saisie « 3/2/26 », « 03/02/2026 » ou ISO → « 2026-02-03 » (null si non reconnue). */
+function dateIso(texte: string): string | null {
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(texte);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, '0')}-${iso[3].padStart(2, '0')}`;
+  const fr = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})$/.exec(texte);
+  if (!fr) return null;
+  const annee = fr[3].length === 2 ? `20${fr[3]}` : fr[3];
+  return `${annee}-${fr[2].padStart(2, '0')}-${fr[1].padStart(2, '0')}`;
+}
+
+/** Valeur typée → texte éditable, au format lisible (dates jj/mm/aaaa, heures hh:mm). */
 export function formaterValeur(champ: ValeurChampOCR | undefined): string {
   if (!champ) return '';
   switch (champ.type_champ) {
@@ -81,6 +103,10 @@ export function formaterValeur(champ: ValeurChampOCR | undefined): string {
     case 'BINAIRE':
       if (typeof champ.valeur === 'boolean') return champ.valeur ? 'Oui' : 'Non';
       return champ.valeur != null ? String(champ.valeur) : '';
+    case 'DATE':
+      return champ.valeur != null ? dateLisible(String(champ.valeur)) : '';
+    case 'HEURE':
+      return champ.valeur != null ? heureLisible(String(champ.valeur)) : '';
     default:
       return champ.valeur != null ? String(champ.valeur) : '';
   }
@@ -88,7 +114,8 @@ export function formaterValeur(champ: ValeurChampOCR | undefined): string {
 
 /**
  * Texte saisi → valeur de correction envoyée à `POST /donnees-extraites/{id}/valider`
- * (le backend remplace `champs[nom].valeur`). Nombres et booléens typés, le reste en texte.
+ * (le backend remplace `champs[nom].valeur`). Nombres, booléens, dates (ISO) et
+ * heures typés ; le reste en texte.
  */
 export function parserCorrection(typeChamp: string, texte: string): unknown {
   const t = texte.trim();
@@ -99,8 +126,13 @@ export function parserCorrection(typeChamp: string, texte: string): unknown {
   }
   if (typeChamp === 'BINAIRE') {
     const v = t.toLowerCase();
-    if (['oui', 'o', 'true', '1', '+', 'positif', 'yes'].includes(v)) return true;
-    if (['non', 'n', 'false', '0', '-', 'négatif', 'negatif', 'no'].includes(v)) return false;
+    if (['oui', 'o', 'true', '1', '+', 'positif', 'yes', '✓'].includes(v)) return true;
+    if (['non', 'n', 'false', '0', '-', 'négatif', 'negatif', 'no', '✗'].includes(v)) return false;
+  }
+  if (typeChamp === 'DATE') return dateIso(t) ?? t;
+  if (typeChamp === 'HEURE') {
+    const m = /^(\d{1,2})\s*[:hH]\s*(\d{2})?$/.exec(t);
+    if (m) return `${m[1].padStart(2, '0')}:${m[2] ?? '00'}:00`;
   }
   return t;
 }
@@ -213,7 +245,7 @@ export function construireCorrections(
   return corrections;
 }
 
-// ─── Vue registre : grille calquée sur le registre papier ─────────────────
+// ─── Vue registre / fiche patiente ──────────────────────────────────────────
 //
 // Registres multi-visites (CPN : 4 lignes / patiente, CPON : 3) : une rangée
 // par visite ; les colonnes d'identité (`niveau_patiente`) sont fusionnées
@@ -222,17 +254,35 @@ export function construireCorrections(
 
 type PiiCellule = components['schemas']['PiiCelluleRead'];
 
+/**
+ * Métadonnées d'identification sans colonne sur le papier (en-tête de page /
+ * contexte de session) : toujours vides dans le tableau, masquées par défaut.
+ */
+export const CHAMPS_SANS_COLONNE = new Set([
+  'region', 'departement', 'district', 'structure_sanitaire', 'annee_registre',
+]);
+
+/** Libellés d'en-tête au-delà de cette longueur : on préfère l'abréviation du papier. */
+const LONGUEUR_LIBELLE_COURT = 14;
+
 export interface ColonneGrille {
   nom: string;
   libelle: string;
+  /** Intitulé court (abréviation du papier si le libellé est long). */
+  libelleCourt: string;
   unite: string | null;
   type_champ: string;
+  modalites: string[] | null;
+  /** Nom de la section du catalogue (regroupement / repli). */
+  section: string;
   is_pii: boolean;
   /** Écrite une fois par patiente (cellule fusionnée sur ses visites). */
   niveau_patiente: boolean;
 }
 
 export interface GroupeColonnes {
+  /** Nom technique de la section (clé de repli). */
+  section: string;
   /** Libellé de section (en-tête regroupé, comme sur le registre). */
   libelle: string;
   colonnes: ColonneGrille[];
@@ -264,11 +314,42 @@ export interface Grille {
   rangsParPatient: number;
 }
 
+function libelleCourt(champ: ChampCatalogue): string {
+  if (champ.libelle.length <= LONGUEUR_LIBELLE_COURT) return champ.libelle;
+  const alias = (champ.contraintes as { alias?: unknown } | undefined)?.alias;
+  const court = Array.isArray(alias)
+    ? alias.find((a): a is string => typeof a === 'string' && a.trim().length > 0 && a.length <= LONGUEUR_LIBELLE_COURT)
+    : undefined;
+  return court ?? champ.libelle;
+}
+
+/** Regroupe des colonnes (déjà ordonnées) par section consécutive. */
+export function regrouperParSection(colonnes: ColonneGrille[], libelles: Map<string, string>): GroupeColonnes[] {
+  const groupes: GroupeColonnes[] = [];
+  for (const colonne of colonnes) {
+    const dernier = groupes.at(-1);
+    if (dernier && dernier.section === colonne.section) dernier.colonnes.push(colonne);
+    else {
+      groupes.push({
+        section: colonne.section,
+        libelle: libelles.get(colonne.section) ?? colonne.section,
+        colonnes: [colonne],
+      });
+    }
+  }
+  return groupes;
+}
+
+/** Libellés des sections d'une grille (section → libellé). */
+export function libellesSections(grille: Grille): Map<string, string> {
+  return new Map(grille.groupes.map((g) => [g.section, g.libelle]));
+}
+
 /**
  * Construit la grille « registre » : colonnes dans l'ordre physique du papier
- * (`colonne_registre`, puis ordre de section/champ), regroupées par section
- * consécutive ; une rangée par visite (`numero_ordre`, `rang`), PII et
- * identité replacées sur le bloc de la patiente.
+ * (sections puis champs du catalogue), regroupées par section consécutive ;
+ * une rangée par visite (`numero_ordre`, `rang`), PII et identité replacées
+ * sur le bloc de la patiente.
  */
 export function construireGrille(
   catalogue: Catalogue | undefined,
@@ -288,22 +369,19 @@ export function construireGrille(
       [...section.champs].sort((a, b) => a.ordre - b.ordre).map((champ) => ({ section, champ })),
     );
 
-  const colonnes: ColonneGrille[] = [];
-  const groupes: GroupeColonnes[] = [];
-  for (const { section, champ } of champsOrdonnes) {
-    const colonne: ColonneGrille = {
-      nom: champ.nom,
-      libelle: champ.libelle,
-      unite: champ.unite ?? null,
-      type_champ: champ.type_champ,
-      is_pii: champ.is_pii,
-      niveau_patiente: multiVisites && (champ.niveau_patiente || champ.is_pii),
-    };
-    colonnes.push(colonne);
-    const dernier = groupes.at(-1);
-    if (dernier && dernier.libelle === section.libelle) dernier.colonnes.push(colonne);
-    else groupes.push({ libelle: section.libelle, colonnes: [colonne] });
-  }
+  const colonnes: ColonneGrille[] = champsOrdonnes.map(({ section, champ }) => ({
+    nom: champ.nom,
+    libelle: champ.libelle,
+    libelleCourt: libelleCourt(champ),
+    unite: champ.unite ?? null,
+    type_champ: champ.type_champ,
+    modalites: champ.modalites ?? null,
+    section: section.nom,
+    is_pii: champ.is_pii,
+    niveau_patiente: multiVisites && (champ.niveau_patiente || champ.is_pii),
+  }));
+  const libelles = new Map(catalogue.sections.map((s) => [s.nom, s.libelle]));
+  const groupes = regrouperParSection(colonnes, libelles);
 
   const rangees = new Map<string, RangeeGrille>();
   const rangee = (numeroOrdre: number, rang: number): RangeeGrille => {
@@ -366,4 +444,115 @@ export function construireGrille(
   }
 
   return { groupes, colonnes, rangees: triees, rangsParPatient };
+}
+
+// ─── État d'affichage d'une case (commun grille / fiche) ────────────────────
+
+export interface SaisiesValideur {
+  /** {id_donnee_extraite: {nom_champ: texte}} */
+  cliniques: Record<string, Record<string, string>>;
+  /** {id_pii_cellule: texte} */
+  pii: Record<string, string>;
+}
+
+export interface EtatCellule {
+  /** Valeur affichée (saisie en cours, sinon valeur serveur). */
+  valeur: string;
+  /** Valeur serveur (référence pour savoir si la case est modifiée). */
+  valeurOrigine: string;
+  modifie: boolean;
+  confiance: number | null;
+  lu: boolean;
+  verrouillee: boolean;
+  corrigee: boolean;
+  deduit: boolean;
+  scoreInconnu: boolean;
+  /** Case qui mérite l'œil du valideur (score faible / moyen / inconnu). */
+  aVerifier: boolean;
+  niveau: 'basse' | 'moyenne' | 'haute' | 'inconnue';
+}
+
+export function etatCellule(cellule: CelluleGrille | undefined, saisies: SaisiesValideur): EtatCellule | null {
+  if (!cellule || cellule.kind === 'vide') return null;
+  let valeurOrigine: string;
+  let valeur: string;
+  let confiance: number | null;
+  let lu: boolean;
+  let verrouillee: boolean;
+  let corrigee: boolean;
+  let deduit = false;
+
+  if (cellule.kind === 'clinique') {
+    const { champ, idDonnee } = cellule;
+    valeurOrigine = champ.valeur;
+    valeur = saisies.cliniques[idDonnee]?.[champ.nom] ?? champ.valeur;
+    confiance = champ.confiance;
+    lu = champ.lu;
+    verrouillee = cellule.verrouillee;
+    corrigee = champ.corrigeParHumain;
+    deduit = champ.deduit;
+  } else {
+    const { pii } = cellule;
+    valeurOrigine = pii.valeur_saisie ?? pii.valeur_lue ?? '';
+    valeur = saisies.pii[pii.id_pii_cellule] ?? valeurOrigine;
+    confiance = pii.saisie ? null : cellule.confiance;
+    lu = !!pii.valeur_lue;
+    verrouillee = pii.saisie;
+    corrigee = pii.saisie;
+  }
+
+  const modifie = valeur.trim() !== valeurOrigine.trim();
+  const neutre = corrigee || modifie || deduit || verrouillee;
+  const niveau = neutre ? 'inconnue' : niveauConfiance(confiance);
+  const scoreInconnu = !neutre && lu && confiance === null;
+  const aVerifier = !neutre && lu && (niveau === 'basse' || niveau === 'moyenne' || scoreInconnu);
+  return {
+    valeur, valeurOrigine, modifie, confiance, lu, verrouillee, corrigee, deduit, scoreInconnu, aVerifier, niveau,
+  };
+}
+
+/** true si la case contient quelque chose (valeur serveur ou saisie en cours). */
+function celluleRemplie(cellule: CelluleGrille | undefined, saisies: SaisiesValideur): boolean {
+  const etat = etatCellule(cellule, saisies);
+  return !!etat && (etat.valeur.trim() !== '' || etat.valeurOrigine.trim() !== '');
+}
+
+/**
+ * Colonnes à afficher : sans les métadonnées absentes du papier ni les colonnes
+ * vides sur toute la page, sauf si `toutes` (bouton « Afficher les colonnes vides »).
+ */
+export function colonnesVisibles(grille: Grille, saisies: SaisiesValideur, toutes: boolean): ColonneGrille[] {
+  if (toutes) return grille.colonnes;
+  return grille.colonnes.filter(
+    (c) => !CHAMPS_SANS_COLONNE.has(c.nom) && grille.rangees.some((r) => celluleRemplie(r.cellules[c.nom], saisies)),
+  );
+}
+
+export interface PatienteGrille {
+  numeroOrdre: number;
+  /** Visites de la patiente, par rang (une seule hors CPN/CPON). */
+  visites: RangeeGrille[];
+}
+
+/** Rangées regroupées par patiente (ordre du registre). */
+export function patientesDeGrille(grille: Grille): PatienteGrille[] {
+  const parNumero = new Map<number, PatienteGrille>();
+  for (const r of grille.rangees) {
+    const p = parNumero.get(r.numeroOrdre) ?? { numeroOrdre: r.numeroOrdre, visites: [] };
+    p.visites.push(r);
+    parNumero.set(r.numeroOrdre, p);
+  }
+  return [...parNumero.values()];
+}
+
+/** Nombre de cases à vérifier d'une patiente (identité + visites). */
+export function casesAVerifier(patiente: PatienteGrille, colonnes: ColonneGrille[], saisies: SaisiesValideur): number {
+  let n = 0;
+  for (const visite of patiente.visites) {
+    for (const c of colonnes) {
+      if (c.niveau_patiente && !visite.debutPatiente) continue;
+      if (etatCellule(visite.cellules[c.nom], saisies)?.aVerifier) n++;
+    }
+  }
+  return n;
 }
