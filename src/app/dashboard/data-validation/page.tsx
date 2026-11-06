@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import DetailsTable from '@/components/features/data-validation/DetailsTable';
 import { useQuery } from '@tanstack/react-query';
-import { SessionsService } from '@/services/sessions.service';
+import { SessionsService, sessionFolderStatus, sessionLabel } from '@/services/sessions.service';
 import { Loader2 } from 'lucide-react';
 import {
   Search,
@@ -78,14 +78,14 @@ export default function DataValidationPage() {
   const folders: FolderData[] = useMemo(() => {
     if (!data?.items) return [];
     return data.items.map(session => ({
-      id: session.id,
-      name: session.libelle_session || `Session ${session.id}`,
-      filesCount: session.nb_pages || 0,
+      id: session.id_session_scan,
+      name: sessionLabel(session),
+      filesCount: session.nombre_pages ?? 0,
       size: 'N/A', // Compute if available
       sizeBytes: 0,
-      status: (session.statut?.toLowerCase() as FolderStatus) || 'pending',
+      status: sessionFolderStatus(session.statut_session),
       createdAt: session.date_creation || new Date().toISOString(),
-      lastModified: session.date_creation || new Date().toISOString(),
+      lastModified: session.date_modification || session.date_creation || new Date().toISOString(),
       tags: [session.type_registre, `Year ${session.annee_version}`],
       description: `Type: ${session.type_registre}`,
     }));
@@ -98,7 +98,7 @@ export default function DataValidationPage() {
       const matchesStatus = statusFilter === 'all' || f.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [search, statusFilter, language]);
+  }, [folders, search, statusFilter, language]);
 
   const statusTag = selectedFolder ? STATUS_TAG[selectedFolder.status] : null;
 
@@ -107,7 +107,7 @@ export default function DataValidationPage() {
     const counts = { all: folders.length, pending: 0, validated: 0, rejected: 0, anomaly: 0 };
     folders.forEach(f => counts[f.status]++);
     return counts;
-  }, []);
+  }, [folders]);
 
   return (
     <div className="h-full flex flex-col gap-4 p-5 overflow-hidden">

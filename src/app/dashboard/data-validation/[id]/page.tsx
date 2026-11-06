@@ -154,7 +154,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Pages</span>
               <span className="text-3xl font-bold text-gray-800">
-                {sessionLoading ? '...' : (session.nb_pages || 0)}
+                {sessionLoading ? '...' : (session.nombre_pages ?? 0)}
               </span>
             </div>
 
