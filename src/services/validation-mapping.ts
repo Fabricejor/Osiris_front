@@ -266,18 +266,14 @@ export function construireGrille(
   const rangsParPatient = Math.max(1, catalogue.rangs_par_patient ?? 1);
   const multiVisites = rangsParPatient > 1;
 
+  // Ordre = sections puis champs du catalogue, alignés sur le papier.
+  // (`colonne_registre` n'est renseigné que pour une partie des champs : trier
+  // dessus repousserait tous les autres en fin de tableau.)
   const champsOrdonnes = [...catalogue.sections]
     .sort((a, b) => a.ordre - b.ordre)
-    .flatMap((section, iSection) =>
-      [...section.champs]
-        .sort((a, b) => a.ordre - b.ordre)
-        .map((champ, iChamp) => ({ section, champ, rangLogique: iSection * 1000 + iChamp })),
-    )
-    .sort((a, b) => {
-      const ca = a.champ.colonne_registre ?? Number.MAX_SAFE_INTEGER;
-      const cb = b.champ.colonne_registre ?? Number.MAX_SAFE_INTEGER;
-      return ca - cb || a.rangLogique - b.rangLogique;
-    });
+    .flatMap((section) =>
+      [...section.champs].sort((a, b) => a.ordre - b.ordre).map((champ) => ({ section, champ })),
+    );
 
   const colonnes: ColonneGrille[] = [];
   const groupes: GroupeColonnes[] = [];
