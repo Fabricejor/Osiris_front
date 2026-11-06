@@ -455,6 +455,56 @@
         "title": "ChampCatalogue",
         "type": "object"
       },
+      "ChampCatalogueUpdate": {
+        "additionalProperties": false,
+        "description": "Body de `PATCH /catalogue-registres/{type}/{annee}/champs/{nom}`.\n\nChamp absent ou `null` = inchangé. `alias: []` supprime tous les alias.",
+        "properties": {
+          "alias": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Variantes de l'intitulé de la colonne sur les registres terrain.",
+            "title": "Alias"
+          },
+          "libelle": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Libelle"
+          },
+          "modalites": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Valeurs autorisées (champs à choix / oui-non).",
+            "title": "Modalites"
+          }
+        },
+        "title": "ChampCatalogueUpdate",
+        "type": "object"
+      },
       "ChangePasswordRequest": {
         "additionalProperties": false,
         "description": "Body de `POST /auth/change-password`.\n\nPublic (aucune auth requise) — sinon un utilisateur bloqué par un\npassword temporaire ne pourrait pas y accéder. Le rate limit habituel\ndu login s'applique pour éviter le brute-force du `current_password`.",
@@ -2458,7 +2508,8 @@
           "CREATE_STRUCTURE",
           "UPDATE_STRUCTURE",
           "CREATE_EXPORT",
-          "DELETE_EXPORT"
+          "DELETE_EXPORT",
+          "UPDATE_CATALOGUE"
         ],
         "title": "TypeActionAudit",
         "type": "string"
@@ -2508,7 +2559,8 @@
           "SESSION_SCAN",
           "REGISTRE_SCANNE",
           "STRUCTURE_SANITAIRE",
-          "EXPORT"
+          "EXPORT",
+          "CATALOGUE_CHAMP"
         ],
         "title": "TypeRessourceAudit",
         "type": "string"
@@ -4247,6 +4299,99 @@
           }
         ],
         "summary": "Détail d'un catalogue (sections + champs)",
+        "tags": [
+          "Catalogues"
+        ]
+      }
+    },
+    "/api/v1/catalogue-registres/{type_registre}/{annee_version}/champs/{nom_champ}": {
+      "patch": {
+        "description": "Effet immédiat sur cette instance de l'API ; les workers OCR voient la\nmodification au plus tard après la durée de vie du cache (60 s).",
+        "operationId": "patch_champ_catalogue_api_v1_catalogue_registres__type_registre___annee_version__champs__nom_champ__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "type_registre",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TypeRegistre"
+            }
+          },
+          {
+            "in": "path",
+            "name": "annee_version",
+            "required": true,
+            "schema": {
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Annee Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "nom_champ",
+            "required": true,
+            "schema": {
+              "maxLength": 120,
+              "title": "Nom Champ",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChampCatalogueUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogueRegistre"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Réservé aux admins"
+          },
+          "404": {
+            "description": "Catalogue ou champ introuvable"
+          },
+          "422": {
+            "description": "Modification invalide (alias déjà utilisé par un autre champ…)"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Admin : modifier le libellé, les alias ou les modalités d'un champ",
         "tags": [
           "Catalogues"
         ]

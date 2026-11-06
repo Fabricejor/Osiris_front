@@ -1,9 +1,28 @@
 import { apiClient } from "./apiClient";
 
-import type { CatalogueRegistre, CreateCatalogueDto, UpdateCatalogueDto } from "../types";
+import type { CatalogueRegistre } from "../types";
 import type { components } from "@/types/api.generated";
 
+export type ChampCatalogueUpdate = components["schemas"]["ChampCatalogueUpdate"];
+
 export const CataloguesService = {
+  /**
+   * Modifie le libellé, les alias ou les modalités d'un champ (admins).
+   * Renvoie le catalogue complet à jour. Les workers OCR voient la
+   * modification au plus tard 60 s après (cache).
+   */
+  modifierChamp: async (
+    typeRegistre: string,
+    anneeVersion: number,
+    nomChamp: string,
+    modification: ChampCatalogueUpdate,
+  ) => {
+    return apiClient<components["schemas"]["CatalogueRegistre"]>(
+      `/v1/catalogue-registres/${encodeURIComponent(typeRegistre)}/${anneeVersion}/champs/${encodeURIComponent(nomChamp)}`,
+      { method: "PATCH", body: JSON.stringify(modification) },
+    );
+  },
+
   /** Catalogue d'un (type, année) : sections → champs (nom, libellé, ordre, type, unité). */
   getByTypeAnnee: async (typeRegistre: string, anneeVersion: number) => {
     return apiClient<components["schemas"]["CatalogueRegistre"]>(
@@ -29,29 +48,6 @@ export const CataloguesService = {
     }));
   },
 
-  getById: async (id: string) => {
-    return apiClient<CatalogueRegistre>(`/v1/catalogue-registres/${id}`, {
-      method: "GET",
-    });
-  },
-
-  create: async (data: CreateCatalogueDto) => {
-    return apiClient<CatalogueRegistre>("/v1/catalogue-registres", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-
-  update: async (id: string, data: UpdateCatalogueDto) => {
-    return apiClient<CatalogueRegistre>(`/v1/catalogue-registres/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-
-  delete: async (id: string) => {
-    return apiClient(`/v1/catalogue-registres/${id}`, {
-      method: "DELETE",
-    });
-  },
+  // Création / modification / suppression d'un catalogue : non exposées par
+  // l'API (la structure évolue par migration). Voir modifierChamp pour les champs.
 };
