@@ -33,6 +33,7 @@ import {
   champsAffiches,
   confianceLigne,
   construireCorrections,
+  libelleChamp,
   niveauConfiance,
   type ChampAffiche,
 } from '@/services/validation-mapping';
@@ -118,7 +119,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   });
 
   // Catalogue (libellés, ordre, unités des champs) du type de registre de la page.
-  const { data: catalogue } = useQuery({
+  const { data: catalogue, isLoading: isLoadingCatalogue, isError: catalogueEnErreur } = useQuery({
     queryKey: ['catalogue', currentPage?.type_registre, currentPage?.annee_version],
     queryFn: () => CataloguesService.getByTypeAnnee(currentPage!.type_registre, currentPage!.annee_version),
     enabled: isOpen && canValidate && !!currentPage,
@@ -405,8 +406,8 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       </h3>
                       <p className="text-xs text-gray-500 mb-4">
                         {language === 'fr'
-                          ? "Recopiez chaque case d'après l'extrait d'image. La valeur pré-remplie est une lecture automatique à vérifier."
-                          : 'Transcribe each cell from the image crop. Pre-filled values are automatic readings to check.'}
+                          ? "Valeurs pré-remplies par Gemini (avec son score de confiance) : vérifiez-les sur l'image de la page, corrigez si besoin, puis validez."
+                          : 'Values pre-filled by Gemini (with its confidence score): check them against the page image, correct if needed, then validate.'}
                       </p>
 
                       <div className="space-y-5">
@@ -422,23 +423,39 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                             <div key={pii.id_pii_cellule} className="relative">
                               <div className="flex items-center justify-between mb-1 ml-4">
                                 <label htmlFor={`pii-${pii.id_pii_cellule}`} className="text-xs font-bold text-gray-500">
-                                  {pii.nom_champ ? pii.nom_champ.replace(/_/g, ' ') : pii.cell_id} · patient {pii.patient_index + 1}
+                                  {pii.nom_champ ? libelleChamp(catalogue, pii.nom_champ) : pii.cell_id} · {language === 'fr' ? 'ligne' : 'row'} {pii.patient_index + 1}
                                 </label>
-                                {pii.saisie && (
+                                {pii.saisie ? (
                                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">Saisie</span>
-                                )}
-                                {!pii.saisie && pii.valeur_lue && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-gray-100 text-gray-600 border-gray-200">Pré-lu OCR</span>
+                                ) : (
+                                  <BadgeConfiance
+                                    champ={{
+                                      nom: pii.nom_champ ?? pii.cell_id,
+                                      libelle: '',
+                                      type_champ: 'TEXTE',
+                                      unite: null,
+                                      valeur: pii.valeur_lue ?? '',
+                                      lu: !!pii.valeur_lue,
+                                      confiance:
+                                        typeof pii.score_confiance === 'number' ? Math.round(pii.score_confiance * 100) : null,
+                                      corrigeParHumain: false,
+                                      manquant: !pii.valeur_lue,
+                                    }}
+                                  />
                                 )}
                               </div>
-                              {/* eslint-disable-next-line @next/next/no-img-element -- URL présignée MinIO éphémère */}
-                              <img
-                                src={pii.crop_url}
-                                alt={pii.nom_champ ?? pii.cell_id}
-                                className="ml-4 mb-2 max-h-16 rounded border border-gray-200 bg-white object-contain"
-                              />
+                              {pii.crop_url && (
+                                <>
+                                  {/* eslint-disable-next-line @next/next/no-img-element -- URL présignée MinIO éphémère */}
+                                  <img
+                                    src={pii.crop_url}
+                                    alt={pii.nom_champ ?? pii.cell_id}
+                                    className="ml-4 mb-2 max-h-16 rounded border border-gray-200 bg-white object-contain"
+                                  />
+                                </>
+                              )}
                               <div className="flex items-center">
-                                <div className={`w-1.5 h-10 ${pii.saisie ? 'bg-[#65b741]' : 'bg-yellow-400'} rounded-r-md absolute left-0 bottom-0`} />
+                                <div className={`w-1.5 h-10 ${pii.saisie ? 'bg-[#65b741]' : BARRE_CONFIANCE[niveauConfiance(typeof pii.score_confiance === 'number' ? Math.round(pii.score_confiance * 100) : null)]} rounded-r-md absolute left-0 bottom-0`} />
                                 <input
                                   id={`pii-${pii.id_pii_cellule}`}
                                   type="text"
@@ -460,13 +477,20 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       </h3>
 
                       <div className="space-y-6">
-                        {isLoadingClinical && (
+                        {(isLoadingClinical || isLoadingCatalogue) && (
                           <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[#65b741]" /></div>
                         )}
-                        {!isLoadingClinical && lignes.length === 0 && (
+                        {catalogueEnErreur && (
+                          <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm">
+                            {language === 'fr'
+                              ? 'Catalogue du registre introuvable : impossible de distinguer les champs cliniques des PII.'
+                              : 'Register catalogue not found: clinical and PII fields cannot be told apart.'}
+                          </div>
+                        )}
+                        {!isLoadingClinical && !isLoadingCatalogue && !catalogueEnErreur && lignes.length === 0 && (
                           <div className="text-gray-500 text-center py-8">Aucune donnée clinique pour cette page.</div>
                         )}
-                        {!isLoadingClinical && lignes.map(({ donnee, champs }) => {
+                        {!isLoadingClinical && !isLoadingCatalogue && lignes.map(({ donnee, champs }) => {
                           const confiance = confianceLigne(champs);
                           const niveau = niveauConfiance(confiance);
                           const saisies = saisiesCliniques[donnee.id_donnee_extraite] ?? {};

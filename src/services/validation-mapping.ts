@@ -108,6 +108,18 @@ function champsCatalogue(catalogue: Catalogue | undefined): ChampCatalogue[] {
     .filter((c) => !c.is_pii); // les PII sont saisies à part (onglet PII)
 }
 
+/** Noms des champs identifiants (`is_pii`) : affichés dans l'onglet PII, jamais en clinique. */
+export function nomsChampsPii(catalogue: Catalogue | undefined): Set<string> {
+  if (!catalogue) return new Set();
+  return new Set(catalogue.sections.flatMap((s) => s.champs).filter((c) => c.is_pii).map((c) => c.nom));
+}
+
+/** Libellé lisible d'un champ (catalogue), à défaut son nom humanisé. */
+export function libelleChamp(catalogue: Catalogue | undefined, nom: string): string {
+  const def = catalogue?.sections.flatMap((s) => s.champs).find((c) => c.nom === nom);
+  return def?.libelle ?? humaniser(nom);
+}
+
 function humaniser(nom: string): string {
   const s = nom.replace(/_/g, ' ');
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -127,6 +139,9 @@ function champsDeLigne(donnee: DonneeExtraite): Record<string, ValeurChampOCR> {
  * à la fin pour ne rien perdre.
  */
 export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | undefined): ChampAffiche[] {
+  // Sans catalogue, impossible de savoir quels champs sont des PII : on
+  // n'affiche rien plutôt que de risquer d'afficher un nom en clinique.
+  if (!catalogue) return [];
   const lus = champsDeLigne(donnee);
   const manquants = new Set((donnee.missings_reels ?? []).map(String));
 
@@ -147,7 +162,9 @@ export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | un
   };
 
   const defs = champsCatalogue(catalogue);
-  const vus = new Set(defs.map((d) => d.nom));
+  // Les lignes extraites avant la séparation PII/clinique contiennent encore
+  // nom, adresse… dans leurs champs : on ne les affiche jamais ici.
+  const vus = new Set([...defs.map((d) => d.nom), ...nomsChampsPii(catalogue)]);
   return [
     ...defs.map((d) => depuis(d.nom, d)),
     ...Object.keys(lus).filter((nom) => !vus.has(nom)).map((nom) => depuis(nom)),
