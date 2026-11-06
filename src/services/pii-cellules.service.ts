@@ -1,42 +1,44 @@
 import { apiClient } from './apiClient';
-import type { PiiCellule } from '@/types';
+import type { components } from '@/types/api.generated';
+
+/** `PiiCelluleRead` (backend : src/schemas/pii_cellule.py) — généré depuis l'OpenAPI. */
+export type PiiCellule = components['schemas']['PiiCelluleRead'];
 
 interface ListResponse<T> {
   items: T[];
   total: number;
 }
 
+export interface PiiFiltres {
+  statut?: 'a_saisir' | 'saisie';
+  id_session_scan?: string;
+  /** Cellules d'UNE page (registre_scanne). */
+  id_registre_scanne?: string;
+}
+
 export const PiiCellulesService = {
-  /**
-   * Récupère la liste des cellules PII nécessitant une saisie
-   */
-  async getCellulesASaisir(
-    limit: number = 50,
+  /** Cellules PII (crop image + valeur pré-lue) à saisir par le valideur. */
+  async getCellules(
+    filtres: PiiFiltres = {},
+    limit: number = 100,
     offset: number = 0,
-    statut: string = 'a_saisir',
-    id_session_scan?: string
   ): Promise<ListResponse<PiiCellule>> {
-    let url = `/v1/pii-cellules?limit=${limit}&offset=${offset}&statut=${statut}`;
-    if (id_session_scan) {
-      url += `&id_session_scan=${id_session_scan}`;
-    }
-    return apiClient<ListResponse<PiiCellule>>(url, { method: 'GET' });
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    params.set('statut', filtres.statut ?? 'a_saisir');
+    if (filtres.id_session_scan) params.set('id_session_scan', filtres.id_session_scan);
+    if (filtres.id_registre_scanne) params.set('id_registre_scanne', filtres.id_registre_scanne);
+    return apiClient<ListResponse<PiiCellule>>(`/v1/pii-cellules?${params}`, { method: 'GET' });
   },
 
-  /**
-   * Récupère le détail d'une cellule PII (incluant une URL de crop présignée fraîche)
-   */
+  /** Détail (avec une URL de crop présignée fraîche). */
   async getCelluleById(id: string): Promise<PiiCellule> {
     return apiClient<PiiCellule>(`/v1/pii-cellules/${id}`, { method: 'GET' });
   },
 
-  /**
-   * Enregistre la saisie d'une cellule PII
-   */
-  async saisirCellule(id: string, valeur: string): Promise<void> {
-    await apiClient(`/v1/pii-cellules/${id}/saisir`, {
+  async saisirCellule(id: string, valeur: string): Promise<PiiCellule> {
+    return apiClient<PiiCellule>(`/v1/pii-cellules/${id}/saisir`, {
       method: 'POST',
       body: JSON.stringify({ valeur }),
     });
-  }
+  },
 };

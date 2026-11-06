@@ -1,8 +1,17 @@
 import { apiClient } from "./apiClient";
 
 import type { CatalogueRegistre, CreateCatalogueDto, UpdateCatalogueDto } from "../types";
+import type { components } from "@/types/api.generated";
 
 export const CataloguesService = {
+  /** Catalogue d'un (type, année) : sections → champs (nom, libellé, ordre, type, unité). */
+  getByTypeAnnee: async (typeRegistre: string, anneeVersion: number) => {
+    return apiClient<components["schemas"]["CatalogueRegistre"]>(
+      `/v1/catalogue-registres/${encodeURIComponent(typeRegistre)}/${anneeVersion}`,
+      { method: "GET" },
+    );
+  },
+
   getAll: async () => {
     const res = await apiClient<{items: CatalogueRegistre[], total: number}>("/v1/catalogue-registres", {
       method: "GET",

@@ -1,52 +1,55 @@
 import { apiClient } from './apiClient';
-import type { DonneeExtraite } from '@/types';
+import type { components } from '@/types/api.generated';
+
+/** `DonneeExtraiteRead` (backend : src/schemas/donnee_extraite.py) — généré depuis l'OpenAPI. */
+export type DonneeExtraite = components['schemas']['DonneeExtraiteRead'];
+export type CategorieRejet = components['schemas']['CategorieRejet'];
 
 interface ListResponse<T> {
   items: T[];
   total: number;
 }
 
+export interface DonneesFiltres {
+  statut?: 'a_valider' | 'validee' | 'rejetee';
+  id_session_scan?: string;
+  /** Lignes d'UNE page (registre_scanne) — ce qu'affiche le popup de validation. */
+  id_registre_scanne?: string;
+}
+
 export const DonneesExtraitesService = {
-  /**
-   * Récupère la liste des données extraites nécessitant une validation (ou filtrées)
-   */
-  async getDonneesAValider(
-    limit: number = 20,
+  /** Lignes extraites par l'OCR, filtrées par statut / session / page. */
+  async getDonnees(
+    filtres: DonneesFiltres = {},
+    limit: number = 100,
     offset: number = 0,
-    statut: string = 'a_valider',
-    id_session_scan?: string
   ): Promise<ListResponse<DonneeExtraite>> {
-    let url = `/v1/donnees-extraites?limit=${limit}&offset=${offset}&statut=${statut}`;
-    if (id_session_scan) {
-      url += `&id_session_scan=${id_session_scan}`;
-    }
-    return apiClient<ListResponse<DonneeExtraite>>(url, { method: 'GET' });
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    params.set('statut', filtres.statut ?? 'a_valider');
+    if (filtres.id_session_scan) params.set('id_session_scan', filtres.id_session_scan);
+    if (filtres.id_registre_scanne) params.set('id_registre_scanne', filtres.id_registre_scanne);
+    return apiClient<ListResponse<DonneeExtraite>>(`/v1/donnees-extraites?${params}`, { method: 'GET' });
   },
 
-  /**
-   * Récupère les détails d'une ligne extraite par son ID
-   */
   async getDonneeById(id: string): Promise<DonneeExtraite> {
     return apiClient<DonneeExtraite>(`/v1/donnees-extraites/${id}`, { method: 'GET' });
   },
 
   /**
-   * Valide les données extraites (avec ou sans corrections)
+   * Valide une ligne. `corrections` = `{nom_champ: nouvelle_valeur}` pour les
+   * seuls champs modifiés ; vide → la lecture OCR est acceptée telle quelle.
    */
-  async validerDonnee(id: string, corrections: Record<string, any> = {}): Promise<void> {
-    await apiClient(`/v1/donnees-extraites/${id}/valider`, {
+  async validerDonnee(id: string, corrections: Record<string, unknown> = {}): Promise<DonneeExtraite> {
+    return apiClient<DonneeExtraite>(`/v1/donnees-extraites/${id}/valider`, {
       method: 'POST',
       body: JSON.stringify({ corrections }),
     });
   },
 
-  /**
-   * Rejette la donnée avec un motif
-   */
-  async rejeterDonnee(id: string, categorie: string, motif?: string): Promise<void> {
-    await apiClient(`/v1/donnees-extraites/${id}/rejeter`, {
+  async rejeterDonnee(id: string, categorie: CategorieRejet, motif?: string): Promise<DonneeExtraite> {
+    return apiClient<DonneeExtraite>(`/v1/donnees-extraites/${id}/rejeter`, {
       method: 'POST',
       body: JSON.stringify({ categorie, motif }),
     });
-  }
+  },
 };

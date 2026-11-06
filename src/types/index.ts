@@ -31,29 +31,7 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-export interface DonneeExtraite {
-  id: string;
-  id_registre_scanne: string;
-  donnees_brutes_ocr: Record<string, any>;
-  donnees_validees?: Record<string, any>;
-  alertes?: string[];
-  missings_reels?: string[];
-  statut: 'A_VALIDER' | 'VALIDEE' | 'REJETEE';
-  date_validation?: string;
-  score_confiance?: number;
-  valeur_extraite?: string;
-}
 
-export interface PiiCellule {
-  id: string;
-  cell_id: string;
-  nom_champ: string;
-  crop_url: string;
-  valeur_saisie?: string;
-  date_saisie?: string;
-  statut: 'A_SAISIR' | 'SAISIE';
-  score_confiance?: number;
-}
 
 export interface AuditLog {
   id: string;

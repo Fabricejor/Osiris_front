@@ -1341,9 +1341,16 @@
             "type": "string"
           },
           "crop_url": {
-            "description": "URL MinIO présignée du crop, TTL court.",
-            "title": "Crop Url",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "URL MinIO présignée du crop, TTL court. None en lecture pleine page (pas de crop : le valideur lit la page entière).",
+            "title": "Crop Url"
           },
           "date_creation": {
             "format": "date-time",
@@ -1413,6 +1420,20 @@
             "title": "Saisie",
             "type": "boolean"
           },
+          "score_confiance": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Confiance Gemini (0..1) sur `valeur_lue`. None = aucun score fourni.",
+            "title": "Score Confiance"
+          },
           "valeur_lue": {
             "anyOf": [
               {
@@ -1444,7 +1465,6 @@
           "nom_champ",
           "patient_index",
           "rang",
-          "crop_url",
           "valeur_saisie",
           "id_valideur_medical",
           "date_saisie",

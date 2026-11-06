@@ -1749,9 +1749,9 @@ export interface components {
             cell_id: string;
             /**
              * Crop Url
-             * @description URL MinIO présignée du crop, TTL court.
+             * @description URL MinIO présignée du crop, TTL court. None en lecture pleine page (pas de crop : le valideur lit la page entière).
              */
-            crop_url: string;
+            crop_url?: string | null;
             /**
              * Date Creation
              * Format: date-time
@@ -1791,6 +1791,11 @@ export interface components {
              * @description True si `valeur_saisie` est renseignée.
              */
             saisie: boolean;
+            /**
+             * Score Confiance
+             * @description Confiance Gemini (0..1) sur `valeur_lue`. None = aucun score fourni.
+             */
+            score_confiance?: number | null;
             /**
              * Valeur Lue
              * @description Valeur extraite par l'OCR (Gemini) pour pré-remplissage.
