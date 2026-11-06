@@ -34,7 +34,7 @@ interface DetailsTableProps {
 const IdCell = (info: any) => <span className="font-medium text-gray-800">{info.getValue()}</span>;
 
 const StatusCell = (info: any) => {
-  const status = sessionFolderStatus(info.getValue());
+  const status = info.getValue() as FolderStatus;
   const statusTag = STATUS_TAG[status] || STATUS_TAG['pending'];
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTag.bg} ${statusTag.text}`}>
@@ -82,7 +82,8 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
         header: 'Date Création',
         cell: (info) => new Date(info.getValue() as string).toLocaleDateString(),
       }),
-      columnHelper.accessor('statut_session', {
+      columnHelper.accessor((s) => sessionFolderStatus(s), {
+        id: 'statut',
         header: 'Status',
         cell: StatusCell,
       }),
@@ -97,7 +98,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
       const matchesSearch =
         s.id_session_scan.toLowerCase().includes(q) ||
         sessionLabel(s).toLowerCase().includes(q);
-      const matchesStatus = statusFilter === 'all' || sessionFolderStatus(s.statut_session) === statusFilter;
+      const matchesStatus = statusFilter === 'all' || sessionFolderStatus(s) === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [data, search, statusFilter]);

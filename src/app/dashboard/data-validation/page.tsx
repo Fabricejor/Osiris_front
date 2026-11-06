@@ -83,7 +83,7 @@ export default function DataValidationPage() {
       filesCount: session.nombre_pages ?? 0,
       size: 'N/A', // Compute if available
       sizeBytes: 0,
-      status: sessionFolderStatus(session.statut_session),
+      status: sessionFolderStatus(session),
       createdAt: session.date_creation || new Date().toISOString(),
       lastModified: session.date_modification || session.date_creation || new Date().toISOString(),
       tags: [session.type_registre, `Year ${session.annee_version}`],
