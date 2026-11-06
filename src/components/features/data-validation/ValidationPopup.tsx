@@ -137,6 +137,8 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   const [saisiesPii, setSaisiesPii] = useState<Record<string, string>>({});
   // Cases confirmées telles quelles en mode « À vérifier » (clés `cleCellule`).
   const [revues, setRevues] = useState<Set<string>>(new Set());
+  // Mode « Corriger » : déverrouille les valeurs déjà validées / saisies.
+  const [modeCorrection, setModeCorrection] = useState(false);
 
 
   const currentPage = pages[currentIndex];
@@ -174,13 +176,15 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   // Données de la page affichée (et non de toute la session).
   const { data: clinicalData = [], isLoading: isLoadingClinical } = useQuery({
     queryKey: ['clinical-data', pageId],
-    queryFn: async () => (await DonneesExtraitesService.getDonnees({ id_registre_scanne: pageId })).items,
+    // Toutes les lignes de la page (y compris validées / rejetées) : la page
+    // s'affiche entière, et une valeur validée peut être corrigée.
+    queryFn: () => DonneesExtraitesService.getToutesDeLaPage(pageId!),
     enabled: isOpen && canValidate && !!pageId,
   });
 
   const { data: piiData = [], isLoading: isLoadingPii } = useQuery({
     queryKey: ['pii-data', pageId],
-    queryFn: async () => (await PiiCellulesService.getCellules({ id_registre_scanne: pageId })).items,
+    queryFn: () => PiiCellulesService.getToutesDeLaPage(pageId!),
     enabled: isOpen && canValidate && !!pageId,
   });
 
@@ -197,7 +201,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     setSaisiesCliniques((prev) => ({ ...prev, [idDonnee]: { ...prev[idDonnee], [nomChamp]: valeur } }));
   const modifierPii = (idPii: string, valeur: string) =>
     setSaisiesPii((prev) => ({ ...prev, [idPii]: valeur }));
-  const saisies = { cliniques: saisiesCliniques, pii: saisiesPii, revues };
+  const saisies = { cliniques: saisiesCliniques, pii: saisiesPii, revues, correction: modeCorrection };
   const confirmerCase = useCallback((cle: string) => setRevues((prev) => new Set(prev).add(cle)), []);
   // Cases encore douteuses (après corrections et confirmations du valideur).
   const nbAVerifier = elementsAVerifier(grille, saisies).length;
@@ -271,31 +275,61 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     mutationFn: async () => {
       if (!currentPage) return;
       if (canValidate) {
+        // La page n'est validée qu'avec TOUTES ses données personnelles : on
+        // refuse avant d'envoyer quoi que ce soit (pas de validation partielle).
+        // Exception : patiente dont toutes les lignes ont été rejetées.
+        const numerosRejetes = new Set(
+          [...new Set(lignes.map(({ donnee }) => donnee.numero_ordre_ligne))].filter((n) =>
+            lignes.filter(({ donnee }) => donnee.numero_ordre_ligne === n).every(({ donnee }) => !!donnee.categorie_rejet),
+          ),
+        );
+        const piiVides = piiData.filter(
+          (pii) =>
+            !pii.saisie &&
+            !numerosRejetes.has(pii.patient_index + 1) &&
+            !(saisiesPii[pii.id_pii_cellule] ?? pii.valeur_lue ?? '').trim(),
+        );
+        if (piiVides.length > 0) {
+          const qui = [...new Set(piiVides.map((p) => `N° ${p.patient_index + 1}`))].join(', ');
+          throw new Error(
+            language === 'fr'
+              ? `${piiVides.length} donnée(s) personnelle(s) vide(s) à saisir avant de valider (${qui}).`
+              : `${piiVides.length} empty personal field(s) to fill in before validating (${qui}).`,
+          );
+        }
         for (const { donnee, champs } of lignes) {
-          if (donnee.valide) continue;
           const corrections = construireCorrections(champs, saisiesCliniques[donnee.id_donnee_extraite]);
-          await DonneesExtraitesService.validerDonnee(donnee.id_donnee_extraite, corrections);
+          if (!donnee.valide) {
+            await DonneesExtraitesService.validerDonnee(donnee.id_donnee_extraite, corrections);
+          } else if (!donnee.categorie_rejet && Object.keys(corrections).length > 0) {
+            // Mode « Corriger » : ligne déjà validée, seuls les champs modifiés.
+            await DonneesExtraitesService.corrigerDonnee(donnee.id_donnee_extraite, corrections);
+          }
         }
         for (const pii of piiData) {
           const valeur = (saisiesPii[pii.id_pii_cellule] ?? pii.valeur_saisie ?? pii.valeur_lue ?? '').trim();
-          if (valeur && valeur !== (pii.valeur_saisie ?? '')) {
-            await PiiCellulesService.saisirCellule(pii.id_pii_cellule, valeur);
-          }
+          if (!valeur || valeur === (pii.valeur_saisie ?? '')) continue;
+          if (pii.saisie) await PiiCellulesService.corrigerCellule(pii.id_pii_cellule, valeur);
+          else await PiiCellulesService.saisirCellule(pii.id_pii_cellule, valeur);
         }
       }
-      // Quand la dernière ligne d'une page est validée (ou rejetée), le backend
-      // passe lui-même la page en VALIDE. Rappeler /pages/{id}/validate
-      // renverrait alors un 409 (page plus « À valider ») : on ne le fait que
-      // pour une page sans aucune ligne extraite.
-      if (lignes.length === 0 && currentPage.status === 'A_VALIDER') {
+      // Quand tout est traité (lignes ET données personnelles), le backend passe
+      // lui-même la page en VALIDE (puis la session). Rappeler /pages/{id}/validate
+      // renverrait un 409 : on ne le fait que pour une page sans rien d'extrait.
+      if (lignes.length === 0 && piiData.length === 0 && currentPage.status === 'A_VALIDER') {
         await SessionsService.validatePage(currentPage.id);
       }
     },
     onSuccess: () => {
-      toast.success(language === 'fr' ? 'Page validée avec succès' : 'Page validated successfully');
+      toast.success(
+        modeCorrection
+          ? (language === 'fr' ? 'Corrections enregistrées' : 'Corrections saved')
+          : (language === 'fr' ? 'Page validée avec succès' : 'Page validated successfully'),
+      );
       setSaisiesCliniques({});
       setSaisiesPii({});
       setRevues(new Set());
+      setModeCorrection(false);
       queryClient.invalidateQueries({ queryKey: ['clinical-data', pageId] });
       queryClient.invalidateQueries({ queryKey: ['pii-data', pageId] });
       queryClient.invalidateQueries({ queryKey: ['sessions-table'] });
@@ -318,6 +352,9 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
   const aRevoir =
     lignes.filter(({ donnee }) => !donnee.valide).length + piiData.filter((p) => !p.saisie).length;
+  // Lignes validées (non rejetées) et PII saisies : corrigeables en mode « Corriger ».
+  const dejaTraitees =
+    lignes.filter(({ donnee }) => donnee.valide && !donnee.categorie_rejet).length + piiData.filter((p) => p.saisie).length;
   // Champs à vérifier en priorité (lignes pas encore validées uniquement) :
   // score Gemini faible, ou valeur lue sans aucun score (« Score inconnu »).
   // Cases douteuses restantes (score < 80 %, inconnu, ou alerte) : baisse au fil
@@ -327,6 +364,10 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     : '';
 
   if (!isOpen || !currentPage) return null;
+
+  // Page déjà validée / rejetée : plus de bouton « Valider » (seulement
+  // « Enregistrer les corrections » en mode Corriger).
+  const pageTerminee = currentPage.status === 'VALIDE' || currentPage.status === 'REJETEE';
 
   const confidenceColor = currentPage.confidence < 80 ? 'text-red-500' : 'text-emerald-600';
   const confidenceBg = currentPage.confidence < 80 ? 'bg-red-500' : 'bg-emerald-500';
@@ -512,6 +553,20 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                         </div>
                       </div>
                     </div>
+                    {canValidate && dejaTraitees > 0 && (
+                      <button
+                        onClick={() => setModeCorrection((v) => !v)}
+                        aria-pressed={modeCorrection}
+                        title={language === 'fr'
+                          ? 'Rendre modifiables les valeurs déjà validées (chaque correction est tracée)'
+                          : 'Make already validated values editable (each correction is logged)'}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors ${modeCorrection ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                      >
+                        {modeCorrection
+                          ? (language === 'fr' ? 'Correction en cours' : 'Correcting')
+                          : (language === 'fr' ? 'Corriger' : 'Correct')}
+                      </button>
+                    )}
                     {canValidate && (
                       <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-bold" role="group" aria-label="Disposition">
                         {([
@@ -562,6 +617,15 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                 {/* Form Scrollable Content */}
                 <div className={`flex-1 min-h-0 overflow-y-auto ${vueTableau ? 'p-4 space-y-4' : 'p-8 space-y-8'}`} style={{ scrollbarWidth: 'thin' }}>
+
+                  {modeCorrection && (
+                    <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-[13px] text-blue-800">
+                      <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+                      {language === 'fr'
+                        ? 'Mode correction : les valeurs déjà validées sont modifiables. Chaque correction est tracée (avant / après) ; les exports déjà générés ne changent pas, les suivants prendront la correction.'
+                        : 'Correction mode: validated values are editable. Each correction is logged (before / after); existing exports do not change, later ones will include it.'}
+                    </div>
+                  )}
 
                   <EcartsRegistre
                     controle={currentPage.controleEntetes}
@@ -807,32 +871,60 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                 {/* Sticky Footer */}
                 <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
-                  <div className="flex items-center gap-3">
-                    <Flag className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-bold text-gray-700">
-                      {canValidate
-                        ? `${aRevoir} élément(s) à valider${detailsAVerifier ? ` · ${detailsAVerifier}` : ''}`
-                        : (language === 'fr' ? 'Validation de la page' : 'Page validation')}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
-                      {t("save_draft")}
-                    </button>
-                    <button
-                      onClick={() => validateMutation.mutate()}
-                      disabled={validateMutation.isPending}
-                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {validateMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
+                  {pageTerminee && !modeCorrection ? (
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${currentPage.status === 'VALIDE' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}
+                      >
                         <CheckCircle2 className="w-4 h-4" />
+                        {currentPage.status === 'VALIDE'
+                          ? (language === 'fr' ? 'Page déjà validée' : 'Page already validated')
+                          : (language === 'fr' ? 'Page rejetée' : 'Page rejected')}
+                      </span>
+                      {canValidate && dejaTraitees > 0 && (
+                        <span className="text-xs text-gray-500">
+                          {language === 'fr'
+                            ? 'Une erreur ? Utilisez « Corriger » en haut à droite.'
+                            : 'Spotted an error? Use "Correct" at the top right.'}
+                        </span>
                       )}
-                      {t("validate_record")}
-                    </button>
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <Flag className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-bold text-gray-700">
+                        {modeCorrection && pageTerminee
+                          ? (language === 'fr' ? 'Correction de données validées' : 'Correcting validated data')
+                          : canValidate
+                            ? `${aRevoir} élément(s) à valider${detailsAVerifier ? ` · ${detailsAVerifier}` : ''}`
+                            : (language === 'fr' ? 'Validation de la page' : 'Page validation')}
+                      </span>
+                    </div>
+                  )}
+
+                  {(!pageTerminee || modeCorrection) && (
+                    <div className="flex items-center gap-3">
+                      {!modeCorrection && (
+                        <button className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                          {t("save_draft")}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => validateMutation.mutate()}
+                        disabled={validateMutation.isPending}
+                        className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {validateMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-4 h-4" />
+                        )}
+                        {modeCorrection && (pageTerminee || aRevoir === 0)
+                          ? (language === 'fr' ? 'Enregistrer les corrections' : 'Save corrections')
+                          : t("validate_record")}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
               </Panel>

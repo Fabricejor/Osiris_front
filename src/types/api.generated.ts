@@ -685,6 +685,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/donnees-extraites/{id_donnee_extraite}/corriger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valideur : corriger une ligne déjà validée
+         * @description Corrige des champs d'une ligne validée (`donnees_validees`). Les valeurs
+         *     avant / après sont tracées dans l'audit. Le statut de la page ne change
+         *     pas ; les exports suivants prennent la correction.
+         */
+        post: operations["post_corriger_api_v1_donnees_extraites__id_donnee_extraite__corriger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/donnees-extraites/{id_donnee_extraite}/rejeter": {
         parameters: {
             query?: never;
@@ -930,6 +952,27 @@ export interface paths {
         get: operations["get_pii_api_v1_pii_cellules__id_pii_cellule__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pii-cellules/{id_pii_cellule}/corriger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valideur : corriger une cellule PII déjà saisie
+         * @description Remplace la valeur saisie (faute vue après coup). Tracé dans l'audit,
+         *     sans la valeur (donnée personnelle).
+         */
+        post: operations["post_corriger_api_v1_pii_cellules__id_pii_cellule__corriger_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1460,6 +1503,19 @@ export interface components {
             new_password: string;
             /** Username */
             username: string;
+        };
+        /**
+         * CorrectionRequest
+         * @description Body de `POST /donnees-extraites/{id}/corriger` (ligne déjà validée).
+         */
+        CorrectionRequest: {
+            /**
+             * Corrections
+             * @description Champs à corriger {nom_champ: nouvelle_valeur} (au moins un).
+             */
+            corrections: {
+                [key: string]: unknown;
+            };
         };
         /** DashboardStat */
         DashboardStat: {
@@ -2282,7 +2338,7 @@ export interface components {
          *     (contrainte enum PostgreSQL native).
          * @enum {string}
          */
-        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT" | "UPDATE_CATALOGUE";
+        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CORRECTION_CLINIQUE" | "CORRECTION_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT" | "UPDATE_CATALOGUE";
         /**
          * TypeChamp
          * @description Types de champs OCR extraits d'un registre (voir ADR-004 §2).
@@ -3908,6 +3964,72 @@ export interface operations {
             };
         };
     };
+    post_corriger_api_v1_donnees_extraites__id_donnee_extraite__corriger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID de la ligne validée à corriger */
+                id_donnee_extraite: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonneeExtraiteRead"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Donnée extraite introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ligne pas encore validée, ou rejetée */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_rejeter_api_v1_donnees_extraites__id_donnee_extraite__rejeter_post: {
         parameters: {
             query?: never;
@@ -4527,6 +4649,72 @@ export interface operations {
             };
             /** @description Cellule PII introuvable */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_corriger_api_v1_pii_cellules__id_pii_cellule__corriger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID de la cellule à corriger */
+                id_pii_cellule: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaisieRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PiiCelluleRead"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cellule PII introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cellule pas encore saisie (utiliser /saisir) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

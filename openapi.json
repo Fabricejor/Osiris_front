@@ -544,6 +544,24 @@
         "title": "ChangePasswordRequest",
         "type": "object"
       },
+      "CorrectionRequest": {
+        "additionalProperties": false,
+        "description": "Body de `POST /donnees-extraites/{id}/corriger` (ligne déjà validée).",
+        "properties": {
+          "corrections": {
+            "additionalProperties": true,
+            "description": "Champs à corriger {nom_champ: nouvelle_valeur} (au moins un).",
+            "minProperties": 1,
+            "title": "Corrections",
+            "type": "object"
+          }
+        },
+        "required": [
+          "corrections"
+        ],
+        "title": "CorrectionRequest",
+        "type": "object"
+      },
       "DashboardStat": {
         "properties": {
           "change": {
@@ -2494,6 +2512,8 @@
           "VALIDATION_CLINIQUE",
           "REJET_CLINIQUE",
           "SAISIE_PII",
+          "CORRECTION_CLINIQUE",
+          "CORRECTION_PII",
           "CHANGE_PASSWORD",
           "RESET_PASSWORD",
           "CREATE_USER",
@@ -5194,6 +5214,95 @@
         ]
       }
     },
+    "/api/v1/donnees-extraites/{id_donnee_extraite}/corriger": {
+      "post": {
+        "description": "Corrige des champs d'une ligne validée (`donnees_validees`). Les valeurs\navant / après sont tracées dans l'audit. Le statut de la page ne change\npas ; les exports suivants prennent la correction.",
+        "operationId": "post_corriger_api_v1_donnees_extraites__id_donnee_extraite__corriger_post",
+        "parameters": [
+          {
+            "description": "UUID de la ligne validée à corriger",
+            "in": "path",
+            "name": "id_donnee_extraite",
+            "required": true,
+            "schema": {
+              "description": "UUID de la ligne validée à corriger",
+              "format": "uuid",
+              "title": "Id Donnee Extraite",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonneeExtraiteRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Donnée extraite introuvable"
+          },
+          "409": {
+            "description": "Ligne pas encore validée, ou rejetée"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : corriger une ligne déjà validée",
+        "tags": [
+          "Validation clinique"
+        ]
+      }
+    },
     "/api/v1/donnees-extraites/{id_donnee_extraite}/rejeter": {
       "post": {
         "description": "Marque la ligne comme rejetée (non-exportée en CSV mais conservée en DB\npour traçabilité). `categorie` obligatoire (enum), `motif` texte libre\noptionnel (≤ 500 chars).\n\nComme pour `/valider` : si toutes les lignes du registre sont désormais\ntraitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.",
@@ -6176,6 +6285,95 @@
           }
         ],
         "summary": "Valideur : détails d'une cellule PII (avec crop_url présignée)",
+        "tags": [
+          "Validation PII"
+        ]
+      }
+    },
+    "/api/v1/pii-cellules/{id_pii_cellule}/corriger": {
+      "post": {
+        "description": "Remplace la valeur saisie (faute vue après coup). Tracé dans l'audit,\nsans la valeur (donnée personnelle).",
+        "operationId": "post_corriger_api_v1_pii_cellules__id_pii_cellule__corriger_post",
+        "parameters": [
+          {
+            "description": "UUID de la cellule à corriger",
+            "in": "path",
+            "name": "id_pii_cellule",
+            "required": true,
+            "schema": {
+              "description": "UUID de la cellule à corriger",
+              "format": "uuid",
+              "title": "Id Pii Cellule",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaisieRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PiiCelluleRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Cellule PII introuvable"
+          },
+          "409": {
+            "description": "Cellule pas encore saisie (utiliser /saisir)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : corriger une cellule PII déjà saisie",
         "tags": [
           "Validation PII"
         ]

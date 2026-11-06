@@ -332,7 +332,7 @@ export interface GroupeColonnes {
 }
 
 export type CelluleGrille =
-  | { kind: 'clinique'; champ: ChampAffiche; idDonnee: string; verrouillee: boolean }
+  | { kind: 'clinique'; champ: ChampAffiche; idDonnee: string; verrouillee: boolean; rejetee: boolean }
   | { kind: 'pii'; pii: PiiCellule; confiance: number | null }
   | { kind: 'vide' };
 
@@ -446,6 +446,7 @@ export function construireGrille(
         champ,
         idDonnee: donnee.id_donnee_extraite,
         verrouillee: donnee.valide,
+        rejetee: !!donnee.categorie_rejet,
       };
     }
   }
@@ -498,6 +499,8 @@ export interface SaisiesValideur {
   pii: Record<string, string>;
   /** Cases confirmées telles quelles par le valideur (mode « À vérifier »), voir `cleCellule`. */
   revues?: ReadonlySet<string>;
+  /** Mode « Corriger » : les valeurs déjà validées / saisies redeviennent modifiables (sauf lignes rejetées). */
+  correction?: boolean;
 }
 
 /** Identifiant stable d'une case (clé de `SaisiesValideur.revues`). */
@@ -538,6 +541,8 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
   let verrouillee: boolean;
   let corrigee: boolean;
   let deduit = false;
+  // Déjà validée / saisie (reste neutre même déverrouillée en mode « Corriger »).
+  let traitee: boolean;
   let alertes: string[] = [];
   let infos: string[] = [];
 
@@ -547,7 +552,8 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
     valeur = saisies.cliniques[idDonnee]?.[champ.nom] ?? champ.valeur;
     confiance = champ.confiance;
     lu = champ.lu;
-    verrouillee = cellule.verrouillee;
+    traitee = cellule.verrouillee;
+    verrouillee = cellule.verrouillee && (!saisies.correction || cellule.rejetee);
     corrigee = champ.corrigeParHumain;
     deduit = champ.deduit;
     alertes = champ.alertes.filter((a) => a.bloquante).map((a) => a.message);
@@ -558,18 +564,19 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
     valeur = saisies.pii[pii.id_pii_cellule] ?? valeurOrigine;
     confiance = pii.saisie ? null : cellule.confiance;
     lu = !!pii.valeur_lue;
-    verrouillee = pii.saisie;
+    traitee = pii.saisie;
+    verrouillee = pii.saisie && !saisies.correction;
     corrigee = pii.saisie;
   }
 
   const modifie = valeur.trim() !== valeurOrigine.trim();
   const revue = !modifie && !!saisies.revues?.has(cleCellule(cellule) ?? '');
-  const neutre = corrigee || modifie || deduit || verrouillee || revue;
+  const neutre = corrigee || modifie || deduit || traitee || revue;
   const niveau = neutre ? 'inconnue' : niveauConfiance(confiance);
   const scoreInconnu = !neutre && lu && confiance === null;
   // Une alerte de cohérence reste visible même si la lecture est sûre (620 kg lu à 95 %),
   // jusqu'à ce que le valideur corrige ou confirme la valeur.
-  const alertesTraitees = modifie || verrouillee || corrigee || revue;
+  const alertesTraitees = modifie || traitee || corrigee || revue;
   const alertesActives = alertesTraitees ? [] : alertes;
   if (revue) infos = [...alertes, ...infos];
   const aVerifier =
