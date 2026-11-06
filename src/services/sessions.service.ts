@@ -34,6 +34,8 @@ export type RegistreScanne = Schemas["RegistreScanneRead"];
 export interface PageView {
   id: string;
   id_session_scan: string;
+  type_registre: string;
+  annee_version: number;
   name: string;
   status: StatutTraitement;
   statusText: string;
@@ -59,6 +61,8 @@ export function toPageView(page: RegistreScanne): PageView {
   return {
     id: page.id_registre_scanne,
     id_session_scan: page.id_session_scan,
+    type_registre: page.type_registre,
+    annee_version: page.annee_version,
     name: `${page.type_registre} ${page.annee_version}${ligne} · ${page.id_registre_scanne.slice(0, 8)}`,
     status: page.statut_traitement,
     statusText: STATUT_LABEL[page.statut_traitement] ?? page.statut_traitement,
