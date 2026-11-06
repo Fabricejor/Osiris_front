@@ -78,6 +78,7 @@ function Cellule({
   let lu: boolean;
   let verrouillee: boolean;
   let corrigee: boolean;
+  let deduit = false;
   let onChange: (v: string) => void;
 
   if (cellule.kind === 'clinique') {
@@ -88,6 +89,7 @@ function Cellule({
     lu = champ.lu;
     verrouillee = cellule.verrouillee;
     corrigee = champ.corrigeParHumain;
+    deduit = champ.deduit;
     onChange = (v) => props.onChangeClinique(idDonnee, champ.nom, v);
   } else {
     const { pii } = cellule;
@@ -101,14 +103,18 @@ function Cellule({
   }
 
   const modifie = valeur.trim() !== valeurOrigine.trim();
-  const niveau = corrigee || modifie ? 'inconnue' : niveauConfiance(confiance);
-  const scoreInconnu = !corrigee && !modifie && lu && confiance === null;
+  const niveau = corrigee || modifie || deduit ? 'inconnue' : niveauConfiance(confiance);
+  const scoreInconnu = !corrigee && !modifie && !deduit && lu && confiance === null;
 
   return (
     <td
       rowSpan={rowSpan}
       className={`relative border border-gray-200 p-0 min-w-[7rem] ${rowSpan && rowSpan > 1 ? 'align-middle' : ''} ${FOND_CONFIANCE[niveau]} ${colonne.is_pii ? 'border-l-purple-200' : ''}`}
-      title={infobulle(confiance, lu, modifie, fr)}
+      title={
+        deduit && !modifie
+          ? (fr ? 'Déduit de la ligne du registre (non lu par Gemini)' : 'Deduced from the register row (not read by Gemini)')
+          : infobulle(confiance, lu, modifie, fr)
+      }
     >
       <input
         type="text"
@@ -119,7 +125,10 @@ function Cellule({
         className={`w-full bg-transparent px-2 py-1.5 pr-8 text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-inset focus:ring-[#65b741] disabled:text-gray-500 ${modifie ? 'ring-2 ring-inset ring-blue-400' : ''}`}
       />
       {/* Score Gemini en coin de case (ou « ? » si inconnu). */}
-      {!modifie && !corrigee && (confiance !== null || scoreInconnu) && (
+      {deduit && !modifie && (
+        <span className="pointer-events-none absolute right-1 top-1 text-[9px] font-bold text-slate-400">auto</span>
+      )}
+      {!modifie && !corrigee && !deduit && (confiance !== null || scoreInconnu) && (
         <span className={`pointer-events-none absolute right-1 top-1 text-[9px] font-bold ${TEXTE_CONFIANCE[niveau]}`}>
           {scoreInconnu ? '?' : `${confiance}%`}
         </span>

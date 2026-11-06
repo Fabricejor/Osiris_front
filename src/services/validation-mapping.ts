@@ -46,6 +46,11 @@ export interface ChampAffiche {
   confiance: number | null;
   /** true si la valeur a déjà été corrigée par un humain. */
   corrigeParHumain: boolean;
+  /**
+   * true si la valeur n'est pas lue mais déduite de la structure du registre
+   * (ex. période de la grossesse CPN, déterminée par la ligne du bloc).
+   */
+  deduit: boolean;
   /** true si la case est vide sur le registre (champ non extrait). */
   manquant: boolean;
 }
@@ -157,6 +162,7 @@ export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | un
       confiance:
         lu && typeof lu.score_confiance === 'number' ? Math.round(lu.score_confiance * 100) : null,
       corrigeParHumain: lu?.origine === 'HUMAIN' || lu?.origine === 'humain',
+      deduit: lu?.origine === 'filtre_math',
       manquant: !lu && manquants.has(nom),
     };
   };

@@ -72,6 +72,16 @@ function BadgeConfiance({ champ }: Readonly<{ champ: ChampAffiche }>) {
       </span>
     );
   }
+  if (champ.deduit) {
+    return (
+      <span
+        title="Valeur déduite de la ligne du registre (non lue par Gemini)"
+        className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-slate-100 text-slate-600 border-slate-200"
+      >
+        Déduit
+      </span>
+    );
+  }
   const niveau = niveauConfiance(champ.confiance);
   let texte = `Gemini ${champ.confiance}%`;
   let titre = 'Score de confiance renvoyé par Gemini pour cette cellule';
@@ -500,6 +510,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                       confiance:
                                         typeof pii.score_confiance === 'number' ? Math.round(pii.score_confiance * 100) : null,
                                       corrigeParHumain: false,
+                                      deduit: false,
                                       manquant: !pii.valeur_lue,
                                     }}
                                   />
