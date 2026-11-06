@@ -53,6 +53,47 @@ export interface ChampAffiche {
   deduit: boolean;
   /** true si la case est vide sur le registre (champ non extrait). */
   manquant: boolean;
+  /**
+   * Alertes des contrôles automatiques sur ce champ (bornes, écart entre
+   * visites, parité > gestité…). `bloquante` = WARNING/ERROR (case à vérifier),
+   * sinon INFO (affichée au survol seulement).
+   */
+  alertes: AlerteChamp[];
+}
+
+export interface AlerteChamp {
+  code: string;
+  message: string;
+  bloquante: boolean;
+}
+
+/** Alertes de cohérence d'une ligne, par champ concerné. */
+function alertesParChamp(donnee: DonneeExtraite): Map<string, AlerteChamp[]> {
+  const parChamp = new Map<string, AlerteChamp[]>();
+  for (const brute of (donnee.alertes_coherence ?? []) as unknown[]) {
+    if (!brute || typeof brute !== 'object') continue;
+    const a = brute as { code?: unknown; message?: unknown; severite?: unknown; champs_concernes?: unknown };
+    const alerte: AlerteChamp = {
+      code: String(a.code ?? ''),
+      message: String(a.message ?? ''),
+      bloquante: a.severite === 'WARNING' || a.severite === 'ERROR',
+    };
+    for (const nom of Array.isArray(a.champs_concernes) ? a.champs_concernes : []) {
+      const liste = parChamp.get(String(nom)) ?? [];
+      liste.push(alerte);
+      parChamp.set(String(nom), liste);
+    }
+  }
+  return parChamp;
+}
+
+/** Messages des alertes de cohérence d'une ligne (pour un récapitulatif). */
+export function messagesAlertes(donnee: DonneeExtraite, bloquantesSeulement = true): string[] {
+  const vus = new Set<string>();
+  for (const alertes of alertesParChamp(donnee).values()) {
+    for (const a of alertes) if (!bloquantesSeulement || a.bloquante) vus.add(a.message);
+  }
+  return [...vus];
 }
 
 /** Seuils d'affichage de la confiance Gemini. */
@@ -181,6 +222,7 @@ export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | un
   if (!catalogue) return [];
   const lus = champsDeLigne(donnee);
   const manquants = new Set((donnee.missings_reels ?? []).map(String));
+  const alertes = alertesParChamp(donnee);
 
   const depuis = (nom: string, def?: ChampCatalogue): ChampAffiche => {
     const lu = lus[nom];
@@ -196,6 +238,7 @@ export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | un
       corrigeParHumain: lu?.origine === 'HUMAIN' || lu?.origine === 'humain',
       deduit: lu?.origine === 'filtre_math',
       manquant: !lu && manquants.has(nom),
+      alertes: alertes.get(nom) ?? [],
     };
   };
 
@@ -467,8 +510,12 @@ export interface EtatCellule {
   corrigee: boolean;
   deduit: boolean;
   scoreInconnu: boolean;
-  /** Case qui mérite l'œil du valideur (score faible / moyen / inconnu). */
+  /** Case qui mérite l'œil du valideur (score faible / moyen / inconnu, ou alerte). */
   aVerifier: boolean;
+  /** Alertes de cohérence (bloquantes) sur cette case, ex. écart entre visites. */
+  alertes: string[];
+  /** Alertes informatives (ex. modalité corrigée automatiquement). */
+  infos: string[];
   niveau: 'basse' | 'moyenne' | 'haute' | 'inconnue';
 }
 
@@ -481,6 +528,8 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
   let verrouillee: boolean;
   let corrigee: boolean;
   let deduit = false;
+  let alertes: string[] = [];
+  let infos: string[] = [];
 
   if (cellule.kind === 'clinique') {
     const { champ, idDonnee } = cellule;
@@ -491,6 +540,8 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
     verrouillee = cellule.verrouillee;
     corrigee = champ.corrigeParHumain;
     deduit = champ.deduit;
+    alertes = champ.alertes.filter((a) => a.bloquante).map((a) => a.message);
+    infos = champ.alertes.filter((a) => !a.bloquante).map((a) => a.message);
   } else {
     const { pii } = cellule;
     valeurOrigine = pii.valeur_saisie ?? pii.valeur_lue ?? '';
@@ -505,9 +556,13 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
   const neutre = corrigee || modifie || deduit || verrouillee;
   const niveau = neutre ? 'inconnue' : niveauConfiance(confiance);
   const scoreInconnu = !neutre && lu && confiance === null;
-  const aVerifier = !neutre && lu && (niveau === 'basse' || niveau === 'moyenne' || scoreInconnu);
+  // Une alerte de cohérence reste visible même si la lecture est sûre (620 kg lu à 95 %).
+  const alertesActives = modifie || verrouillee || corrigee ? [] : alertes;
+  const aVerifier =
+    alertesActives.length > 0 || (!neutre && lu && (niveau === 'basse' || niveau === 'moyenne' || scoreInconnu));
   return {
     valeur, valeurOrigine, modifie, confiance, lu, verrouillee, corrigee, deduit, scoreInconnu, aVerifier, niveau,
+    alertes: alertesActives, infos,
   };
 }
 

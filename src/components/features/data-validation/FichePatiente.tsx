@@ -16,6 +16,7 @@ import {
   casesAVerifier,
   etatCellule,
   libellesSections,
+  messagesAlertes,
   patientesDeGrille,
   regrouperParSection,
   type ColonneGrille,
@@ -92,6 +93,9 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
       return suivant;
     });
   const colSpan = visites.length + 1;
+  const alertesPatiente = visites
+    .filter((v) => v.donnee && !v.donnee.valide)
+    .flatMap((v) => messagesAlertes(v.donnee!));
 
   return (
     <div className="flex flex-col gap-3">
@@ -181,6 +185,14 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
           ))}
         </div>
       </div>
+
+      {alertesPatiente.length > 0 && (
+        <ul className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-[12px] text-red-800 space-y-0.5">
+          {[...new Set(alertesPatiente)].map((m) => (
+            <li key={m}>⚠ {m}</li>
+          ))}
+        </ul>
+      )}
 
       {/* Visites en colonnes */}
       <div className="overflow-auto rounded-xl border border-gray-200" style={{ scrollbarWidth: 'thin' }}>

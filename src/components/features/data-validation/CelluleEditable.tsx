@@ -49,6 +49,12 @@ const TEXTE_SCORE = {
   inconnue: 'text-slate-500',
 } as const;
 
+function fondCellule(etat: NonNullable<ReturnType<typeof etatCellule>>): string {
+  if (etat.alertes.length > 0) return 'bg-red-50';
+  if (etat.scoreInconnu) return 'bg-slate-100';
+  return FOND[etat.niveau];
+}
+
 /** Identifiant de la <datalist> des modalités d'une colonne (voir ListesModalites). */
 export function idListeModalites(colonne: ColonneGrille): string {
   return `modalites-${colonne.nom}`;
@@ -70,6 +76,12 @@ export function ListesModalites({ colonnes }: Readonly<{ colonnes: ColonneGrille
 }
 
 function infobulle(etat: NonNullable<ReturnType<typeof etatCellule>>, fr: boolean): string {
+  const lignes = [...etat.alertes.map((a) => `⚠ ${a}`), ...etat.infos.map((a) => `ℹ ${a}`)];
+  const base = infobulleBase(etat, fr);
+  return lignes.length ? [...lignes, base].join('\n') : base;
+}
+
+function infobulleBase(etat: NonNullable<ReturnType<typeof etatCellule>>, fr: boolean): string {
   if (etat.modifie) return fr ? 'Modifié par vous' : 'Edited by you';
   if (etat.corrigee) return fr ? 'Déjà corrigé / saisi par un valideur' : 'Already corrected by a validator';
   if (etat.deduit) return fr ? "Déduit de la ligne du registre (non lu sur l'image)" : 'Deduced from the register row';
@@ -156,7 +168,7 @@ export default function CelluleEditable({
         aria-label={colonne.libelle}
         list={colonne.modalites?.length ? idListeModalites(colonne) : undefined}
         placeholder={colonne.type_champ === 'DATE' ? 'jj/mm/aaaa' : undefined}
-        className={`${classesSaisie} ${etat.aVerifier ? 'pr-8' : ''}`}
+        className={`${classesSaisie} ${etat.aVerifier || etat.alertes.length ? 'pr-8' : ''}`}
       />
     );
   }
@@ -164,12 +176,16 @@ export default function CelluleEditable({
   return (
     <Tag
       rowSpan={as === 'td' ? rowSpan : undefined}
-      className={`relative ${as === 'td' ? 'border border-gray-200 p-0' : 'rounded border border-gray-200'} ${largeur} ${rowSpan && rowSpan > 1 ? 'align-middle' : ''} ${etat.scoreInconnu ? 'bg-slate-100' : FOND[etat.niveau]} ${colonne.is_pii ? 'border-l-2 border-l-purple-200' : ''} ${className}`}
+      className={`relative ${as === 'td' ? 'border border-gray-200 p-0' : 'rounded border border-gray-200'} ${largeur} ${rowSpan && rowSpan > 1 ? 'align-middle' : ''} ${fondCellule(etat)} ${colonne.is_pii ? 'border-l-2 border-l-purple-200' : ''} ${className}`}
       title={infobulle(etat, fr)}
     >
       {saisie}
+      {/* Alerte de cohérence (ex. écart entre visites) : prime sur le score. */}
+      {etat.alertes.length > 0 && (
+        <span className="pointer-events-none absolute right-1 top-0.5 text-[11px] font-bold text-red-600">⚠</span>
+      )}
       {/* Score affiché seulement pour une case à vérifier (le reste au survol). */}
-      {etat.aVerifier && (
+      {etat.aVerifier && etat.alertes.length === 0 && (
         <span className={`pointer-events-none absolute right-1 top-1 text-[10px] font-bold ${TEXTE_SCORE[etat.niveau]}`}>
           {etat.scoreInconnu ? '?' : `${etat.confiance}%`}
         </span>

@@ -68,6 +68,17 @@ const BARRE_CONFIANCE = {
 
 /** Badge « xx % » (score de confiance de l'OCR) affiché à côté de chaque champ lu. */
 function BadgeConfiance({ champ }: Readonly<{ champ: ChampAffiche }>) {
+  const alertes = champ.alertes.filter((a) => a.bloquante);
+  if (alertes.length > 0 && !champ.corrigeParHumain) {
+    return (
+      <span
+        title={alertes.map((a) => a.message).join('\n')}
+        className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-100 text-red-700 border-red-200"
+      >
+        ⚠ Incohérent
+      </span>
+    );
+  }
   if (champ.corrigeParHumain) {
     return (
       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">
@@ -553,6 +564,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                       corrigeParHumain: false,
                                       deduit: false,
                                       manquant: !pii.valeur_lue,
+                                      alertes: [],
                                     }}
                                   />
                                 )}
