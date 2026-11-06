@@ -83,6 +83,7 @@ function infobulle(etat: NonNullable<ReturnType<typeof etatCellule>>, fr: boolea
 
 function infobulleBase(etat: NonNullable<ReturnType<typeof etatCellule>>, fr: boolean): string {
   if (etat.modifie) return fr ? 'Modifié par vous' : 'Edited by you';
+  if (etat.revue) return fr ? 'Vérifié par vous (valeur confirmée)' : 'Checked by you (value confirmed)';
   if (etat.corrigee) return fr ? 'Déjà corrigé / saisi par un valideur' : 'Already corrected by a validator';
   if (etat.deduit) return fr ? "Déduit de la ligne du registre (non lu sur l'image)" : 'Deduced from the register row';
   if (etat.confiance !== null) return `${fr ? 'Confiance' : 'Confidence'} : ${etat.confiance} %`;
@@ -101,6 +102,12 @@ interface CelluleEditableProps {
   as?: 'td' | 'div';
   rowSpan?: number;
   className?: string;
+  /** Saisie agrandie (mode « À vérifier »). */
+  grande?: boolean;
+  /** Lien photo ↔ données : survol / focus de la case. */
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  onFocus?: () => void;
 }
 
 export default function CelluleEditable({
@@ -113,6 +120,10 @@ export default function CelluleEditable({
   as = 'td',
   rowSpan,
   className = '',
+  grande = false,
+  onMouseEnter,
+  onMouseLeave,
+  onFocus,
 }: Readonly<CelluleEditableProps>) {
   const fr = language === 'fr';
   const Tag = as;
@@ -137,7 +148,8 @@ export default function CelluleEditable({
     else onChangePii(cellule.pii.id_pii_cellule, v);
   };
 
-  const classesSaisie = `w-full bg-transparent px-2 py-1.5 text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-inset focus:ring-[#65b741] disabled:text-gray-500 ${etat.modifie ? 'ring-2 ring-inset ring-blue-400' : ''}`;
+  const taille = grande ? 'px-3 py-3 text-xl font-semibold' : 'px-2 py-1.5 text-[13px]';
+  const classesSaisie = `w-full bg-transparent ${taille} text-gray-800 outline-none focus:ring-2 focus:ring-inset focus:ring-[#65b741] disabled:text-gray-500 ${etat.modifie ? 'ring-2 ring-inset ring-blue-400' : ''}`;
 
   let saisie: React.ReactNode;
   if (colonne.type_champ === 'BINAIRE') {
@@ -178,6 +190,9 @@ export default function CelluleEditable({
       rowSpan={as === 'td' ? rowSpan : undefined}
       className={`relative ${as === 'td' ? 'border border-gray-200 p-0' : 'rounded border border-gray-200'} ${largeur} ${rowSpan && rowSpan > 1 ? 'align-middle' : ''} ${fondCellule(etat)} ${colonne.is_pii ? 'border-l-2 border-l-purple-200' : ''} ${className}`}
       title={infobulle(etat, fr)}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
     >
       {saisie}
       {/* Alerte de cohérence (ex. écart entre visites) : prime sur le score. */}
@@ -189,6 +204,9 @@ export default function CelluleEditable({
         <span className={`pointer-events-none absolute right-1 top-1 text-[10px] font-bold ${TEXTE_SCORE[etat.niveau]}`}>
           {etat.scoreInconnu ? '?' : `${etat.confiance}%`}
         </span>
+      )}
+      {etat.revue && (
+        <span className="pointer-events-none absolute right-1 top-1 text-[10px] font-bold text-emerald-600">✓</span>
       )}
       {etat.corrigee && !etat.modifie && (
         <span className="pointer-events-none absolute right-1 top-1 text-[10px] font-bold text-blue-600">✓</span>

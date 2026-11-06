@@ -496,6 +496,14 @@ export interface SaisiesValideur {
   cliniques: Record<string, Record<string, string>>;
   /** {id_pii_cellule: texte} */
   pii: Record<string, string>;
+  /** Cases confirmées telles quelles par le valideur (mode « À vérifier »), voir `cleCellule`. */
+  revues?: ReadonlySet<string>;
+}
+
+/** Identifiant stable d'une case (clé de `SaisiesValideur.revues`). */
+export function cleCellule(cellule: CelluleGrille | undefined): string | null {
+  if (!cellule || cellule.kind === 'vide') return null;
+  return cellule.kind === 'clinique' ? `${cellule.idDonnee}:${cellule.champ.nom}` : `pii:${cellule.pii.id_pii_cellule}`;
 }
 
 export interface EtatCellule {
@@ -510,6 +518,8 @@ export interface EtatCellule {
   corrigee: boolean;
   deduit: boolean;
   scoreInconnu: boolean;
+  /** Confirmée telle quelle par le valideur (mode « À vérifier »). */
+  revue: boolean;
   /** Case qui mérite l'œil du valideur (score faible / moyen / inconnu, ou alerte). */
   aVerifier: boolean;
   /** Alertes de cohérence (bloquantes) sur cette case, ex. écart entre visites. */
@@ -553,15 +563,19 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
   }
 
   const modifie = valeur.trim() !== valeurOrigine.trim();
-  const neutre = corrigee || modifie || deduit || verrouillee;
+  const revue = !modifie && !!saisies.revues?.has(cleCellule(cellule) ?? '');
+  const neutre = corrigee || modifie || deduit || verrouillee || revue;
   const niveau = neutre ? 'inconnue' : niveauConfiance(confiance);
   const scoreInconnu = !neutre && lu && confiance === null;
-  // Une alerte de cohérence reste visible même si la lecture est sûre (620 kg lu à 95 %).
-  const alertesActives = modifie || verrouillee || corrigee ? [] : alertes;
+  // Une alerte de cohérence reste visible même si la lecture est sûre (620 kg lu à 95 %),
+  // jusqu'à ce que le valideur corrige ou confirme la valeur.
+  const alertesTraitees = modifie || verrouillee || corrigee || revue;
+  const alertesActives = alertesTraitees ? [] : alertes;
+  if (revue) infos = [...alertes, ...infos];
   const aVerifier =
     alertesActives.length > 0 || (!neutre && lu && (niveau === 'basse' || niveau === 'moyenne' || scoreInconnu));
   return {
-    valeur, valeurOrigine, modifie, confiance, lu, verrouillee, corrigee, deduit, scoreInconnu, aVerifier, niveau,
+    valeur, valeurOrigine, modifie, confiance, lu, verrouillee, corrigee, deduit, scoreInconnu, revue, aVerifier, niveau,
     alertes: alertesActives, infos,
   };
 }
@@ -610,4 +624,80 @@ export function casesAVerifier(patiente: PatienteGrille, colonnes: ColonneGrille
     }
   }
   return n;
+}
+
+// ─── Mode « À vérifier » : les cases douteuses, une par une ──────────────────
+
+export interface ElementAVerifier {
+  /** `cleCellule` de la case. */
+  cle: string;
+  patiente: PatienteGrille;
+  /** Rangée (visite) qui porte la case. */
+  rangee: RangeeGrille;
+  colonne: ColonneGrille;
+}
+
+/**
+ * Cases à vérifier, dans l'ordre du registre (patiente, visite, colonne).
+ * Calculé SANS les saisies du valideur pour que la liste reste stable pendant
+ * la revue (une case corrigée reste à sa place, marquée « traitée »).
+ */
+export function elementsAVerifier(grille: Grille, saisies: SaisiesValideur = { cliniques: {}, pii: {} }): ElementAVerifier[] {
+  const elements: ElementAVerifier[] = [];
+  for (const patiente of patientesDeGrille(grille)) {
+    for (const rangee of [...patiente.visites].sort((a, b) => a.rang - b.rang)) {
+      for (const colonne of grille.colonnes) {
+        if (colonne.niveau_patiente && !rangee.debutPatiente) continue;
+        const cellule = rangee.cellules[colonne.nom];
+        const cle = cleCellule(cellule);
+        if (cle && etatCellule(cellule, saisies)?.aVerifier) elements.push({ cle, patiente, rangee, colonne });
+      }
+    }
+  }
+  return elements;
+}
+
+// ─── Lien photo ↔ données : zone de chaque ligne sur l'image ─────────────────
+
+/** [ymin, xmin, ymax, xmax], normalisés 0..1000 (convention Gemini). */
+export type ZoneImage = [number, number, number, number];
+
+/** Zone de la ligne sur l'image, renvoyée par l'OCR (`position_ligne`), ou null. */
+export function positionLigne(donnee: DonneeExtraite | null | undefined): ZoneImage | null {
+  const brut = (donnee?.donnees_brutes_ocr as { position_ligne?: unknown } | null | undefined)?.position_ligne;
+  if (!Array.isArray(brut) || brut.length !== 4 || !brut.every((v) => typeof v === 'number' && Number.isFinite(v))) {
+    return null;
+  }
+  const [ymin, xmin, ymax, xmax] = brut as number[];
+  return ymin < ymax && xmin < xmax ? [ymin, xmin, ymax, xmax] : null;
+}
+
+/** Plus petite zone contenant toutes les zones connues (bloc d'une patiente). */
+export function unionZones(zones: (ZoneImage | null)[]): ZoneImage | null {
+  const connues = zones.filter((z): z is ZoneImage => z !== null);
+  if (connues.length === 0) return null;
+  return [
+    Math.min(...connues.map((z) => z[0])),
+    Math.min(...connues.map((z) => z[1])),
+    Math.max(...connues.map((z) => z[2])),
+    Math.max(...connues.map((z) => z[3])),
+  ];
+}
+
+export function zonePatiente(patiente: PatienteGrille): ZoneImage | null {
+  return unionZones(patiente.visites.map((v) => positionLigne(v.donnee)));
+}
+
+/** Zone d'une visite, ou à défaut celle de tout le bloc de la patiente. */
+export function zoneRangee(rangee: RangeeGrille, grille: Grille): ZoneImage | null {
+  return (
+    positionLigne(rangee.donnee) ??
+    unionZones(grille.rangees.filter((r) => r.numeroOrdre === rangee.numeroOrdre).map((r) => positionLigne(r.donnee)))
+  );
+}
+
+/** Demande d'affichage d'une zone : `zoom` pour cadrer l'image dessus (sinon simple surlignage). */
+export interface DemandeZone {
+  zone: ZoneImage | null;
+  zoom: boolean;
 }

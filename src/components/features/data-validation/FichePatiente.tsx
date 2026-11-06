@@ -9,7 +9,7 @@
  *   fait ressortir les erreurs (ex. 620 kg au lieu de 62).
  * Registres à une ligne par patiente : une seule colonne de valeurs.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import {
   CHAMPS_SANS_COLONNE,
@@ -19,7 +19,10 @@ import {
   messagesAlertes,
   patientesDeGrille,
   regrouperParSection,
+  zonePatiente,
+  zoneRangee,
   type ColonneGrille,
+  type DemandeZone,
   type Grille,
   type RangeeGrille,
   type SaisiesValideur,
@@ -33,6 +36,8 @@ interface FichePatienteProps {
   onChangeClinique: (idDonnee: string, nomChamp: string, valeur: string) => void;
   onChangePii: (idPii: string, valeur: string) => void;
   language: string;
+  /** Lien photo ↔ données : surligne / cadre la patiente ou la visite sur l'image. */
+  onZone?: (demande: DemandeZone | null) => void;
 }
 
 /** Champs qui donnent le contexte d'une visite (affichés sous « Visite n »). */
@@ -56,6 +61,15 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
   const [replies, setReplies] = useState<Set<string>>(new Set());
 
   const patientes = patientesDeGrille(grille);
+  const patienteCourante = patientes.length ? patientes[Math.min(index, patientes.length - 1)] : undefined;
+  const zoneCourante = patienteCourante ? zonePatiente(patienteCourante) : null;
+  const cleZone = zoneCourante?.join(',') ?? '';
+  const { onZone } = props;
+  // Changement de patiente : on cadre son bloc sur la photo.
+  useEffect(() => {
+    if (cleZone) onZone?.({ zone: cleZone.split(',').map(Number) as DemandeZone['zone'], zoom: true });
+  }, [cleZone, onZone]);
+
   if (grille.colonnes.length === 0) return null;
   if (patientes.length === 0) {
     return <div className="text-gray-500 text-center py-8">{fr ? 'Aucune donnée extraite pour cette page.' : 'No extracted data for this page.'}</div>;
@@ -207,7 +221,12 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
                 const date = CHAMPS_DATE_VISITE.map((n) => valeurDe(v, n, saisies)).find(Boolean);
                 const etat = v.donnee?.valide ? (v.donnee.categorie_rejet ? 'rejetée' : 'validée') : null;
                 return (
-                  <th key={v.rang} className="border border-gray-200 px-2 py-1.5 align-bottom text-[11px] text-gray-700">
+                  <th
+                    key={v.rang}
+                    onMouseEnter={() => onZone?.({ zone: zoneRangee(v, grille), zoom: false })}
+                    onMouseLeave={() => onZone?.(null)}
+                    className="border border-gray-200 px-2 py-1.5 align-bottom text-[11px] text-gray-700"
+                  >
                     <div className="font-bold">
                       {multiVisites ? `${fr ? 'Visite' : 'Visit'} ${v.rang}` : (fr ? 'Valeur' : 'Value')}
                       {etat && <span className="ml-1 text-blue-600" title={`Ligne ${etat}`}>✓</span>}
@@ -268,6 +287,9 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
                             onChangeClinique={props.onChangeClinique}
                             onChangePii={props.onChangePii}
                             language={language}
+                            onMouseEnter={() => onZone?.({ zone: zoneRangee(v, grille), zoom: false })}
+                            onMouseLeave={() => onZone?.(null)}
+                            onFocus={() => onZone?.({ zone: zoneRangee(v, grille), zoom: true })}
                           />
                         ))}
                       </tr>

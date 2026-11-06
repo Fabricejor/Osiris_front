@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import {
   X,
   ZoomIn,
@@ -20,7 +20,8 @@ import {
   Flag,
   EyeOff,
   ShieldAlert,
-  Loader2
+  Loader2,
+  Crosshair
 } from 'lucide-react';
 import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -38,9 +39,10 @@ import {
   type ChampAffiche,
 } from '@/services/validation-mapping';
 import { useAuthStore } from '@/store/authStore';
-import { construireGrille } from '@/services/validation-mapping';
+import { construireGrille, elementsAVerifier, type DemandeZone, type ZoneImage } from '@/services/validation-mapping';
 import RegistreGrid from './RegistreGrid';
 import FichePatiente from './FichePatiente';
+import RevueAVerifier from './RevueAVerifier';
 import EcartsRegistre from './EcartsRegistre';
 import { valeursNonRattachees } from '@/services/validation-mapping';
 
@@ -127,14 +129,47 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   // « fiche » : une patiente à la fois, visites en colonnes (image à gauche) ;
   // « registre » : tableau calqué sur le registre papier (image au-dessus) ;
   // « liste » : ancienne vue par ligne (image à gauche, onglets clinique/PII).
+  // « verifier » : les cases douteuses une par une (Entrée = confirmer).
   // null = vue par défaut selon le registre (fiche pour CPN/CPON, registre sinon).
-  const [vue, setVue] = useState<'fiche' | 'registre' | 'liste' | null>(null);
+  const [vue, setVue] = useState<'verifier' | 'fiche' | 'registre' | 'liste' | null>(null);
   // Saisies du valideur : {id_donnee_extraite: {nom_champ: texte}} et {id_pii_cellule: texte}.
   const [saisiesCliniques, setSaisiesCliniques] = useState<Record<string, Record<string, string>>>({});
   const [saisiesPii, setSaisiesPii] = useState<Record<string, string>>({});
+  // Cases confirmées telles quelles en mode « À vérifier » (clés `cleCellule`).
+  const [revues, setRevues] = useState<Set<string>>(new Set());
+
 
   const currentPage = pages[currentIndex];
   const pageId = currentPage?.id;
+
+  // ── Lien photo ↔ données ──
+  // Zone survolée (surlignage) et zone « active » (focus : l'image est cadrée dessus),
+  // en clés texte « ymin,xmin,ymax,xmax » pour ne re-rendre qu'en cas de vrai changement.
+  const [zoneSurvol, setZoneSurvol] = useState<string | null>(null);
+  const [zoneFocus, setZoneFocus] = useState<string | null>(null);
+  const [suivreZones, setSuivreZones] = useState(true);
+  const [imageNaturelle, setImageNaturelle] = useState<{ src: string; w: number; h: number } | null>(null);
+  const [cadre, setCadre] = useState({ w: 0, h: 0 });
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const zoneFocusRef = useRef<HTMLDivElement>(null);
+  const observateurCadre = useRef<ResizeObserver | null>(null);
+  // Ref « callback » : le cadre de l'image est recréé quand la disposition change.
+  const cadreRef = useCallback((el: HTMLDivElement | null) => {
+    observateurCadre.current?.disconnect();
+    if (!el) return;
+    const mesurer = () => setCadre({ w: el.clientWidth, h: el.clientHeight });
+    mesurer();
+    observateurCadre.current = new ResizeObserver(mesurer);
+    observateurCadre.current.observe(el);
+  }, []);
+  const onZone = useCallback((demande: DemandeZone | null) => {
+    const cle = demande?.zone ? `${pageId}#${demande.zone.join(',')}` : null;
+    if (demande?.zoom) {
+      if (cle) setZoneFocus(cle);
+    } else {
+      setZoneSurvol(cle);
+    }
+  }, [pageId]);
 
   // Données de la page affichée (et non de toute la session).
   const { data: clinicalData = [], isLoading: isLoadingClinical } = useQuery({
@@ -162,7 +197,10 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     setSaisiesCliniques((prev) => ({ ...prev, [idDonnee]: { ...prev[idDonnee], [nomChamp]: valeur } }));
   const modifierPii = (idPii: string, valeur: string) =>
     setSaisiesPii((prev) => ({ ...prev, [idPii]: valeur }));
-  const saisies = { cliniques: saisiesCliniques, pii: saisiesPii };
+  const saisies = { cliniques: saisiesCliniques, pii: saisiesPii, revues };
+  const confirmerCase = useCallback((cle: string) => setRevues((prev) => new Set(prev).add(cle)), []);
+  // Cases encore douteuses (après corrections et confirmations du valideur).
+  const nbAVerifier = elementsAVerifier(grille, saisies).length;
   const vueEffective = vue ?? (grille.rangsParPatient > 1 ? 'fiche' : 'registre');
   // Vues tableau (fiche, registre) : clinique + PII ensemble, sans onglets.
   const vueTableau = canValidate && vueEffective !== 'liste';
@@ -186,6 +224,42 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
       setCurrentIndex(initialPageIndex);
     }
   }, [isOpen, initialPageIndex]);
+
+  // Zones mémorisées avec leur page (« page#ymin,xmin,ymax,xmax ») : une zone
+  // d'une autre page est ignorée, sans effet de remise à zéro.
+  const zoneDeLaPage = (z: string | null) => (z?.startsWith(`${pageId}#`) ? z.slice(`${pageId}#`.length) : null);
+  const zoneFocusPage = zoneDeLaPage(zoneFocus);
+  const zoneSurvolPage = zoneDeLaPage(zoneSurvol);
+
+  // Rectangle occupé par la photo dans son cadre (object-contain + p-4 de l'<Image>).
+  const rectImage = (() => {
+    if (!imageNaturelle || imageNaturelle.src !== currentPage?.image || !cadre.w || !cadre.h) return null;
+    const marge = 16;
+    const w = cadre.w - 2 * marge;
+    const h = cadre.h - 2 * marge;
+    if (w <= 0 || h <= 0) return null;
+    const k = Math.min(w / imageNaturelle.w, h / imageNaturelle.h);
+    const largeur = imageNaturelle.w * k;
+    const hauteur = imageNaturelle.h * k;
+    return { left: marge + (w - largeur) / 2, top: marge + (h - hauteur) / 2, width: largeur, height: hauteur };
+  })();
+  const styleZone = (cle: string | null): React.CSSProperties | null => {
+    if (!cle || !rectImage) return null;
+    const [ymin, xmin, ymax, xmax] = cle.split(',').map(Number) as ZoneImage;
+    return {
+      left: rectImage.left + (xmin / 1000) * rectImage.width,
+      top: rectImage.top + (ymin / 1000) * rectImage.height,
+      width: ((xmax - xmin) / 1000) * rectImage.width,
+      height: ((ymax - ymin) / 1000) * rectImage.height,
+    };
+  };
+  const imagePrete = rectImage !== null;
+
+  // Zone active : on cadre la photo dessus (désactivable par le bouton « Suivre »).
+  useEffect(() => {
+    if (!zoneFocusPage || !suivreZones || !imagePrete || !zoneFocusRef.current) return;
+    transformRef.current?.zoomToElement(zoneFocusRef.current, 2, 300);
+  }, [zoneFocusPage, suivreZones, imagePrete]);
 
   // Hook déclaré AVANT tout return conditionnel (règle des hooks React) :
   // sinon l'ouverture du popup change le nombre de hooks et React plante.
@@ -221,6 +295,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
       toast.success(language === 'fr' ? 'Page validée avec succès' : 'Page validated successfully');
       setSaisiesCliniques({});
       setSaisiesPii({});
+      setRevues(new Set());
       queryClient.invalidateQueries({ queryKey: ['clinical-data', pageId] });
       queryClient.invalidateQueries({ queryKey: ['pii-data', pageId] });
       queryClient.invalidateQueries({ queryKey: ['sessions-table'] });
@@ -245,19 +320,11 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     lignes.filter(({ donnee }) => !donnee.valide).length + piiData.filter((p) => !p.saisie).length;
   // Champs à vérifier en priorité (lignes pas encore validées uniquement) :
   // score Gemini faible, ou valeur lue sans aucun score (« Score inconnu »).
-  const lignesAValider = lignes.filter(({ donnee }) => !donnee.valide);
-  const champsFaibles = lignesAValider.reduce(
-    (n, { champs }) => n + champs.filter((c) => niveauConfiance(c.confiance) === 'basse').length,
-    0,
-  );
-  const champsScoreInconnu = lignesAValider.reduce(
-    (n, { champs }) => n + champs.filter((c) => c.lu && c.confiance === null).length,
-    0,
-  );
-  const detailsAVerifier = [
-    champsFaibles ? `${champsFaibles} champ(s) à faible confiance` : null,
-    champsScoreInconnu ? `${champsScoreInconnu} champ(s) à score inconnu` : null,
-  ].filter(Boolean).join(' · ');
+  // Cases douteuses restantes (score < 80 %, inconnu, ou alerte) : baisse au fil
+  // des corrections et confirmations.
+  const detailsAVerifier = nbAVerifier
+    ? (language === 'fr' ? `${nbAVerifier} case(s) à vérifier` : `${nbAVerifier} cell(s) to check`)
+    : '';
 
   if (!isOpen || !currentPage) return null;
 
@@ -299,6 +366,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                 <div className="flex-1 overflow-hidden relative flex items-center justify-center">
                   <TransformWrapper
+                    ref={transformRef}
                     initialScale={1}
                     minScale={0.5}
                     maxScale={4}
@@ -323,6 +391,16 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                               <Icon className="w-4 h-4" />
                             </button>
                           ))}
+                          <button
+                            onClick={() => setSuivreZones((v) => !v)}
+                            aria-pressed={suivreZones}
+                            className={`p-2 rounded-lg transition-colors ${suivreZones ? 'bg-emerald-500/30 text-emerald-200' : 'hover:bg-white/15'}`}
+                            title={language === 'fr'
+                              ? 'Cadrer la photo sur la ligne en cours de saisie (si l’OCR a fourni sa position)'
+                              : 'Frame the photo on the row being edited (when OCR provided its position)'}
+                          >
+                            <Crosshair className="w-4 h-4" />
+                          </button>
                         </div>
 
                         {/* Confidence badge */}
@@ -334,7 +412,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                         </div>
 
                         <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <div className="relative w-full h-full pointer-events-none p-4">
+                          <div ref={cadreRef} className="relative w-full h-full pointer-events-none p-4">
                             {currentPage.image && (
                               <Image
                                 src={currentPage.image}
@@ -343,9 +421,26 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                 unoptimized
                                 className="object-contain p-4"
                                 priority
+                                onLoad={(e) => {
+                                  const img = e.currentTarget;
+                                  setImageNaturelle({ src: currentPage.image, w: img.naturalWidth, h: img.naturalHeight });
+                                }}
                               />
                             )}
-
+                            {/* Ligne en cours (cadrée) et ligne survolée, d'après la position renvoyée par l'OCR. */}
+                            {styleZone(zoneFocusPage) && (
+                              <div
+                                ref={zoneFocusRef}
+                                className="absolute rounded-sm border-2 border-emerald-400 bg-emerald-300/10 shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]"
+                                style={styleZone(zoneFocusPage)!}
+                              />
+                            )}
+                            {zoneSurvolPage !== zoneFocusPage && styleZone(zoneSurvolPage) && (
+                              <div
+                                className="absolute rounded-sm border-2 border-amber-400 bg-amber-300/20"
+                                style={styleZone(zoneSurvolPage)!}
+                              />
+                            )}
                           </div>
                         </TransformComponent>
                       </>
@@ -420,6 +515,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                     {canValidate && (
                       <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-bold" role="group" aria-label="Disposition">
                         {([
+                          ['verifier', `${language === 'fr' ? 'À vérifier' : 'To check'}${nbAVerifier ? ` (${nbAVerifier})` : ''}`],
                           ['fiche', language === 'fr' ? 'Fiche patiente' : 'Patient sheet'],
                           ['registre', language === 'fr' ? 'Registre' : 'Register'],
                           ['liste', language === 'fr' ? 'Liste' : 'List'],
@@ -488,25 +584,42 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                         </div>
                       )}
                       {!isLoadingClinical && !isLoadingPii && !isLoadingCatalogue && !catalogueEnErreur && (
-                        vueEffective === 'fiche' ? (
-                          <FichePatiente
-                            key={pageId}
-                            grille={grille}
-                            saisies={saisies}
-                            onChangeClinique={modifierClinique}
-                            onChangePii={modifierPii}
-                            language={language}
-                          />
-                        ) : (
-                          <RegistreGrid
-                            key={pageId}
-                            grille={grille}
-                            saisies={saisies}
-                            onChangeClinique={modifierClinique}
-                            onChangePii={modifierPii}
-                            language={language}
-                          />
-                        )
+                        <>
+                          {vueEffective === 'verifier' && (
+                            <RevueAVerifier
+                              key={pageId}
+                              grille={grille}
+                              saisies={saisies}
+                              onChangeClinique={modifierClinique}
+                              onChangePii={modifierPii}
+                              onConfirmer={confirmerCase}
+                              language={language}
+                              onZone={onZone}
+                            />
+                          )}
+                          {vueEffective === 'fiche' && (
+                            <FichePatiente
+                              key={pageId}
+                              grille={grille}
+                              saisies={saisies}
+                              onChangeClinique={modifierClinique}
+                              onChangePii={modifierPii}
+                              language={language}
+                              onZone={onZone}
+                            />
+                          )}
+                          {vueEffective === 'registre' && (
+                            <RegistreGrid
+                              key={pageId}
+                              grille={grille}
+                              saisies={saisies}
+                              onChangeClinique={modifierClinique}
+                              onChangePii={modifierPii}
+                              language={language}
+                              onZone={onZone}
+                            />
+                          )}
+                        </>
                       )}
                     </>
                   )}

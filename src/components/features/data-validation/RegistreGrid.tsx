@@ -17,7 +17,9 @@ import {
   etatCellule,
   libellesSections,
   regrouperParSection,
+  zoneRangee,
   type ColonneGrille,
+  type DemandeZone,
   type Grille,
   type RangeeGrille,
   type SaisiesValideur,
@@ -30,6 +32,8 @@ interface RegistreGridProps {
   onChangeClinique: (idDonnee: string, nomChamp: string, valeur: string) => void;
   onChangePii: (idPii: string, valeur: string) => void;
   language: string;
+  /** Lien photo ↔ données : survol (surligne) / focus (cadre l'image) d'une rangée. */
+  onZone?: (demande: DemandeZone | null) => void;
 }
 
 export function enteteColonne(c: ColonneGrille): string {
@@ -52,6 +56,7 @@ export function LegendeConfiance({ fr }: Readonly<{ fr: boolean }>) {
       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-slate-100 border border-slate-200 text-[9px] leading-3 text-center font-bold">?</span> {fr ? 'score inconnu' : 'unknown score'}</span>
       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm border border-gray-200 bg-white" /> {fr ? 'sûr (≥ 80 %, score au survol)' : 'reliable (≥ 80 %, hover for score)'}</span>
       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm ring-2 ring-blue-400" /> {fr ? 'modifié' : 'edited'}</span>
+      <span className="flex items-center gap-1"><span className="text-[11px] font-bold text-emerald-600">✓</span> {fr ? 'confirmé' : 'confirmed'}</span>
     </div>
   );
 }
@@ -162,6 +167,9 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
               return (
                 <tr
                   key={`${r.numeroOrdre}:${r.rang}`}
+                  onMouseEnter={() => props.onZone?.({ zone: zoneRangee(r, grille), zoom: false })}
+                  onMouseLeave={() => props.onZone?.(null)}
+                  onFocus={() => props.onZone?.({ zone: zoneRangee(r, grille), zoom: true })}
                   className={`${verrouillee ? 'opacity-70' : ''} ${multiVisites && r.debutPatiente ? 'border-t-2 border-t-gray-400' : ''}`}
                 >
                   {/* N° de la patiente : fusionné sur le bloc de ses visites. */}
