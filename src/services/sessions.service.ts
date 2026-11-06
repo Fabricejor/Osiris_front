@@ -1,13 +1,32 @@
 import { apiClient } from "./apiClient";
 
+import type { FolderStatus } from "@/components/ui/folderUI";
+
+/** Miroir de `SessionScanRead` (backend : src/schemas/session.py). */
+export type StatutSession = "EN_COURS" | "RECU" | "EN_TRAITEMENT" | "A_VALIDER" | "VALIDE";
+
 export interface SessionScan {
-  id: string;
+  id_session_scan: string;
+  id_agent_terrain: string;
   type_registre: string;
   annee_version: number;
-  libelle_session: string;
-  statut: string;
+  statut_session: StatutSession;
+  nombre_pages: number;
+  date_debut: string;
+  date_fin: string | null;
   date_creation: string;
-  nb_pages: number;
+  date_modification: string;
+}
+
+/** Statut backend → statut d'affichage des dossiers. */
+export function sessionFolderStatus(statut: StatutSession | undefined): FolderStatus {
+  return statut === "VALIDE" ? "validated" : "pending";
+}
+
+/** Libellé lisible (le backend ne stocke pas de libellé de session). */
+export function sessionLabel(session: SessionScan): string {
+  const date = new Date(session.date_debut || session.date_creation).toLocaleDateString("fr-FR");
+  return `${session.type_registre} ${session.annee_version} — ${date}`;
 }
 
 export interface ScannedPage {
@@ -45,10 +64,11 @@ export const SessionsService = {
   /**
    * Ouvre une nouvelle session de scan
    */
-  createSession: async (type_registre: string, annee_version: number, libelle_session: string) => {
+  createSession: async (type_registre: string, annee_version: number) => {
+    // Le backend refuse les champs inconnus (extra="forbid") : pas de libelle_session.
     return apiClient<{ id_session_scan: string }>('/v1/sessions', {
       method: 'POST',
-      body: JSON.stringify({ type_registre, annee_version, libelle_session })
+      body: JSON.stringify({ type_registre, annee_version })
     });
   },
 

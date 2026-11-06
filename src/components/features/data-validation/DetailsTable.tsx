@@ -15,7 +15,7 @@ import {
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
 import type { FolderStatus } from '@/components/ui/folderUI';
 import { useQuery } from '@tanstack/react-query';
-import { SessionsService, SessionScan } from '@/services/sessions.service';
+import { SessionsService, SessionScan, sessionFolderStatus, sessionLabel } from '@/services/sessions.service';
 
 const columnHelper = createColumnHelper<SessionScan>();
 
@@ -34,7 +34,7 @@ interface DetailsTableProps {
 const IdCell = (info: any) => <span className="font-medium text-gray-800">{info.getValue()}</span>;
 
 const StatusCell = (info: any) => {
-  const status = (info.getValue() as string).toLowerCase();
+  const status = sessionFolderStatus(info.getValue());
   const statusTag = STATUS_TAG[status] || STATUS_TAG['pending'];
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTag.bg} ${statusTag.text}`}>
@@ -61,7 +61,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor('id', {
+      columnHelper.accessor('id_session_scan', {
         header: 'Session ID',
         cell: IdCell,
       }),
@@ -71,17 +71,18 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
       columnHelper.accessor('annee_version', {
         header: 'Année',
       }),
-      columnHelper.accessor('libelle_session', {
+      columnHelper.accessor((s) => sessionLabel(s), {
+        id: 'libelle',
         header: 'Libellé',
       }),
-      columnHelper.accessor('nb_pages', {
+      columnHelper.accessor('nombre_pages', {
         header: 'Pages',
       }),
       columnHelper.accessor('date_creation', {
         header: 'Date Création',
         cell: (info) => new Date(info.getValue() as string).toLocaleDateString(),
       }),
-      columnHelper.accessor('statut', {
+      columnHelper.accessor('statut_session', {
         header: 'Status',
         cell: StatusCell,
       }),
@@ -92,10 +93,11 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
   const filteredData = useMemo(() => {
     const items = data?.items || [];
     return items.filter((s) => {
+      const q = search.toLowerCase();
       const matchesSearch =
-        s.id.toLowerCase().includes(search.toLowerCase()) ||
-        (s.libelle_session && s.libelle_session.toLowerCase().includes(search.toLowerCase()));
-      const matchesStatus = statusFilter === 'all' || s.statut.toLowerCase() === statusFilter;
+        s.id_session_scan.toLowerCase().includes(q) ||
+        sessionLabel(s).toLowerCase().includes(q);
+      const matchesStatus = statusFilter === 'all' || sessionFolderStatus(s.statut_session) === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [data, search, statusFilter]);
@@ -162,8 +164,8 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
               {table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  onClick={() => setSelectedSessionId(row.original.id)}
-                  className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer ${selectedSessionId === row.original.id ? 'bg-emerald-50/50' : ''}`}
+                  onClick={() => setSelectedSessionId(row.original.id_session_scan)}
+                  className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer ${selectedSessionId === row.original.id_session_scan ? 'bg-emerald-50/50' : ''}`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="py-3 px-4 text-gray-600 text-[13px]">
