@@ -409,6 +409,11 @@
             ],
             "title": "Modalites"
           },
+          "niveau_patiente": {
+            "default": false,
+            "title": "Niveau Patiente",
+            "type": "boolean"
+          },
           "nom": {
             "title": "Nom",
             "type": "string"
@@ -716,6 +721,13 @@
           },
           "numero_ordre_ligne": {
             "title": "Numero Ordre Ligne",
+            "type": "integer"
+          },
+          "rang": {
+            "default": 1,
+            "description": "Rang de la visite (1 hors CPN/CPON).",
+            "minimum": 1.0,
+            "title": "Rang",
             "type": "integer"
           },
           "registration_ecc_score": {

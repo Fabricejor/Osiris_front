@@ -63,7 +63,7 @@ const BARRE_CONFIANCE = {
   inconnue: 'bg-gray-300',
 } as const;
 
-/** Badge « Gemini xx% » affiché à côté de chaque champ lu par l'OCR. */
+/** Badge « xx % » (score de confiance de l'OCR) affiché à côté de chaque champ lu. */
 function BadgeConfiance({ champ }: Readonly<{ champ: ChampAffiche }>) {
   if (champ.corrigeParHumain) {
     return (
@@ -72,12 +72,22 @@ function BadgeConfiance({ champ }: Readonly<{ champ: ChampAffiche }>) {
       </span>
     );
   }
+  if (champ.deduit) {
+    return (
+      <span
+        title="Valeur déduite de la ligne du registre (non lue sur l'image)"
+        className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-slate-100 text-slate-600 border-slate-200"
+      >
+        Déduit
+      </span>
+    );
+  }
   const niveau = niveauConfiance(champ.confiance);
-  let texte = `Gemini ${champ.confiance}%`;
-  let titre = 'Score de confiance renvoyé par Gemini pour cette cellule';
+  let texte = `${champ.confiance}%`;
+  let titre = 'Score de confiance de la lecture de cette cellule';
   if (champ.confiance === null && champ.lu) {
     texte = 'Score inconnu';
-    titre = "Gemini a lu une valeur mais n'a renvoyé aucun score de confiance : à vérifier";
+    titre = 'Valeur lue sans score de confiance : à vérifier';
   } else if (champ.confiance === null) {
     texte = champ.manquant ? 'Case vide' : 'Non lu';
     titre = "Aucune valeur lue par l'OCR pour ce champ";
@@ -139,7 +149,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   const vueRegistre = vue === 'registre' && canValidate;
 
   const lignes = [...clinicalData]
-    .sort((a, b) => a.numero_ordre_ligne - b.numero_ordre_ligne)
+    .sort((a, b) => a.numero_ordre_ligne - b.numero_ordre_ligne || (a.rang ?? 1) - (b.rang ?? 1))
     .map((donnee) => ({ donnee, champs: champsAffiches(donnee, catalogue) }));
 
   useEffect(() => {
@@ -467,8 +477,8 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       </h3>
                       <p className="text-xs text-gray-500 mb-4">
                         {language === 'fr'
-                          ? "Valeurs pré-remplies par Gemini (avec son score de confiance) : vérifiez-les sur l'image de la page, corrigez si besoin, puis validez."
-                          : 'Values pre-filled by Gemini (with its confidence score): check them against the page image, correct if needed, then validate.'}
+                          ? "Valeurs pré-remplies automatiquement (avec leur score de confiance) : vérifiez-les sur l'image de la page, corrigez si besoin, puis validez."
+                          : 'Automatically pre-filled values (with their confidence score): check them against the page image, correct if needed, then validate.'}
                       </p>
 
                       <div className="space-y-5">
@@ -500,6 +510,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                       confiance:
                                         typeof pii.score_confiance === 'number' ? Math.round(pii.score_confiance * 100) : null,
                                       corrigeParHumain: false,
+                                      deduit: false,
                                       manquant: !pii.valeur_lue,
                                     }}
                                   />
@@ -560,6 +571,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                               <div className="flex items-center justify-between mb-3">
                                 <h4 className="text-sm font-bold text-gray-800">
                                   {language === 'fr' ? 'Ligne' : 'Row'} {donnee.numero_ordre_ligne}
+                                  {grille.rangsParPatient > 1 && ` · ${language === 'fr' ? 'visite' : 'visit'} ${donnee.rang ?? 1}`}
                                   {donnee.valide && (
                                     <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">
                                       {donnee.categorie_rejet ? 'Rejetée' : 'Validée'}
@@ -567,7 +579,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                   )}
                                 </h4>
                                 <span
-                                  title="Moyenne des scores de confiance Gemini des champs lus"
+                                  title="Moyenne des scores de confiance des champs lus"
                                   className={`text-xs font-bold px-2 py-0.5 rounded-full border ${BADGE_CONFIANCE[niveau]}`}
                                 >
                                   {confiance === null ? 'Confiance —' : `Confiance ${confiance}%`}
