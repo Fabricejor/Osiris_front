@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { AuthService } from "@/services/auth.service";
 import { Loader2 } from "lucide-react";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     return () => clearTimeout(timeout);
   }, [isAuthenticated, router, pathname]);
+
+  // Recharge le profil (rôles) depuis /auth/me une fois par chargement : le
+  // profil persisté en localStorage peut être obsolète (rôle modifié, ancien
+  // format sans rôle). Un 401 non rafraîchissable déconnecte via apiClient.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    AuthService.getCurrentUser()
+      .then((user) => useAuthStore.getState().login(user))
+      .catch(() => { /* apiClient gère déjà la fin de session */ });
+  }, [isAuthenticated]);
 
   if (isChecking) {
     return (

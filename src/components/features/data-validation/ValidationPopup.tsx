@@ -78,18 +78,19 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     }
   }, [isOpen, initialPageIndex]);
 
-  if (!isOpen) return null;
-
   const currentPage = pages[currentIndex];
 
+  // Hook déclaré AVANT tout return conditionnel (règle des hooks React) :
+  // sinon l'ouverture du popup change le nombre de hooks et React plante.
   const validateMutation = useMutation({
-    mutationFn: () => SessionsService.validatePage(currentPage.id.toString()),
+    mutationFn: () => SessionsService.validatePage(String(currentPage?.id)),
     onSuccess: () => {
       toast.success(language === 'fr' ? 'Page validée avec succès' : 'Page validated successfully');
       queryClient.invalidateQueries({ queryKey: ['clinical-data', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['pii-data', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['sessions-table'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
+
       if (currentIndex < pages.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else {
@@ -100,6 +101,8 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
       toast.error(err.message || (language === 'fr' ? 'Erreur lors de la validation' : 'Error during validation'));
     }
   });
+
+  if (!isOpen || !currentPage) return null;
 
   const confidenceColor = currentPage.confidence < 80 ? 'text-red-500' : 'text-emerald-600';
   const confidenceBg = currentPage.confidence < 80 ? 'bg-red-500' : 'bg-emerald-500';
@@ -171,13 +174,16 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                         <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <div className="relative w-full h-full pointer-events-none p-4">
-                            <Image
-                              src={currentPage.url_image || currentPage.image}
-                              alt={currentPage.nom_fichier || currentPage.name}
-                              fill
-                              className="object-contain p-4"
-                              priority
-                            />
+                            {currentPage.image && (
+                              <Image
+                                src={currentPage.image}
+                                alt={currentPage.name}
+                                fill
+                                unoptimized
+                                className="object-contain p-4"
+                                priority
+                              />
+                            )}
 
                           </div>
                         </TransformComponent>
@@ -233,7 +239,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                 <div className="p-6 border-b border-gray-100 flex items-start justify-between shrink-0">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-1">Record Validation</h2>
-                    <p className="text-sm text-gray-500">{currentPage.nom_fichier || currentPage.name} • {currentPage.id_session_scan || currentPage.batch}</p>
+                    <p className="text-sm text-gray-500">{currentPage.name} • {currentPage.id_session_scan}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     {/* Confidence indicator */}

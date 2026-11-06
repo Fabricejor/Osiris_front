@@ -6,7 +6,9 @@ const ContentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
-  "img-src 'self' data: blob: https://storage.googleapis.com",
+  // *.qsoul.africa : URLs pré-signées MinIO (MINIO_PUBLIC_ENDPOINT=s3osiris.qsoul.africa) ;
+  // localhost:9000 : MinIO en dev.
+  "img-src 'self' data: blob: https://storage.googleapis.com https://*.qsoul.africa http://localhost:9000",
   `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",

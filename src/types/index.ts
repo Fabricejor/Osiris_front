@@ -3,12 +3,17 @@
  * Vous pouvez les importer n'importe où via `import type { User } from "@/types";`
  */
 
+export type UserRole = 'AGENT_TERRAIN' | 'VALIDEUR_MEDICAL' | 'ADMIN' | 'SUPERADMIN';
+
 export interface User {
   id: string;
   email: string;
   firstName?: string;
   lastName?: string;
-  role: 'AGENT_TERRAIN' | 'VALIDEUR_MEDICAL' | 'ADMIN' | 'SUPERADMIN';
+  /** Rôle effectif (dérivé des rôles Keycloak de /auth/me). */
+  role: UserRole;
+  /** Rôles Keycloak bruts (ex. ["admin", "superadmin"]). */
+  roles?: string[];
   avatarUrl?: string;
   status?: string;
   createdAt: string;

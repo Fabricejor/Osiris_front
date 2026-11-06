@@ -12,7 +12,6 @@ import {
   Filter,
   Pencil,
   CheckCircle2,
-  ArrowRight,
   ShieldAlert,
   Gauge,
   AlertTriangle
@@ -21,7 +20,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
 import { useQuery } from '@tanstack/react-query';
-import { SessionsService } from '@/services/sessions.service';
+import { SessionsService, pageCategory, toPageView, type PageView, type SessionScan } from '@/services/sessions.service';
 
 
 
@@ -48,16 +47,14 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
     queryFn: () => SessionsService.getSessionTimeline(batchId),
   });
 
-  const pages = pagesData?.items || [];
-  const session = sessionData || {};
-  const timelineSteps = timelineData || [];
+  const pages: PageView[] = useMemo(() => (pagesData?.items ?? []).map(toPageView), [pagesData]);
+  const session: Partial<SessionScan> = sessionData ?? {};
+  const timelineSteps = timelineData ?? [];
 
   const pageStats = useMemo(() => {
-    return pages.reduce((acc: any, p: any) => {
-      const status = p.status || 'pending';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, { validated: 0, pending: 0, review: 0 });
+    const acc = { validated: 0, pending: 0, review: 0 };
+    pages.forEach((p) => { acc[pageCategory(p)] += 1; });
+    return acc;
   }, [pages]);
 
   const getStatusColorClass = (status: string) => {
@@ -244,34 +241,38 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
               ) : pages.length === 0 ? (
                 <div className="text-gray-500 text-center">No pages found.</div>
               ) : (
-                pages.map((page: any, index: number) => (
+                pages.map((page, index) => (
                   <div
                     key={page.id}
                     className={`group relative flex bg-white rounded-lg border-2 transition-all ${pageViewMode === 'grid' ? 'flex-col' : 'flex-row items-center p-2'
-                      } ${page.status === 'review' ? 'border-red-500 shadow-sm shadow-red-100' : 'border-transparent shadow-sm hover:shadow-md'
+                      } ${pageCategory(page) === 'review' ? 'border-red-500 shadow-sm shadow-red-100' : 'border-transparent shadow-sm hover:shadow-md'
                       }`}
                   >
                     {/* Image Container */}
                     <div className={`relative bg-gray-100 overflow-hidden ${pageViewMode === 'grid' ? 'aspect-3/4 w-full rounded-t-md' : 'w-24 h-32 rounded-md shrink-0'
                       }`}>
-                      <Image
-                        src={page.url_image || page.image}
-                        alt={page.nom_fichier || page.name}
-                        fill
-                        className="object-cover"
-                      />
+                      {/* URL pré-signée MinIO : `unoptimized` (signature éphémère, pas de cache optimiseur). */}
+                      {page.image && (
+                        <Image
+                          src={page.image}
+                          alt={page.name}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      )}
 
                       {/* Confidence Badge (only in grid mode on image) */}
                       {pageViewMode === 'grid' && (
                         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm text-xs font-bold">
-                          <span className={(page.score_confiance_moyen || page.confidence) < 80 ? 'text-red-500' : 'text-[#65b741]'}>
-                            {page.score_confiance_moyen || page.confidence}%
+                          <span className={page.confidence < 80 ? 'text-red-500' : 'text-[#65b741]'}>
+                            {page.confidence}%
                           </span>
                         </div>
                       )}
 
                       {/* Review warning */}
-                      {page.status === 'review' && (
+                      {pageCategory(page) === 'review' && (
                         <div className="absolute top-2 left-2 bg-red-500 text-white p-1 rounded-lg shadow-sm">
                           <AlertTriangle className="w-3.5 h-3.5" />
                         </div>
@@ -293,9 +294,9 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                     <div className={`flex items-start justify-between bg-white ${pageViewMode === 'grid' ? 'p-3 flex-row rounded-b-md border border-t-0 border-gray-100 w-full' : 'p-4 flex-row flex-1 ml-4 items-center border-none'
                       }`}>
                       <div className="flex flex-col">
-                        <span className={`font-bold text-gray-900 mb-1 ${pageViewMode === 'grid' ? 'text-sm' : 'text-base'}`}>{page.nom_fichier || page.name}</span>
-                        <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(page.statut_traitement || page.status)}`}>
-                          {page.statut_traitement || page.statusText}
+                        <span className={`font-bold text-gray-900 mb-1 ${pageViewMode === 'grid' ? 'text-sm' : 'text-base'}`}>{page.name}</span>
+                        <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(pageCategory(page))}`}>
+                          {page.statusText}
                         </span>
                       </div>
 
@@ -305,14 +306,14 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                         {pageViewMode === 'list' && (
                           <div className="flex flex-col items-end">
                             <span className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Confidence</span>
-                            <span className={`text-sm font-bold ${(page.score_confiance_moyen || page.confidence) < 80 ? 'text-red-500' : 'text-[#65b741]'}`}>
-                              {page.score_confiance_moyen || page.confidence}%
+                            <span className={`text-sm font-bold ${page.confidence < 80 ? 'text-red-500' : 'text-[#65b741]'}`}>
+                              {page.confidence}%
                             </span>
                           </div>
                         )}
 
                         {/* Status Dot/Icon */}
-                        {renderStatusDot(page.statut_traitement || page.status, pageViewMode === 'grid')}
+                        {renderStatusDot(pageCategory(page), pageViewMode === 'grid')}
                       </div>
                     </div>
                   </div>
@@ -335,7 +336,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                 <div className="text-sm text-gray-500">Loading timeline...</div>
               ) : timelineSteps.length === 0 ? (
                 <div className="text-sm text-gray-500">No timeline data available.</div>
-              ) : timelineSteps.map((step: any, index: number) => {
+              ) : timelineSteps.map((step) => {
                 const isCompleted = step.status === 'completed';
                 const isCurrent = step.status === 'current';
                 const isUpcoming = step.status === 'upcoming';
@@ -354,7 +355,9 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                       </h4>
 
                       {step.time && (
-                        <p className="text-xs text-gray-500">{step.time}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(step.time).toLocaleString(language === 'fr' ? 'fr-FR' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                        </p>
                       )}
 
                       {step.subtitle && (
@@ -371,11 +374,6 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                         </div>
                       )}
 
-                      {step.action && (
-                        <button className="mt-2 flex items-center gap-1 text-xs font-semibold text-[#65b741] hover:text-[#5aa43a] transition-colors">
-                          {step.action} <ArrowRight className="w-3 h-3" />
-                        </button>
-                      )}
                     </div>
                   </div>
                 );

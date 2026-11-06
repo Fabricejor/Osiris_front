@@ -1,32 +1,83 @@
 import { apiClient } from "./apiClient";
 
 import type { FolderStatus } from "@/components/ui/folderUI";
+import type { components } from "@/types/api.generated";
 
-/** Miroir de `SessionScanRead` (backend : src/schemas/session.py). */
-export type StatutSession = "EN_COURS" | "RECU" | "EN_TRAITEMENT" | "A_VALIDER" | "VALIDE";
+// Types générés depuis l'OpenAPI du backend (`npm run gen:api`) : un champ
+// renommé côté backend casse la compilation au lieu de donner `undefined`.
+type Schemas = components["schemas"];
 
-export interface SessionScan {
-  id_session_scan: string;
-  id_agent_terrain: string;
-  type_registre: string;
-  annee_version: number;
-  statut_session: StatutSession;
-  nombre_pages: number;
-  date_debut: string;
-  date_fin: string | null;
-  date_creation: string;
-  date_modification: string;
-}
+export type StatutSession = Schemas["StatutSession"];
+/** `SessionScanRead` + champs calculés (statut_validation, score moyen, opérateur, clinique). */
+export type SessionScan = Schemas["SessionScanRead"];
 
-/** Statut backend → statut d'affichage des dossiers. */
-export function sessionFolderStatus(statut: StatutSession | undefined): FolderStatus {
-  return statut === "VALIDE" ? "validated" : "pending";
+/** Statut d'affichage d'une session (calculé côté backend). */
+export function sessionFolderStatus(session: Pick<SessionScan, "statut_validation"> | undefined): FolderStatus {
+  return session?.statut_validation ?? "pending";
 }
 
 /** Libellé lisible (le backend ne stocke pas de libellé de session). */
 export function sessionLabel(session: SessionScan): string {
   const date = new Date(session.date_debut || session.date_creation).toLocaleDateString("fr-FR");
   return `${session.type_registre} ${session.annee_version} — ${date}`;
+}
+
+export type StatutTraitement = Schemas["StatutTraitement"];
+/**
+ * `RegistreScanneRead`. Attention : `url_image_page_*` = clé objet MinIO
+ * (pas une URL) ; `image_url_page_*` = URL pré-signée affichable ;
+ * `score_confiance` = Decimal sérialisé en chaîne ("72.50"), 0-100.
+ */
+export type RegistreScanne = Schemas["RegistreScanneRead"];
+
+/** Page prête à afficher (cartes OCR + popup de validation). */
+export interface PageView {
+  id: string;
+  id_session_scan: string;
+  name: string;
+  status: StatutTraitement;
+  statusText: string;
+  isAnomaly: boolean;
+  confidence: number;
+  /** URL d'image affichable (pré-signée, expire) — vide si indisponible. */
+  image: string;
+  date_creation: string;
+}
+
+const STATUT_LABEL: Record<StatutTraitement, string> = {
+  RECU: "En traitement",
+  EN_TRAITEMENT: "En traitement",
+  A_VALIDER: "À valider",
+  VALIDE: "Validée",
+  FUSION_INCOMPLETE: "Anomalie",
+  ECHEC_RECALAGE: "Échec recalage",
+  REJETEE: "Rejetée",
+};
+
+export function toPageView(page: RegistreScanne): PageView {
+  const ligne = page.numero_ordre_ligne ? ` · ligne ${page.numero_ordre_ligne}` : "";
+  return {
+    id: page.id_registre_scanne,
+    id_session_scan: page.id_session_scan,
+    name: `${page.type_registre} ${page.annee_version}${ligne} · ${page.id_registre_scanne.slice(0, 8)}`,
+    status: page.statut_traitement,
+    statusText: STATUT_LABEL[page.statut_traitement] ?? page.statut_traitement,
+    isAnomaly: page.statut_traitement === "FUSION_INCOMPLETE" || page.statut_traitement === "ECHEC_RECALAGE",
+    confidence: Math.round(Number(page.score_confiance ?? 0)),
+    image: page.image_url_page_gauche ?? page.image_url_page_droite ?? "",
+    date_creation: page.date_creation,
+  };
+}
+
+export type EtapeTimeline = Schemas["EtapeTimelineRead"];
+
+/** Catégorie d'affichage d'une page : validée, à revoir (anomalie / rejet), en attente. */
+export type PageCategory = "validated" | "review" | "pending";
+
+export function pageCategory(page: PageView): PageCategory {
+  if (page.status === "VALIDE") return "validated";
+  if (page.isAnomaly || page.status === "REJETEE") return "review";
+  return "pending";
 }
 
 export interface ScannedPage {
@@ -56,7 +107,7 @@ export const SessionsService = {
    * Récupère les pages d'une session
    */
   getPages: async (sessionId: string) => {
-    return apiClient<ListResponse<ScannedPage>>(`/v1/sessions/${sessionId}/pages`, {
+    return apiClient<ListResponse<RegistreScanne>>(`/v1/sessions/${sessionId}/pages`, {
       method: "GET",
     });
   },
@@ -76,7 +127,7 @@ export const SessionsService = {
    * Récupère les détails d'une session
    */
   getSessionById: async (sessionId: string) => {
-    return apiClient<any>(`/v1/sessions/${sessionId}`, {
+    return apiClient<SessionScan>(`/v1/sessions/${sessionId}`, {
       method: "GET",
     });
   },
@@ -85,7 +136,7 @@ export const SessionsService = {
    * Récupère la timeline d'une session
    */
   getSessionTimeline: async (sessionId: string) => {
-    return apiClient<any[]>(`/v1/sessions/${sessionId}/timeline`, {
+    return apiClient<EtapeTimeline[]>(`/v1/sessions/${sessionId}/timeline`, {
       method: "GET",
     });
   },
@@ -94,7 +145,7 @@ export const SessionsService = {
    * Récupère la file d'attente globale des pages nécessitant une vérification OCR
    */
   getPagesQueue: async (limit: number = 50, offset: number = 0) => {
-    return apiClient<ListResponse<any>>(`/v1/pages/queue?limit=${limit}&offset=${offset}`, {
+    return apiClient<ListResponse<RegistreScanne>>(`/v1/pages/queue?limit=${limit}&offset=${offset}`, {
       method: "GET",
     });
   },
@@ -103,7 +154,7 @@ export const SessionsService = {
    * Valide une page (OCR Processing)
    */
   validatePage: async (pageId: string) => {
-    return apiClient(`/v1/pages/${pageId}/validate`, {
+    return apiClient<RegistreScanne>(`/v1/pages/${pageId}/validate`, {
       method: "POST",
     });
   },
@@ -111,9 +162,10 @@ export const SessionsService = {
   /**
    * Rejette une page (OCR Processing)
    */
-  rejectPage: async (pageId: string) => {
-    return apiClient(`/v1/pages/${pageId}/reject`, {
+  rejectPage: async (pageId: string, motif?: string) => {
+    return apiClient<RegistreScanne>(`/v1/pages/${pageId}/reject`, {
       method: "POST",
+      body: JSON.stringify({ motif: motif || null }),
     });
   }
 };

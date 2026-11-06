@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Search,
   LayoutGrid,
@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SessionsService } from '@/services/sessions.service';
+import { SessionsService, toPageView, type PageView } from '@/services/sessions.service';
+import { toast } from 'sonner';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
 import PageHeader from '@/components/ui/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -30,20 +31,30 @@ export default function OCRProcessingPage() {
     queryKey: ['pages-queue'],
     queryFn: () => SessionsService.getPagesQueue(),
   });
-  const queuePages = data?.items || [];
+  const queuePages: PageView[] = useMemo(() => (data?.items ?? []).map(toPageView), [data]);
+
+  const onActionError = (err: any) => {
+    // 409 : la page a changé de statut entre-temps (ex. déjà validée par un collègue).
+    toast.error(err?.message || (language === 'fr' ? "L'action a échoué" : 'Action failed'));
+    queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
+  };
 
   const validateMutation = useMutation({
     mutationFn: (id: string) => SessionsService.validatePage(id),
     onSuccess: () => {
+      toast.success(language === 'fr' ? 'Page validée' : 'Page validated');
       queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
-    }
+    },
+    onError: onActionError,
   });
 
   const rejectMutation = useMutation({
     mutationFn: (id: string) => SessionsService.rejectPage(id),
     onSuccess: () => {
+      toast.success(language === 'fr' ? 'Page rejetée' : 'Page rejected');
       queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
-    }
+    },
+    onError: onActionError,
   });
 
   // State for Dropdown and Popup
@@ -73,17 +84,13 @@ export default function OCRProcessingPage() {
     }
   };
 
-  const filteredPages = queuePages.filter((page: any) => {
-    const pageName = page.nom_fichier || page.name || '';
-    const pageBatch = page.id_session_scan || page.batch || '';
-    const pageStatus = page.statut_traitement || page.status || '';
-    const pageConfidence = page.score_confiance ?? page.score_confiance_moyen ?? page.confidence ?? 0;
-
-    const matchSearch = pageName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pageBatch.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredPages = queuePages.filter((page) => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch = page.name.toLowerCase().includes(q) ||
+      page.id_session_scan.toLowerCase().includes(q);
     const matchFilter = filterType === 'All' ||
-      (filterType === 'Anomalies' && pageStatus === 'anomaly') ||
-      (filterType === 'Low Confidence' && pageConfidence < 50);
+      (filterType === 'Anomalies' && page.isAnomaly) ||
+      (filterType === 'Low Confidence' && page.confidence < 50);
     return matchSearch && matchFilter;
   });
 
@@ -103,7 +110,7 @@ export default function OCRProcessingPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase">Pending Review</p>
-              <p className="text-2xl font-black text-gray-900">{queuePages.filter((p: any) => (p.statut_traitement || p.status) === 'pending').length}</p>
+              <p className="text-2xl font-black text-gray-900">{queuePages.filter((p) => p.status === 'A_VALIDER').length}</p>
             </div>
           </div>
           <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex-1 flex items-center gap-4">
@@ -112,7 +119,7 @@ export default function OCRProcessingPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase">Anomalies Detected</p>
-              <p className="text-2xl font-black text-gray-900">{queuePages.filter((p: any) => (p.statut_traitement || p.status) === 'anomaly').length}</p>
+              <p className="text-2xl font-black text-gray-900">{queuePages.filter((p) => p.isAnomaly).length}</p>
             </div>
           </div>
         </div>
@@ -170,14 +177,13 @@ export default function OCRProcessingPage() {
           </div>
         ) : (
           <div className={`grid gap-6 ${pageViewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`} ref={dropdownRef}>
-            {filteredPages.map((page: any, index: number) => {
-              const pageName = page.nom_fichier || page.name || 'Unnamed Page';
-              const pageStatus = page.statut_traitement || page.status || 'unknown';
-              const pageStatusText = pageStatus === 'anomaly' ? 'Anomaly' : (page.statusText || 'Pending');
-              const pageConfidence = page.score_confiance ?? page.score_confiance_moyen ?? page.confidence ?? 0;
-              const pageBatch = page.id_session_scan || page.batch || 'N/A';
-              const pageUploadDate = page.date_creation ? new Date(page.date_creation).toLocaleDateString() : (page.uploadDate || 'N/A');
-              const pageImage = page.url_image || page.image || '';
+            {filteredPages.map((page, index) => {
+              const pageName = page.name;
+              const pageStatusText = page.statusText;
+              const pageConfidence = page.confidence;
+              const pageBatch = page.id_session_scan.slice(0, 8);
+              const pageUploadDate = page.date_creation ? new Date(page.date_creation).toLocaleDateString() : 'N/A';
+              const pageImage = page.image;
 
               return (
                 <div
@@ -188,11 +194,11 @@ export default function OCRProcessingPage() {
                   {/* Image Section */}
                   <div className={`relative bg-gray-100 overflow-hidden ${pageViewMode === 'grid' ? 'aspect-4/3 w-full rounded-t-xl' : 'w-32 h-24 rounded-lg shrink-0'
                     }`}>
-                    {pageImage && <Image src={pageImage} alt={pageName} fill className="object-cover" />}
+                    {pageImage && <Image src={pageImage} alt={pageName} fill unoptimized className="object-cover" />}
 
                     {/* Status Badge Over Image */}
                     <div className="absolute top-3 left-3 flex gap-2">
-                      <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm ${pageStatus === 'anomaly' ? 'bg-rose-500/90 text-white' : 'bg-amber-400/90 text-amber-900'
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm ${page.isAnomaly ? 'bg-rose-500/90 text-white' : 'bg-amber-400/90 text-amber-900'
                         }`}>
                         {pageStatusText}
                       </span>
@@ -258,12 +264,9 @@ export default function OCRProcessingPage() {
       <ValidationPopup
         isOpen={selectedPageIndex !== null}
         onClose={() => setSelectedPageIndex(null)}
-        pages={filteredPages.map(p => ({
-          ...p,
-          statusText: t(p.status as any)
-        }))}
+        pages={filteredPages}
         initialPageIndex={selectedPageIndex || 0}
-        sessionId={selectedPageIndex !== null ? (filteredPages[selectedPageIndex]?.id_session_scan || filteredPages[selectedPageIndex]?.batch || '') : ''}
+        sessionId={selectedPageIndex !== null ? (filteredPages[selectedPageIndex]?.id_session_scan ?? '') : ''}
       />
     </div>
   );
