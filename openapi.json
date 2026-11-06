@@ -455,6 +455,56 @@
         "title": "ChampCatalogue",
         "type": "object"
       },
+      "ChampCatalogueUpdate": {
+        "additionalProperties": false,
+        "description": "Body de `PATCH /catalogue-registres/{type}/{annee}/champs/{nom}`.\n\nChamp absent ou `null` = inchangé. `alias: []` supprime tous les alias.",
+        "properties": {
+          "alias": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Variantes de l'intitulé de la colonne sur les registres terrain.",
+            "title": "Alias"
+          },
+          "libelle": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Libelle"
+          },
+          "modalites": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Valeurs autorisées (champs à choix / oui-non).",
+            "title": "Modalites"
+          }
+        },
+        "title": "ChampCatalogueUpdate",
+        "type": "object"
+      },
       "ChangePasswordRequest": {
         "additionalProperties": false,
         "description": "Body de `POST /auth/change-password`.\n\nPublic (aucune auth requise) — sinon un utilisateur bloqué par un\npassword temporaire ne pourrait pas y accéder. Le rate limit habituel\ndu login s'applique pour éviter le brute-force du `current_password`.",
@@ -492,6 +542,24 @@
           "new_password"
         ],
         "title": "ChangePasswordRequest",
+        "type": "object"
+      },
+      "CorrectionRequest": {
+        "additionalProperties": false,
+        "description": "Body de `POST /donnees-extraites/{id}/corriger` (ligne déjà validée).",
+        "properties": {
+          "corrections": {
+            "additionalProperties": true,
+            "description": "Champs à corriger {nom_champ: nouvelle_valeur} (au moins un).",
+            "minProperties": 1,
+            "title": "Corrections",
+            "type": "object"
+          }
+        },
+        "required": [
+          "corrections"
+        ],
+        "title": "CorrectionRequest",
         "type": "object"
       },
       "DashboardStat": {
@@ -1728,6 +1796,18 @@
             "title": "Annee Version",
             "type": "integer"
           },
+          "controle_entetes": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Controle Entetes"
+          },
           "date_creation": {
             "format": "date-time",
             "title": "Date Creation",
@@ -1737,6 +1817,17 @@
             "format": "date-time",
             "title": "Date Modification",
             "type": "string"
+          },
+          "erreur_ocr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erreur Ocr"
           },
           "id_registre_scanne": {
             "format": "uuid",
@@ -2204,6 +2295,7 @@
           "VALIDE",
           "FUSION_INCOMPLETE",
           "ECHEC_RECALAGE",
+          "ECHEC_OCR",
           "REJETEE"
         ],
         "title": "StatutTraitement",
@@ -2432,6 +2524,8 @@
           "VALIDATION_CLINIQUE",
           "REJET_CLINIQUE",
           "SAISIE_PII",
+          "CORRECTION_CLINIQUE",
+          "CORRECTION_PII",
           "CHANGE_PASSWORD",
           "RESET_PASSWORD",
           "CREATE_USER",
@@ -2446,7 +2540,8 @@
           "CREATE_STRUCTURE",
           "UPDATE_STRUCTURE",
           "CREATE_EXPORT",
-          "DELETE_EXPORT"
+          "DELETE_EXPORT",
+          "UPDATE_CATALOGUE"
         ],
         "title": "TypeActionAudit",
         "type": "string"
@@ -2496,7 +2591,8 @@
           "SESSION_SCAN",
           "REGISTRE_SCANNE",
           "STRUCTURE_SANITAIRE",
-          "EXPORT"
+          "EXPORT",
+          "CATALOGUE_CHAMP"
         ],
         "title": "TypeRessourceAudit",
         "type": "string"
@@ -4240,6 +4336,99 @@
         ]
       }
     },
+    "/api/v1/catalogue-registres/{type_registre}/{annee_version}/champs/{nom_champ}": {
+      "patch": {
+        "description": "Effet immédiat sur cette instance de l'API ; les workers OCR voient la\nmodification au plus tard après la durée de vie du cache (60 s).",
+        "operationId": "patch_champ_catalogue_api_v1_catalogue_registres__type_registre___annee_version__champs__nom_champ__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "type_registre",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TypeRegistre"
+            }
+          },
+          {
+            "in": "path",
+            "name": "annee_version",
+            "required": true,
+            "schema": {
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Annee Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "nom_champ",
+            "required": true,
+            "schema": {
+              "maxLength": 120,
+              "title": "Nom Champ",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChampCatalogueUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogueRegistre"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Réservé aux admins"
+          },
+          "404": {
+            "description": "Catalogue ou champ introuvable"
+          },
+          "422": {
+            "description": "Modification invalide (alias déjà utilisé par un autre champ…)"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Admin : modifier le libellé, les alias ou les modalités d'un champ",
+        "tags": [
+          "Catalogues"
+        ]
+      }
+    },
     "/api/v1/dashboard/activity-heatmap": {
       "get": {
         "operationId": "get_activity_heatmap_api_v1_dashboard_activity_heatmap_get",
@@ -5037,6 +5226,95 @@
         ]
       }
     },
+    "/api/v1/donnees-extraites/{id_donnee_extraite}/corriger": {
+      "post": {
+        "description": "Corrige des champs d'une ligne validée (`donnees_validees`). Les valeurs\navant / après sont tracées dans l'audit. Le statut de la page ne change\npas ; les exports suivants prennent la correction.",
+        "operationId": "post_corriger_api_v1_donnees_extraites__id_donnee_extraite__corriger_post",
+        "parameters": [
+          {
+            "description": "UUID de la ligne validée à corriger",
+            "in": "path",
+            "name": "id_donnee_extraite",
+            "required": true,
+            "schema": {
+              "description": "UUID de la ligne validée à corriger",
+              "format": "uuid",
+              "title": "Id Donnee Extraite",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonneeExtraiteRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Donnée extraite introuvable"
+          },
+          "409": {
+            "description": "Ligne pas encore validée, ou rejetée"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : corriger une ligne déjà validée",
+        "tags": [
+          "Validation clinique"
+        ]
+      }
+    },
     "/api/v1/donnees-extraites/{id_donnee_extraite}/rejeter": {
       "post": {
         "description": "Marque la ligne comme rejetée (non-exportée en CSV mais conservée en DB\npour traçabilité). `categorie` obligatoire (enum), `motif` texte libre\noptionnel (≤ 500 chars).\n\nComme pour `/valider` : si toutes les lignes du registre sont désormais\ntraitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.",
@@ -5642,7 +5920,7 @@
     },
     "/api/v1/pages/{page_id}/reject": {
       "post": {
-        "description": "`A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` → `REJETEE` (tracé dans l'audit log).",
+        "description": "`A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE` (audit log).",
         "operationId": "reject_page_api_v1_pages__page_id__reject_post",
         "parameters": [
           {
@@ -6019,6 +6297,95 @@
           }
         ],
         "summary": "Valideur : détails d'une cellule PII (avec crop_url présignée)",
+        "tags": [
+          "Validation PII"
+        ]
+      }
+    },
+    "/api/v1/pii-cellules/{id_pii_cellule}/corriger": {
+      "post": {
+        "description": "Remplace la valeur saisie (faute vue après coup). Tracé dans l'audit,\nsans la valeur (donnée personnelle).",
+        "operationId": "post_corriger_api_v1_pii_cellules__id_pii_cellule__corriger_post",
+        "parameters": [
+          {
+            "description": "UUID de la cellule à corriger",
+            "in": "path",
+            "name": "id_pii_cellule",
+            "required": true,
+            "schema": {
+              "description": "UUID de la cellule à corriger",
+              "format": "uuid",
+              "title": "Id Pii Cellule",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaisieRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PiiCelluleRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Cellule PII introuvable"
+          },
+          "409": {
+            "description": "Cellule pas encore saisie (utiliser /saisir)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : corriger une cellule PII déjà saisie",
         "tags": [
           "Validation PII"
         ]
@@ -6571,7 +6938,7 @@
             }
           },
           {
-            "description": "Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, REJETEE).",
+            "description": "Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, ECHEC_OCR, REJETEE).",
             "in": "query",
             "name": "statut",
             "required": false,
@@ -6584,7 +6951,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, REJETEE).",
+              "description": "Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, ECHEC_OCR, REJETEE).",
               "title": "Statut"
             }
           },

@@ -449,6 +449,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalogue-registres/{type_registre}/{annee_version}/champs/{nom_champ}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Admin : modifier le libellé, les alias ou les modalités d'un champ
+         * @description Effet immédiat sur cette instance de l'API ; les workers OCR voient la
+         *     modification au plus tard après la durée de vie du cache (60 s).
+         */
+        patch: operations["patch_champ_catalogue_api_v1_catalogue_registres__type_registre___annee_version__champs__nom_champ__patch"];
+        trace?: never;
+    };
     "/api/v1/dashboard/activity-heatmap": {
         parameters: {
             query?: never;
@@ -664,6 +685,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/donnees-extraites/{id_donnee_extraite}/corriger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valideur : corriger une ligne déjà validée
+         * @description Corrige des champs d'une ligne validée (`donnees_validees`). Les valeurs
+         *     avant / après sont tracées dans l'audit. Le statut de la page ne change
+         *     pas ; les exports suivants prennent la correction.
+         */
+        post: operations["post_corriger_api_v1_donnees_extraites__id_donnee_extraite__corriger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/donnees-extraites/{id_donnee_extraite}/rejeter": {
         parameters: {
             query?: never;
@@ -847,7 +890,7 @@ export interface paths {
         put?: never;
         /**
          * Reject Page
-         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` → `REJETEE` (tracé dans l'audit log).
+         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE` (audit log).
          */
         post: operations["reject_page_api_v1_pages__page_id__reject_post"];
         delete?: never;
@@ -909,6 +952,27 @@ export interface paths {
         get: operations["get_pii_api_v1_pii_cellules__id_pii_cellule__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pii-cellules/{id_pii_cellule}/corriger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valideur : corriger une cellule PII déjà saisie
+         * @description Remplace la valeur saisie (faute vue après coup). Tracé dans l'audit,
+         *     sans la valeur (donnée personnelle).
+         */
+        post: operations["post_corriger_api_v1_pii_cellules__id_pii_cellule__corriger_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1402,6 +1466,26 @@ export interface components {
             unite: string | null;
         };
         /**
+         * ChampCatalogueUpdate
+         * @description Body de `PATCH /catalogue-registres/{type}/{annee}/champs/{nom}`.
+         *
+         *     Champ absent ou `null` = inchangé. `alias: []` supprime tous les alias.
+         */
+        ChampCatalogueUpdate: {
+            /**
+             * Alias
+             * @description Variantes de l'intitulé de la colonne sur les registres terrain.
+             */
+            alias?: string[] | null;
+            /** Libelle */
+            libelle?: string | null;
+            /**
+             * Modalites
+             * @description Valeurs autorisées (champs à choix / oui-non).
+             */
+            modalites?: string[] | null;
+        };
+        /**
          * ChangePasswordRequest
          * @description Body de `POST /auth/change-password`.
          *
@@ -1419,6 +1503,19 @@ export interface components {
             new_password: string;
             /** Username */
             username: string;
+        };
+        /**
+         * CorrectionRequest
+         * @description Body de `POST /donnees-extraites/{id}/corriger` (ligne déjà validée).
+         */
+        CorrectionRequest: {
+            /**
+             * Corrections
+             * @description Champs à corriger {nom_champ: nouvelle_valeur} (au moins un).
+             */
+            corrections: {
+                [key: string]: unknown;
+            };
         };
         /** DashboardStat */
         DashboardStat: {
@@ -1920,6 +2017,10 @@ export interface components {
         RegistreScanneRead: {
             /** Annee Version */
             annee_version: number;
+            /** Controle Entetes */
+            controle_entetes?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Date Creation
              * Format: date-time
@@ -1930,6 +2031,8 @@ export interface components {
              * Format: date-time
              */
             date_modification: string;
+            /** Erreur Ocr */
+            erreur_ocr?: string | null;
             /**
              * Id Registre Scanne
              * Format: uuid
@@ -2137,7 +2240,7 @@ export interface components {
          * @description État de traitement d'une page / ligne de registre scanné.
          * @enum {string}
          */
-        StatutTraitement: "RECU" | "EN_TRAITEMENT" | "A_VALIDER" | "VALIDE" | "FUSION_INCOMPLETE" | "ECHEC_RECALAGE" | "REJETEE";
+        StatutTraitement: "RECU" | "EN_TRAITEMENT" | "A_VALIDER" | "VALIDE" | "FUSION_INCOMPLETE" | "ECHEC_RECALAGE" | "ECHEC_OCR" | "REJETEE";
         /**
          * StatutValidationLigne
          * @description État de traitement humain d'une donnee_extraite — query param uniquement.
@@ -2237,7 +2340,7 @@ export interface components {
          *     (contrainte enum PostgreSQL native).
          * @enum {string}
          */
-        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT";
+        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CORRECTION_CLINIQUE" | "CORRECTION_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT" | "UPDATE_CATALOGUE";
         /**
          * TypeChamp
          * @description Types de champs OCR extraits d'un registre (voir ADR-004 §2).
@@ -2261,7 +2364,7 @@ export interface components {
          * @description Type de ressource ciblée par une action audit.
          * @enum {string}
          */
-        TypeRessourceAudit: "DONNEE_EXTRAITE" | "PII_CELLULE" | "UTILISATEUR" | "SESSION_SCAN" | "REGISTRE_SCANNE" | "STRUCTURE_SANITAIRE" | "EXPORT";
+        TypeRessourceAudit: "DONNEE_EXTRAITE" | "PII_CELLULE" | "UTILISATEUR" | "SESSION_SCAN" | "REGISTRE_SCANNE" | "STRUCTURE_SANITAIRE" | "EXPORT" | "CATALOGUE_CHAMP";
         /**
          * TypeUtilisateur
          * @description Rôle métier stocké en base (table utilisateur).
@@ -3392,6 +3495,57 @@ export interface operations {
             };
         };
     };
+    patch_champ_catalogue_api_v1_catalogue_registres__type_registre___annee_version__champs__nom_champ__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type_registre: components["schemas"]["TypeRegistre"];
+                annee_version: number;
+                nom_champ: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChampCatalogueUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogueRegistre"];
+                };
+            };
+            /** @description Réservé aux admins */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Catalogue ou champ introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Modification invalide (alias déjà utilisé par un autre champ…) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_activity_heatmap_api_v1_dashboard_activity_heatmap_get: {
         parameters: {
             query?: never;
@@ -3796,6 +3950,72 @@ export interface operations {
             };
             /** @description Donnée extraite introuvable */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_corriger_api_v1_donnees_extraites__id_donnee_extraite__corriger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID de la ligne validée à corriger */
+                id_donnee_extraite: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonneeExtraiteRead"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Donnée extraite introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ligne pas encore validée, ou rejetée */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4447,6 +4667,72 @@ export interface operations {
             };
         };
     };
+    post_corriger_api_v1_pii_cellules__id_pii_cellule__corriger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID de la cellule à corriger */
+                id_pii_cellule: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaisieRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PiiCelluleRead"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cellule PII introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cellule pas encore saisie (utiliser /saisir) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_saisir_api_v1_pii_cellules__id_pii_cellule__saisir_post: {
         parameters: {
             query?: never;
@@ -4716,7 +5002,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
-                /** @description Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, REJETEE). */
+                /** @description Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, ECHEC_OCR, REJETEE). */
                 statut?: components["schemas"]["StatutTraitement"] | null;
             };
             header?: never;

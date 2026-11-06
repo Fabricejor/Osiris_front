@@ -30,6 +30,25 @@ export type StatutTraitement = Schemas["StatutTraitement"];
  */
 export type RegistreScanne = Schemas["RegistreScanneRead"];
 
+/** En-têtes lus sur la page comparés au catalogue (backend : `ControleEntetes`). */
+export interface ControleEntetes {
+  colonnes_inconnues: string[];
+  champs_absents: string[];
+  ordre_different: boolean;
+  cles_non_mappees: string[];
+}
+
+function lireControleEntetes(brut: unknown): ControleEntetes | null {
+  if (!brut || typeof brut !== "object") return null;
+  const c = brut as Partial<ControleEntetes>;
+  return {
+    colonnes_inconnues: Array.isArray(c.colonnes_inconnues) ? c.colonnes_inconnues : [],
+    champs_absents: Array.isArray(c.champs_absents) ? c.champs_absents : [],
+    ordre_different: c.ordre_different === true,
+    cles_non_mappees: Array.isArray(c.cles_non_mappees) ? c.cles_non_mappees : [],
+  };
+}
+
 /** Page prête à afficher (cartes OCR + popup de validation). */
 export interface PageView {
   id: string;
@@ -43,8 +62,17 @@ export interface PageView {
   confidence: number;
   /** URL d'image affichable (pré-signée, expire) — vide si indisponible. */
   image: string;
+  /** Écarts entre la page et le registre de référence (null si non contrôlé). */
+  controleEntetes: ControleEntetes | null;
+  /** Motif du dernier échec OCR (statut ECHEC_OCR), null sinon. */
+  erreurOcr: string | null;
+  /** Encore « en traitement » 30 min après sa dernière mise à jour : job OCR perdu. */
+  ocrBloque: boolean;
   date_creation: string;
 }
+
+/** Au-delà, une page encore en OCR est considérée bloquée (job perdu, worker arrêté). */
+const DELAI_OCR_BLOQUE_MS = 30 * 60 * 1000;
 
 const STATUT_LABEL: Record<StatutTraitement, string> = {
   RECU: "En traitement",
@@ -53,6 +81,7 @@ const STATUT_LABEL: Record<StatutTraitement, string> = {
   VALIDE: "Validée",
   FUSION_INCOMPLETE: "Anomalie",
   ECHEC_RECALAGE: "Échec recalage",
+  ECHEC_OCR: "Échec OCR",
   REJETEE: "Rejetée",
 };
 
@@ -66,9 +95,17 @@ export function toPageView(page: RegistreScanne): PageView {
     name: `${page.type_registre} ${page.annee_version}${ligne} · ${page.id_registre_scanne.slice(0, 8)}`,
     status: page.statut_traitement,
     statusText: STATUT_LABEL[page.statut_traitement] ?? page.statut_traitement,
-    isAnomaly: page.statut_traitement === "FUSION_INCOMPLETE" || page.statut_traitement === "ECHEC_RECALAGE",
+    isAnomaly:
+      page.statut_traitement === "FUSION_INCOMPLETE" ||
+      page.statut_traitement === "ECHEC_RECALAGE" ||
+      page.statut_traitement === "ECHEC_OCR",
     confidence: Math.round(Number(page.score_confiance ?? 0)),
     image: page.image_url_page_gauche ?? page.image_url_page_droite ?? "",
+    controleEntetes: lireControleEntetes(page.controle_entetes),
+    erreurOcr: page.erreur_ocr ?? null,
+    ocrBloque:
+      (page.statut_traitement === "RECU" || page.statut_traitement === "EN_TRAITEMENT") &&
+      Date.now() - new Date(page.date_modification).getTime() > DELAI_OCR_BLOQUE_MS,
     date_creation: page.date_creation,
   };
 }
@@ -171,5 +208,15 @@ export const SessionsService = {
       method: "POST",
       body: JSON.stringify({ motif: motif || null }),
     });
-  }
+  },
+
+  /**
+   * Relance l'OCR d'une page (échec OCR, recalage, page bloquée) → statut RECU.
+   * Réservé à l'agent de la session, à l'admin de sa structure et au superadmin.
+   */
+  retraiterPage: async (sessionId: string, pageId: string) => {
+    return apiClient<RegistreScanne>(`/v1/sessions/${sessionId}/pages/${pageId}/retraiter`, {
+      method: "POST",
+    });
+  },
 };

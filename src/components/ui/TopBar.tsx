@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Moon, Sun, Bell, ChevronDown, Globe, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import AvatarInitiales from './AvatarInitiales';
 import { AuthService } from '@/services/auth.service';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -97,10 +98,10 @@ export default function TopBar() {
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="flex items-center gap-3 pl-1 pr-3 py-1 bg-white hover:bg-gray-50 rounded-full transition-colors"
           >
-            <img
-              src={user?.avatarUrl || "https://ui-avatars.com/api/?name=" + (user?.firstName || 'A') + "+" + (user?.lastName || 'U') + "&background=random"}
-              alt="User"
-              className="w-8 h-8 rounded-full object-cover border border-gray-200"
+            <AvatarInitiales
+              nom={user?.firstName ? `${user.firstName} ${user.lastName ?? ''}` : (user?.email || 'Utilisateur')}
+              src={user?.avatarUrl}
+              className="w-8 h-8 text-xs border border-gray-200"
             />
             <span className="text-sm font-bold text-gray-700 hidden md:block">
               {user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.email || "Utilisateur")}

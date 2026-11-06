@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, isToday, isYesterday } from 'date-fns';
 import type { AuditLog } from '@/types';
 import PageHeader from '@/components/ui/PageHeader';
+import AvatarInitiales from '@/components/ui/AvatarInitiales';
 import { useTranslation } from '@/hooks/useTranslation';
 
 // Mock data removed
@@ -87,7 +88,6 @@ export default function ActivityLogPage() {
         docId: log.id_ressource || '-',
         status: log.status || 'Success',
         ip: log.ip_address || '-',
-        avatar: `https://ui-avatars.com/api/?name=${log.user_name || log.id_utilisateur_acteur || 'Sys'}`
       });
     });
 
@@ -208,9 +208,7 @@ export default function ActivityLogPage() {
 
                         {/* User */}
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-                            <img src={log.avatar} alt={log.user} width={32} height={32} className="object-cover w-full h-full" />
-                          </div>
+                          <AvatarInitiales nom={log.user} />
                           <span className="text-sm font-bold text-gray-800">{log.user}</span>
                         </div>
 
