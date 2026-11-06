@@ -193,3 +193,120 @@ export function construireCorrections(
   }
   return corrections;
 }
+
+// ─── Vue registre : grille calquée sur le registre papier ─────────────────
+
+type PiiCellule = components['schemas']['PiiCelluleRead'];
+
+export interface ColonneGrille {
+  nom: string;
+  libelle: string;
+  unite: string | null;
+  type_champ: string;
+  is_pii: boolean;
+}
+
+export interface GroupeColonnes {
+  /** Libellé de section (en-tête regroupé, comme sur le registre). */
+  libelle: string;
+  colonnes: ColonneGrille[];
+}
+
+export type CelluleGrille =
+  | { kind: 'clinique'; champ: ChampAffiche; idDonnee: string; verrouillee: boolean }
+  | { kind: 'pii'; pii: PiiCellule; confiance: number | null }
+  | { kind: 'vide' };
+
+export interface RangeeGrille {
+  numeroOrdre: number;
+  donnee: DonneeExtraite | null;
+  cellules: Record<string, CelluleGrille>;
+}
+
+export interface Grille {
+  groupes: GroupeColonnes[];
+  colonnes: ColonneGrille[];
+  rangees: RangeeGrille[];
+}
+
+/**
+ * Construit la grille « registre » : colonnes dans l'ordre physique du papier
+ * (`colonne_registre`, puis ordre de section/champ), regroupées par section
+ * consécutive ; une rangée par ligne du registre (`numero_ordre`), PII
+ * replacées dans leurs colonnes.
+ */
+export function construireGrille(
+  catalogue: Catalogue | undefined,
+  donnees: DonneeExtraite[],
+  pii: PiiCellule[],
+): Grille {
+  if (!catalogue) return { groupes: [], colonnes: [], rangees: [] };
+
+  const champsOrdonnes = [...catalogue.sections]
+    .sort((a, b) => a.ordre - b.ordre)
+    .flatMap((section, iSection) =>
+      [...section.champs]
+        .sort((a, b) => a.ordre - b.ordre)
+        .map((champ, iChamp) => ({ section, champ, rangLogique: iSection * 1000 + iChamp })),
+    )
+    .sort((a, b) => {
+      const ca = a.champ.colonne_registre ?? Number.MAX_SAFE_INTEGER;
+      const cb = b.champ.colonne_registre ?? Number.MAX_SAFE_INTEGER;
+      return ca - cb || a.rangLogique - b.rangLogique;
+    });
+
+  const colonnes: ColonneGrille[] = [];
+  const groupes: GroupeColonnes[] = [];
+  for (const { section, champ } of champsOrdonnes) {
+    const colonne: ColonneGrille = {
+      nom: champ.nom,
+      libelle: champ.libelle,
+      unite: champ.unite ?? null,
+      type_champ: champ.type_champ,
+      is_pii: champ.is_pii,
+    };
+    colonnes.push(colonne);
+    const dernier = groupes.at(-1);
+    if (dernier && dernier.libelle === section.libelle) dernier.colonnes.push(colonne);
+    else groupes.push({ libelle: section.libelle, colonnes: [colonne] });
+  }
+
+  const rangees = new Map<number, RangeeGrille>();
+  const rangee = (numeroOrdre: number): RangeeGrille => {
+    let r = rangees.get(numeroOrdre);
+    if (!r) {
+      r = { numeroOrdre, donnee: null, cellules: {} };
+      rangees.set(numeroOrdre, r);
+    }
+    return r;
+  };
+
+  for (const donnee of donnees) {
+    const r = rangee(donnee.numero_ordre_ligne);
+    r.donnee = donnee;
+    for (const champ of champsAffiches(donnee, catalogue)) {
+      r.cellules[champ.nom] = {
+        kind: 'clinique',
+        champ,
+        idDonnee: donnee.id_donnee_extraite,
+        verrouillee: donnee.valide,
+      };
+    }
+  }
+  for (const cellule of pii) {
+    if (!cellule.nom_champ) continue;
+    const r = rangee(cellule.patient_index + 1);
+    r.cellules[cellule.nom_champ] = {
+      kind: 'pii',
+      pii: cellule,
+      confiance:
+        typeof cellule.score_confiance === 'number' ? Math.round(cellule.score_confiance * 100) : null,
+    };
+  }
+
+  return {
+    groupes,
+    colonnes,
+    rangees: [...rangees.values()].sort((a, b) => a.numeroOrdre - b.numeroOrdre),
+  };
+}

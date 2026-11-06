@@ -38,6 +38,8 @@ import {
   type ChampAffiche,
 } from '@/services/validation-mapping';
 import { useAuthStore } from '@/store/authStore';
+import { construireGrille } from '@/services/validation-mapping';
+import RegistreGrid from './RegistreGrid';
 
 interface ValidationPopupProps {
   isOpen: boolean;
@@ -98,6 +100,9 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   const canValidate = useAuthStore((state) => state.user?.role === 'VALIDEUR_MEDICAL');
   const [currentIndex, setCurrentIndex] = useState(initialPageIndex);
   const [activeTab, setActiveTab] = useState<'clinical' | 'pii'>('clinical');
+  // « registre » : tableau calqué sur le registre papier (image au-dessus) ;
+  // « liste » : ancienne vue par ligne (image à gauche, onglets clinique/PII).
+  const [vue, setVue] = useState<'registre' | 'liste'>('registre');
   // Saisies du valideur : {id_donnee_extraite: {nom_champ: texte}} et {id_pii_cellule: texte}.
   const [saisiesCliniques, setSaisiesCliniques] = useState<Record<string, Record<string, string>>>({});
   const [saisiesPii, setSaisiesPii] = useState<Record<string, string>>({});
@@ -125,6 +130,13 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     enabled: isOpen && canValidate && !!currentPage,
     staleTime: 10 * 60 * 1000,
   });
+
+  const grille = construireGrille(catalogue, clinicalData, piiData);
+  const modifierClinique = (idDonnee: string, nomChamp: string, valeur: string) =>
+    setSaisiesCliniques((prev) => ({ ...prev, [idDonnee]: { ...prev[idDonnee], [nomChamp]: valeur } }));
+  const modifierPii = (idPii: string, valeur: string) =>
+    setSaisiesPii((prev) => ({ ...prev, [idPii]: valeur }));
+  const vueRegistre = vue === 'registre' && canValidate;
 
   const lignes = [...clinicalData]
     .sort((a, b) => a.numero_ordre_ligne - b.numero_ordre_ligne)
@@ -233,10 +245,14 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="bg-white w-full h-full rounded-2xl shadow-2xl overflow-hidden flex flex-col"
           >
-            <PanelGroup orientation="horizontal" className="flex-1 w-full h-full">
+            <PanelGroup
+              key={vueRegistre ? 'registre' : 'liste'}
+              orientation={vueRegistre ? 'vertical' : 'horizontal'}
+              className="flex-1 w-full h-full"
+            >
 
-              {/* ── LEFT PANEL — IMAGE VIEWER ──────────────── */}
-              <Panel defaultSize={40} minSize={30} className="bg-[#1a1a2e] flex flex-col relative">
+              {/* ── IMAGE VIEWER (gauche en vue liste, haut en vue registre) ── */}
+              <Panel defaultSize={vueRegistre ? 42 : 40} minSize={vueRegistre ? 20 : 30} className="bg-[#1a1a2e] flex flex-col relative">
 
                 <div className="flex-1 overflow-hidden relative flex items-center justify-center">
                   <TransformWrapper
@@ -330,17 +346,19 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
               </Panel>
 
               {/* ── RESIZE HANDLE ──────────────────────────── */}
-              <PanelResizeHandle className="w-2 bg-gray-100 hover:bg-emerald-100 transition-colors flex flex-col justify-center items-center cursor-col-resize z-10">
-                <div className="w-1 h-8 bg-gray-300 rounded-full" />
+              <PanelResizeHandle
+                className={`bg-gray-100 hover:bg-emerald-100 transition-colors flex justify-center items-center z-10 ${vueRegistre ? 'h-2 flex-row cursor-row-resize' : 'w-2 flex-col cursor-col-resize'}`}
+              >
+                <div className={`bg-gray-300 rounded-full ${vueRegistre ? 'h-1 w-8' : 'w-1 h-8'}`} />
               </PanelResizeHandle>
 
-              {/* ── RIGHT PANEL — FORM ─────────────────────── */}
-              <Panel defaultSize={60} minSize={30} className="bg-white flex flex-col">
+              {/* ── FORM (droite en vue liste, bas en vue registre) ── */}
+              <Panel defaultSize={vueRegistre ? 58 : 60} minSize={30} className="bg-white flex flex-col min-h-0">
 
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 flex items-start justify-between shrink-0">
+                <div className={`${vueRegistre ? 'px-6 py-3' : 'p-6'} border-b border-gray-100 flex items-start justify-between shrink-0`}>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">Record Validation</h2>
+                    <h2 className={`${vueRegistre ? 'text-lg' : 'text-2xl'} font-bold text-gray-900 mb-1`}>Record Validation</h2>
                     <p className="text-sm text-gray-500">{currentPage.name} • {currentPage.id_session_scan}</p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -356,14 +374,32 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                         </div>
                       </div>
                     </div>
+                    {canValidate && (
+                      <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-bold" role="group" aria-label="Disposition">
+                        <button
+                          onClick={() => setVue('registre')}
+                          aria-pressed={vue === 'registre'}
+                          className={`px-3 py-1.5 rounded-md transition-colors ${vue === 'registre' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                          {language === 'fr' ? 'Vue registre' : 'Register view'}
+                        </button>
+                        <button
+                          onClick={() => setVue('liste')}
+                          aria-pressed={vue === 'liste'}
+                          className={`px-3 py-1.5 rounded-md transition-colors ${vue === 'liste' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                          {language === 'fr' ? 'Vue liste' : 'List view'}
+                        </button>
+                      </div>
+                    )}
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex px-6 border-b border-gray-100 bg-gray-50/50">
+                {/* Tabs (vue liste uniquement : la vue registre montre clinique + PII ensemble) */}
+                <div className={`${vueRegistre ? 'hidden' : 'flex'} px-6 border-b border-gray-100 bg-gray-50/50`}>
                   <button
                     onClick={() => setActiveTab('clinical')}
                     className={`px-4 py-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'clinical' ? 'border-[#65b741] text-[#65b741]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
@@ -386,7 +422,32 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                 </div>
 
                 {/* Form Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-8 space-y-8" style={{ scrollbarWidth: 'thin' }}>
+                <div className={`flex-1 min-h-0 overflow-y-auto ${vueRegistre ? 'p-4 space-y-4' : 'p-8 space-y-8'}`} style={{ scrollbarWidth: 'thin' }}>
+
+                  {vueRegistre && (
+                    <>
+                      {(isLoadingClinical || isLoadingPii || isLoadingCatalogue) && (
+                        <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[#65b741]" /></div>
+                      )}
+                      {catalogueEnErreur && (
+                        <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm">
+                          {language === 'fr'
+                            ? 'Catalogue du registre introuvable : impossible de reconstituer les colonnes du registre.'
+                            : 'Register catalogue not found: register columns cannot be rebuilt.'}
+                        </div>
+                      )}
+                      {!isLoadingClinical && !isLoadingPii && !isLoadingCatalogue && !catalogueEnErreur && (
+                        <RegistreGrid
+                          grille={grille}
+                          saisiesCliniques={saisiesCliniques}
+                          saisiesPii={saisiesPii}
+                          onChangeClinique={modifierClinique}
+                          onChangePii={modifierPii}
+                          language={language}
+                        />
+                      )}
+                    </>
+                  )}
 
                   {!canValidate && (
                     <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm">
@@ -399,7 +460,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                     </div>
                   )}
 
-                  {canValidate && activeTab === 'pii' && (
+                  {canValidate && !vueRegistre && activeTab === 'pii' && (
                     <section>
                       <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
                         <User className="w-4 h-4" /> Patient Information (PII)
@@ -470,7 +531,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                     </section>
                   )}
 
-                  {canValidate && activeTab === 'clinical' && (
+                  {canValidate && !vueRegistre && activeTab === 'clinical' && (
                     <section>
                       <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
                         <Activity className="w-4 h-4" /> Clinical Data
