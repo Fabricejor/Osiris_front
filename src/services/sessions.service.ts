@@ -1,34 +1,15 @@
 import { apiClient } from "./apiClient";
 
 import type { FolderStatus } from "@/components/ui/folderUI";
+import type { components } from "@/types/api.generated";
 
-/** Miroir de `SessionScanRead` (backend : src/schemas/session.py). */
-export type StatutSession = "EN_COURS" | "RECU" | "EN_TRAITEMENT" | "A_VALIDER" | "VALIDE";
+// Types générés depuis l'OpenAPI du backend (`npm run gen:api`) : un champ
+// renommé côté backend casse la compilation au lieu de donner `undefined`.
+type Schemas = components["schemas"];
 
-export interface SessionScan {
-  id_session_scan: string;
-  id_agent_terrain: string;
-  type_registre: string;
-  annee_version: number;
-  statut_session: StatutSession;
-  nombre_pages: number;
-  date_debut: string;
-  date_fin: string | null;
-  date_creation: string;
-  date_modification: string;
-  // Champs calculés par le backend (agrégés depuis les pages de la session).
-  /** rejected > anomaly > validated > pending */
-  statut_validation: FolderStatus;
-  /** Moyenne des scores OCR des pages (0-100), null si aucune page traitée. */
-  score_confiance_moyen: number | null;
-  nb_pages_validees: number;
-  nb_pages_rejetees: number;
-  nb_pages_anomalie: number;
-  /** Nom de l'agent terrain. */
-  operateur: string | null;
-  /** Structure sanitaire de l'agent. */
-  clinique: string | null;
-}
+export type StatutSession = Schemas["StatutSession"];
+/** `SessionScanRead` + champs calculés (statut_validation, score moyen, opérateur, clinique). */
+export type SessionScan = Schemas["SessionScanRead"];
 
 /** Statut d'affichage d'une session (calculé côté backend). */
 export function sessionFolderStatus(session: Pick<SessionScan, "statut_validation"> | undefined): FolderStatus {
@@ -41,36 +22,13 @@ export function sessionLabel(session: SessionScan): string {
   return `${session.type_registre} ${session.annee_version} — ${date}`;
 }
 
-/** Miroir de `StatutTraitement` (backend : src/core/constants/processing.py). */
-export type StatutTraitement =
-  | "RECU"
-  | "EN_TRAITEMENT"
-  | "A_VALIDER"
-  | "VALIDE"
-  | "FUSION_INCOMPLETE"
-  | "ECHEC_RECALAGE"
-  | "REJETEE";
-
-/** Miroir de `RegistreScanneRead` (backend : src/schemas/page.py). */
-export interface RegistreScanne {
-  id_registre_scanne: string;
-  id_session_scan: string;
-  type_registre: string;
-  annee_version: number;
-  type_page: string;
-  numero_ordre_ligne: number | null;
-  /** Clé objet MinIO (pas une URL affichable). */
-  url_image_page_gauche: string | null;
-  url_image_page_droite: string | null;
-  /** URLs GET pré-signées (expirent après quelques minutes), null si indisponibles. */
-  image_url_page_gauche?: string | null;
-  image_url_page_droite?: string | null;
-  statut_traitement: StatutTraitement;
-  /** Decimal sérialisé en chaîne par le backend (ex. "72.50"), 0-100. */
-  score_confiance: string | number | null;
-  date_creation: string;
-  date_modification: string;
-}
+export type StatutTraitement = Schemas["StatutTraitement"];
+/**
+ * `RegistreScanneRead`. Attention : `url_image_page_*` = clé objet MinIO
+ * (pas une URL) ; `image_url_page_*` = URL pré-signée affichable ;
+ * `score_confiance` = Decimal sérialisé en chaîne ("72.50"), 0-100.
+ */
+export type RegistreScanne = Schemas["RegistreScanneRead"];
 
 /** Page prête à afficher (cartes OCR + popup de validation). */
 export interface PageView {
@@ -111,15 +69,7 @@ export function toPageView(page: RegistreScanne): PageView {
   };
 }
 
-/** Miroir de `EtapeTimelineRead` (backend : src/schemas/session.py). */
-export interface EtapeTimeline {
-  id: string;
-  title: string;
-  status: "completed" | "current" | "upcoming";
-  time: string | null;
-  subtitle: string | null;
-  details: string | null;
-}
+export type EtapeTimeline = Schemas["EtapeTimelineRead"];
 
 /** Catégorie d'affichage d'une page : validée, à revoir (anomalie / rejet), en attente. */
 export type PageCategory = "validated" | "review" | "pending";

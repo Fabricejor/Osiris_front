@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/store/authStore';
+import type { UserRole } from '@/types';
 
 type NavItem = {
   name: string;
@@ -28,7 +30,13 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   color: string;
   iconBg: string;
+  /** Rôles autorisés (miroir des contrôles backend). Absent = tout utilisateur connecté. */
+  roles?: UserRole[];
 };
+
+// Doit rester aligné avec les `require_roles` / `get_current_admin` du backend.
+const BACK_OFFICE: UserRole[] = ['ADMIN', 'SUPERADMIN', 'VALIDEUR_MEDICAL'];
+const ADMINS: UserRole[] = ['ADMIN', 'SUPERADMIN'];
 
 
 const mainNavItems: NavItem[] = [
@@ -38,6 +46,7 @@ const mainNavItems: NavItem[] = [
     icon: LayoutDashboard,
     color: 'text-white',
     iconBg: 'bg-white/20',
+    roles: BACK_OFFICE,
   },
   {
     name: 'Data Validation',
@@ -52,6 +61,7 @@ const mainNavItems: NavItem[] = [
     icon: FileScan,
     color: 'text-sky-300',
     iconBg: 'bg-sky-400/20',
+    roles: BACK_OFFICE,
   },
 ];
 
@@ -62,6 +72,7 @@ const secondaryNavItems: NavItem[] = [
     icon: History,
     color: 'text-orange-300',
     iconBg: 'bg-orange-400/20',
+    roles: ADMINS,
   },
 ];
 
@@ -72,6 +83,7 @@ const adminNavItems: NavItem[] = [
     icon: Users,
     color: 'text-indigo-300',
     iconBg: 'bg-indigo-400/20',
+    roles: ADMINS,
   },
   {
     name: 'Structures',
@@ -79,6 +91,7 @@ const adminNavItems: NavItem[] = [
     icon: Building2,
     color: 'text-pink-300',
     iconBg: 'bg-pink-400/20',
+    roles: ADMINS,
   },
   {
     name: 'Catalogues',
@@ -86,6 +99,7 @@ const adminNavItems: NavItem[] = [
     icon: Library,
     color: 'text-yellow-300',
     iconBg: 'bg-yellow-400/20',
+    roles: ADMINS,
   },
   {
     name: 'Data Export',
@@ -93,6 +107,7 @@ const adminNavItems: NavItem[] = [
     icon: Download,
     color: 'text-amber-300',
     iconBg: 'bg-amber-400/20',
+    roles: ADMINS,
   },
 ];
 
@@ -244,6 +259,15 @@ function SectionLabel({ label, isCollapsed }: Readonly<{ label: string; isCollap
 export default function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const role = useAuthStore((state) => state.user?.role);
+
+  // Masque les entrées que le rôle ne peut pas utiliser (elles renverraient 403).
+  // Le backend reste la seule vraie barrière d'accès.
+  const visible = (items: NavItem[]) =>
+    items.filter((item) => !item.roles || (role !== undefined && item.roles.includes(role)));
+  const main = visible(mainNavItems);
+  const secondary = visible(secondaryNavItems);
+  const admin = visible(adminNavItems);
 
   return (
     <Tooltip.Provider delayDuration={0} skipDelayDuration={300}>
@@ -305,8 +329,8 @@ export default function Sidebar() {
       {/* Navigation principale */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5" style={{ scrollbarWidth: 'none' }}>
 
-        <SectionLabel label="Core" isCollapsed={isCollapsed} />
-        {mainNavItems.map((item) => (
+        {main.length > 0 && <SectionLabel label="Core" isCollapsed={isCollapsed} />}
+        {main.map((item) => (
           <NavLink
             key={item.href}
             item={item}
@@ -315,8 +339,8 @@ export default function Sidebar() {
           />
         ))}
 
-        <SectionLabel label="Analytics" isCollapsed={isCollapsed} />
-        {secondaryNavItems.map((item) => (
+        {secondary.length > 0 && <SectionLabel label="Analytics" isCollapsed={isCollapsed} />}
+        {secondary.map((item) => (
           <NavLink
             key={item.href}
             item={item}
@@ -325,8 +349,8 @@ export default function Sidebar() {
           />
         ))}
 
-        <SectionLabel label="Administration" isCollapsed={isCollapsed} />
-        {adminNavItems.map((item) => (
+        {admin.length > 0 && <SectionLabel label="Administration" isCollapsed={isCollapsed} />}
+        {admin.map((item) => (
           <NavLink
             key={item.href}
             item={item}
