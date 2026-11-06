@@ -43,8 +43,8 @@ function enteteColonne(c: ColonneGrille): string {
 
 function infobulle(confiance: number | null, lu: boolean, modifie: boolean, fr: boolean): string {
   if (modifie) return fr ? 'Modifié par vous' : 'Edited by you';
-  if (confiance !== null) return `${fr ? 'Confiance Gemini' : 'Gemini confidence'} : ${confiance} %`;
-  if (lu) return fr ? "Gemini n'a renvoyé aucun score : à vérifier" : 'Gemini returned no score: check it';
+  if (confiance !== null) return `${fr ? 'Confiance' : 'Confidence'} : ${confiance} %`;
+  if (lu) return fr ? 'Valeur lue sans score de confiance : à vérifier' : 'Value read without a confidence score: check it';
   return fr ? "Case vide (rien lu par l'OCR)" : 'Empty cell (nothing read by OCR)';
 }
 
@@ -112,7 +112,7 @@ function Cellule({
       className={`relative border border-gray-200 p-0 min-w-[7rem] ${rowSpan && rowSpan > 1 ? 'align-middle' : ''} ${FOND_CONFIANCE[niveau]} ${colonne.is_pii ? 'border-l-purple-200' : ''}`}
       title={
         deduit && !modifie
-          ? (fr ? 'Déduit de la ligne du registre (non lu par Gemini)' : 'Deduced from the register row (not read by Gemini)')
+          ? (fr ? "Déduit de la ligne du registre (non lu sur l'image)" : 'Deduced from the register row (not read from the image)')
           : infobulle(confiance, lu, modifie, fr)
       }
     >
@@ -154,7 +154,7 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
     <div className="flex flex-col gap-2">
       {/* Légende */}
       <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
-        <span className="font-bold text-gray-600">{fr ? 'Confiance Gemini :' : 'Gemini confidence:'}</span>
+        <span className="font-bold text-gray-600">{fr ? 'Confiance :' : 'Confidence:'}</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-emerald-100 border border-emerald-200" /> ≥ 80 %</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200" /> 50–79 %</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-100 border border-red-200" /> &lt; 50 %</span>
