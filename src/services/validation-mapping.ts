@@ -195,6 +195,11 @@ export function construireCorrections(
 }
 
 // ─── Vue registre : grille calquée sur le registre papier ─────────────────
+//
+// Registres multi-visites (CPN : 4 lignes / patiente, CPON : 3) : une rangée
+// par visite ; les colonnes d'identité (`niveau_patiente`) sont fusionnées
+// verticalement sur le bloc de la patiente, comme sur le papier, et portées
+// par sa visite de rang 1.
 
 type PiiCellule = components['schemas']['PiiCelluleRead'];
 
@@ -204,6 +209,8 @@ export interface ColonneGrille {
   unite: string | null;
   type_champ: string;
   is_pii: boolean;
+  /** Écrite une fois par patiente (cellule fusionnée sur ses visites). */
+  niveau_patiente: boolean;
 }
 
 export interface GroupeColonnes {
@@ -218,29 +225,40 @@ export type CelluleGrille =
   | { kind: 'vide' };
 
 export interface RangeeGrille {
+  /** Numéro d'ordre de la patiente sur le registre. */
   numeroOrdre: number;
+  /** Rang de la visite dans le bloc de la patiente (1 hors CPN/CPON). */
+  rang: number;
   donnee: DonneeExtraite | null;
   cellules: Record<string, CelluleGrille>;
+  /** Première rangée du bloc de la patiente (porte les cellules fusionnées). */
+  debutPatiente: boolean;
+  /** Nombre de rangées (visites) du bloc — `rowSpan` des cellules fusionnées. */
+  taillePatiente: number;
 }
 
 export interface Grille {
   groupes: GroupeColonnes[];
   colonnes: ColonneGrille[];
   rangees: RangeeGrille[];
+  /** > 1 pour les registres multi-visites : affiche la colonne « Visite ». */
+  rangsParPatient: number;
 }
 
 /**
  * Construit la grille « registre » : colonnes dans l'ordre physique du papier
  * (`colonne_registre`, puis ordre de section/champ), regroupées par section
- * consécutive ; une rangée par ligne du registre (`numero_ordre`), PII
- * replacées dans leurs colonnes.
+ * consécutive ; une rangée par visite (`numero_ordre`, `rang`), PII et
+ * identité replacées sur le bloc de la patiente.
  */
 export function construireGrille(
   catalogue: Catalogue | undefined,
   donnees: DonneeExtraite[],
   pii: PiiCellule[],
 ): Grille {
-  if (!catalogue) return { groupes: [], colonnes: [], rangees: [] };
+  if (!catalogue) return { groupes: [], colonnes: [], rangees: [], rangsParPatient: 1 };
+  const rangsParPatient = Math.max(1, catalogue.rangs_par_patient ?? 1);
+  const multiVisites = rangsParPatient > 1;
 
   const champsOrdonnes = [...catalogue.sections]
     .sort((a, b) => a.ordre - b.ordre)
@@ -264,6 +282,7 @@ export function construireGrille(
       unite: champ.unite ?? null,
       type_champ: champ.type_champ,
       is_pii: champ.is_pii,
+      niveau_patiente: multiVisites && (champ.niveau_patiente || champ.is_pii),
     };
     colonnes.push(colonne);
     const dernier = groupes.at(-1);
@@ -271,18 +290,19 @@ export function construireGrille(
     else groupes.push({ libelle: section.libelle, colonnes: [colonne] });
   }
 
-  const rangees = new Map<number, RangeeGrille>();
-  const rangee = (numeroOrdre: number): RangeeGrille => {
-    let r = rangees.get(numeroOrdre);
+  const rangees = new Map<string, RangeeGrille>();
+  const rangee = (numeroOrdre: number, rang: number): RangeeGrille => {
+    const cle = `${numeroOrdre}:${rang}`;
+    let r = rangees.get(cle);
     if (!r) {
-      r = { numeroOrdre, donnee: null, cellules: {} };
-      rangees.set(numeroOrdre, r);
+      r = { numeroOrdre, rang, donnee: null, cellules: {}, debutPatiente: false, taillePatiente: 1 };
+      rangees.set(cle, r);
     }
     return r;
   };
 
   for (const donnee of donnees) {
-    const r = rangee(donnee.numero_ordre_ligne);
+    const r = rangee(donnee.numero_ordre_ligne, donnee.rang ?? 1);
     r.donnee = donnee;
     for (const champ of champsAffiches(donnee, catalogue)) {
       r.cellules[champ.nom] = {
@@ -295,7 +315,7 @@ export function construireGrille(
   }
   for (const cellule of pii) {
     if (!cellule.nom_champ) continue;
-    const r = rangee(cellule.patient_index + 1);
+    const r = rangee(cellule.patient_index + 1, 1); // identité : visite de rang 1
     r.cellules[cellule.nom_champ] = {
       kind: 'pii',
       pii: cellule,
@@ -304,9 +324,31 @@ export function construireGrille(
     };
   }
 
-  return {
-    groupes,
-    colonnes,
-    rangees: [...rangees.values()].sort((a, b) => a.numeroOrdre - b.numeroOrdre),
-  };
+  const triees = [...rangees.values()].sort((a, b) => a.numeroOrdre - b.numeroOrdre || a.rang - b.rang);
+
+  // Blocs par patiente : la 1re rangée porte les cellules fusionnées (rowSpan).
+  for (let i = 0; i < triees.length; ) {
+    let j = i;
+    while (j < triees.length && triees[j].numeroOrdre === triees[i].numeroOrdre) j++;
+    const bloc = triees.slice(i, j);
+    bloc[0].debutPatiente = true;
+    bloc[0].taillePatiente = multiVisites ? bloc.length : 1;
+    if (multiVisites) {
+      // L'identité vit sur la visite de rang 1 ; si celle-ci n'a pas été
+      // extraite, on la cherche sur la première visite qui la porte.
+      for (const colonne of colonnes) {
+        if (!colonne.niveau_patiente || bloc[0].cellules[colonne.nom]) continue;
+        const source = bloc.find((r) => r.cellules[colonne.nom]);
+        if (source) bloc[0].cellules[colonne.nom] = source.cellules[colonne.nom];
+      }
+    } else {
+      bloc.forEach((r) => {
+        r.debutPatiente = true;
+        r.taillePatiente = 1;
+      });
+    }
+    i = j;
+  }
+
+  return { groupes, colonnes, rangees: triees, rangsParPatient };
 }

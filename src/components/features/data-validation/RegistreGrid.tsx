@@ -51,13 +51,25 @@ function infobulle(confiance: number | null, lu: boolean, modifie: boolean, fr: 
 function Cellule({
   cellule,
   colonne,
+  rowSpan,
   props,
-}: Readonly<{ cellule: CelluleGrille | undefined; colonne: ColonneGrille; props: RegistreGridProps }>) {
+}: Readonly<{
+  cellule: CelluleGrille | undefined;
+  colonne: ColonneGrille;
+  rowSpan?: number;
+  props: RegistreGridProps;
+}>) {
   const fr = props.language === 'fr';
 
   if (!cellule || cellule.kind === 'vide') {
     // PII sans cellule en base (rien lu) : non saisissable ici (pas de ligne pii_cellule).
-    return <td className="border border-gray-200 bg-gray-50 min-w-[7rem]" title={fr ? 'Rien lu' : 'Nothing read'} />;
+    return (
+      <td
+        rowSpan={rowSpan}
+        className="border border-gray-200 bg-gray-50 min-w-[7rem]"
+        title={fr ? 'Rien lu' : 'Nothing read'}
+      />
+    );
   }
 
   let valeurOrigine: string;
@@ -94,7 +106,8 @@ function Cellule({
 
   return (
     <td
-      className={`relative border border-gray-200 p-0 min-w-[7rem] ${FOND_CONFIANCE[niveau]} ${colonne.is_pii ? 'border-l-purple-200' : ''}`}
+      rowSpan={rowSpan}
+      className={`relative border border-gray-200 p-0 min-w-[7rem] ${rowSpan && rowSpan > 1 ? 'align-middle' : ''} ${FOND_CONFIANCE[niveau]} ${colonne.is_pii ? 'border-l-purple-200' : ''}`}
       title={infobulle(confiance, lu, modifie, fr)}
     >
       <input
@@ -121,6 +134,7 @@ function Cellule({
 export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
   const { grille, language } = props;
   const fr = language === 'fr';
+  const multiVisites = grille.rangsParPatient > 1;
 
   if (grille.colonnes.length === 0) return null;
   if (grille.rangees.length === 0) {
@@ -148,6 +162,11 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
               <th rowSpan={2} className="sticky left-0 z-30 bg-gray-100 border border-gray-200 px-2 py-1 text-[11px] font-bold text-gray-600 min-w-[3.5rem]">
                 N°
               </th>
+              {multiVisites && (
+                <th rowSpan={2} className="bg-gray-100 border border-gray-200 px-2 py-1 text-[11px] font-bold text-gray-600 whitespace-nowrap">
+                  {fr ? 'Visite' : 'Visit'}
+                </th>
+              )}
               {grille.groupes.map((g, i) => (
                 <th
                   key={`${g.libelle}-${i}`}
@@ -173,19 +192,43 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
           <tbody>
             {grille.rangees.map((r) => {
               const verrouillee = r.donnee?.valide ?? false;
+              const etat = r.donnee?.categorie_rejet ? 'rejetée' : 'validée';
               return (
-                <tr key={r.numeroOrdre} className={verrouillee ? 'opacity-70' : ''}>
-                  <th
-                    scope="row"
-                    className="sticky left-0 z-10 bg-gray-50 border border-gray-200 px-2 text-[12px] font-bold text-gray-700 text-center"
-                    title={verrouillee ? (r.donnee?.categorie_rejet ? 'Ligne rejetée' : 'Ligne validée') : undefined}
-                  >
-                    {r.numeroOrdre}
-                    {verrouillee && <span className="ml-0.5 text-blue-600">✓</span>}
-                  </th>
-                  {grille.colonnes.map((c) => (
-                    <Cellule key={c.nom} cellule={r.cellules[c.nom]} colonne={c} props={props} />
-                  ))}
+                <tr
+                  key={`${r.numeroOrdre}:${r.rang}`}
+                  className={`${verrouillee ? 'opacity-70' : ''} ${multiVisites && r.debutPatiente ? 'border-t-2 border-t-gray-400' : ''}`}
+                >
+                  {/* N° de la patiente : fusionné sur le bloc de ses visites. */}
+                  {r.debutPatiente && (
+                    <th
+                      scope="rowgroup"
+                      rowSpan={r.taillePatiente}
+                      className="sticky left-0 z-10 bg-gray-50 border border-gray-200 px-2 text-[12px] font-bold text-gray-700 text-center align-middle"
+                    >
+                      {r.numeroOrdre}
+                      {!multiVisites && verrouillee && <span className="ml-0.5 text-blue-600" title={`Ligne ${etat}`}>✓</span>}
+                    </th>
+                  )}
+                  {multiVisites && (
+                    <th
+                      scope="row"
+                      className="bg-white border border-gray-200 px-2 text-[11px] font-semibold text-gray-500 text-center whitespace-nowrap"
+                      title={verrouillee ? `Visite ${etat}` : undefined}
+                    >
+                      {r.rang}
+                      {verrouillee && <span className="ml-0.5 text-blue-600">✓</span>}
+                    </th>
+                  )}
+                  {grille.colonnes.map((c) => {
+                    // Identité (CPN/CPON) : une cellule fusionnée par patiente.
+                    if (c.niveau_patiente) {
+                      if (!r.debutPatiente) return null;
+                      return (
+                        <Cellule key={c.nom} cellule={r.cellules[c.nom]} colonne={c} rowSpan={r.taillePatiente} props={props} />
+                      );
+                    }
+                    return <Cellule key={c.nom} cellule={r.cellules[c.nom]} colonne={c} props={props} />;
+                  })}
                 </tr>
               );
             })}

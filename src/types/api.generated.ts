@@ -1386,6 +1386,11 @@ export interface components {
             libelle: string;
             /** Modalites */
             modalites: string[] | null;
+            /**
+             * Niveau Patiente
+             * @default false
+             */
+            niveau_patiente: boolean;
             /** Nom */
             nom: string;
             /** Obligatoire */
@@ -1516,6 +1521,12 @@ export interface components {
             motif_rejet?: string | null;
             /** Numero Ordre Ligne */
             numero_ordre_ligne: number;
+            /**
+             * Rang
+             * @description Rang de la visite (1 hors CPN/CPON).
+             * @default 1
+             */
+            rang: number;
             /**
              * Registration Ecc Score
              * @description Score ECC (0..1) du raffinement du recalage.

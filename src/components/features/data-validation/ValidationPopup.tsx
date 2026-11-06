@@ -139,7 +139,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   const vueRegistre = vue === 'registre' && canValidate;
 
   const lignes = [...clinicalData]
-    .sort((a, b) => a.numero_ordre_ligne - b.numero_ordre_ligne)
+    .sort((a, b) => a.numero_ordre_ligne - b.numero_ordre_ligne || (a.rang ?? 1) - (b.rang ?? 1))
     .map((donnee) => ({ donnee, champs: champsAffiches(donnee, catalogue) }));
 
   useEffect(() => {
@@ -560,6 +560,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                               <div className="flex items-center justify-between mb-3">
                                 <h4 className="text-sm font-bold text-gray-800">
                                   {language === 'fr' ? 'Ligne' : 'Row'} {donnee.numero_ordre_ligne}
+                                  {grille.rangsParPatient > 1 && ` · ${language === 'fr' ? 'visite' : 'visit'} ${donnee.rang ?? 1}`}
                                   {donnee.valide && (
                                     <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">
                                       {donnee.categorie_rejet ? 'Rejetée' : 'Validée'}
