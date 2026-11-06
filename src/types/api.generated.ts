@@ -890,7 +890,7 @@ export interface paths {
         put?: never;
         /**
          * Reject Page
-         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` → `REJETEE` (tracé dans l'audit log).
+         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE` (audit log).
          */
         post: operations["reject_page_api_v1_pages__page_id__reject_post"];
         delete?: never;
@@ -2031,6 +2031,8 @@ export interface components {
              * Format: date-time
              */
             date_modification: string;
+            /** Erreur Ocr */
+            erreur_ocr?: string | null;
             /**
              * Id Registre Scanne
              * Format: uuid
@@ -2238,7 +2240,7 @@ export interface components {
          * @description État de traitement d'une page / ligne de registre scanné.
          * @enum {string}
          */
-        StatutTraitement: "RECU" | "EN_TRAITEMENT" | "A_VALIDER" | "VALIDE" | "FUSION_INCOMPLETE" | "ECHEC_RECALAGE" | "REJETEE";
+        StatutTraitement: "RECU" | "EN_TRAITEMENT" | "A_VALIDER" | "VALIDE" | "FUSION_INCOMPLETE" | "ECHEC_RECALAGE" | "ECHEC_OCR" | "REJETEE";
         /**
          * StatutValidationLigne
          * @description État de traitement humain d'une donnee_extraite — query param uniquement.
@@ -5000,7 +5002,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
-                /** @description Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, REJETEE). */
+                /** @description Filtre par statut OCR (RECU, EN_TRAITEMENT, A_VALIDER, VALIDE, FUSION_INCOMPLETE, ECHEC_RECALAGE, ECHEC_OCR, REJETEE). */
                 statut?: components["schemas"]["StatutTraitement"] | null;
             };
             header?: never;

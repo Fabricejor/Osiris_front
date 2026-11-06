@@ -42,11 +42,12 @@ const FOND = {
 /** Affichage des modalités oui/non dans la liste déroulante. */
 const LIBELLE_BINAIRE: Record<string, string> = { '': '—', Oui: '✓', Non: '✗' };
 
-const TEXTE_SCORE = {
-  basse: 'text-red-600',
-  moyenne: 'text-amber-600',
-  haute: 'text-gray-400',
-  inconnue: 'text-slate-500',
+/** Pastille de score sous la valeur d'une case à vérifier. */
+const PASTILLE_SCORE = {
+  basse: 'bg-red-100 text-red-700',
+  moyenne: 'bg-amber-100 text-amber-800',
+  haute: 'bg-gray-100 text-gray-600',
+  inconnue: 'bg-slate-200 text-slate-700',
 } as const;
 
 function fondCellule(etat: NonNullable<ReturnType<typeof etatCellule>>): string {
@@ -180,7 +181,7 @@ export default function CelluleEditable({
         aria-label={colonne.libelle}
         list={colonne.modalites?.length ? idListeModalites(colonne) : undefined}
         placeholder={colonne.type_champ === 'DATE' ? 'jj/mm/aaaa' : undefined}
-        className={`${classesSaisie} ${etat.aVerifier || etat.alertes.length ? 'pr-8' : ''}`}
+        className={classesSaisie}
       />
     );
   }
@@ -195,15 +196,21 @@ export default function CelluleEditable({
       onFocus={onFocus}
     >
       {saisie}
-      {/* Alerte de cohérence (ex. écart entre visites) : prime sur le score. */}
-      {etat.alertes.length > 0 && (
-        <span className="pointer-events-none absolute right-1 top-0.5 text-[11px] font-bold text-red-600">⚠</span>
-      )}
-      {/* Score affiché seulement pour une case à vérifier (le reste au survol). */}
-      {etat.aVerifier && etat.alertes.length === 0 && (
-        <span className={`pointer-events-none absolute right-1 top-1 text-[10px] font-bold ${TEXTE_SCORE[etat.niveau]}`}>
-          {etat.scoreInconnu ? '?' : `${etat.confiance}%`}
-        </span>
+      {/* Case à vérifier : pastille lisible SOUS la valeur (le score d'une case
+          sûre reste au survol). Une alerte de cohérence prime sur le score.
+          Inutile en mode « À vérifier » (raisons détaillées au-dessus). */}
+      {etat.aVerifier && !grande && (
+        <div className="pointer-events-none px-2 pb-1 leading-none">
+          {etat.alertes.length > 0 ? (
+            <span className="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[11px] font-bold text-red-700">
+              ⚠ {fr ? 'incohérent' : 'inconsistent'}
+            </span>
+          ) : (
+            <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-bold ${PASTILLE_SCORE[etat.niveau]}`}>
+              {etat.scoreInconnu ? 'score ?' : `${etat.confiance} %`}
+            </span>
+          )}
+        </div>
       )}
       {etat.revue && (
         <span className="pointer-events-none absolute right-1 top-1 text-[10px] font-bold text-emerald-600">✓</span>

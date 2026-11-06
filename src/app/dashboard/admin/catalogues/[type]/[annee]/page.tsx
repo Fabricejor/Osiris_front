@@ -8,6 +8,7 @@
  * diffère du registre de référence (« H U », « Prestataire »…). La structure
  * (ajout/suppression de champ, type, PII) n'est pas modifiable ici.
  */
+import { useAuthStore } from '@/store/authStore';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -98,10 +99,13 @@ function LigneChamp({
   champ,
   enregistrer,
   enCours,
+  lectureSeule,
 }: Readonly<{
   champ: ChampCatalogue;
   enregistrer: (nom: string, modification: ChampCatalogueUpdate) => void;
   enCours: boolean;
+  /** Admin de structure : consultation seulement (édition réservée au superadmin). */
+  lectureSeule: boolean;
 }>) {
   const aliasInitiaux = aliasDe(champ);
   const modalitesInitiales = champ.modalites ?? [];
@@ -124,8 +128,9 @@ function LigneChamp({
         <input
           value={libelle}
           onChange={(e) => setLibelle(e.target.value)}
+          disabled={lectureSeule}
           aria-label={`Libellé de ${champ.nom}`}
-          className="w-full rounded-md border border-gray-200 px-2 py-1 text-sm outline-none focus:border-[#65b741] focus:ring-1 focus:ring-[#65b741]/30"
+          className="w-full rounded-md border disabled:bg-gray-50 disabled:text-gray-600 border-gray-200 px-2 py-1 text-sm outline-none focus:border-[#65b741] focus:ring-1 focus:ring-[#65b741]/30"
         />
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400">
           <code>{champ.nom}</code>
@@ -140,20 +145,20 @@ function LigneChamp({
         </div>
       </td>
       <td className="p-3">
-        <EditeurEtiquettes valeurs={alias} onChange={setAlias} placeholder="ex. Prestataire" />
+        <EditeurEtiquettes valeurs={alias} onChange={setAlias} placeholder="ex. Prestataire" disabled={lectureSeule} />
       </td>
       <td className="p-3">
         {aModalites ? (
           <div className="flex items-start gap-1">
             {deduit && <Lock className="w-3.5 h-3.5 mt-1 text-gray-400 shrink-0" aria-label="Verrouillé" />}
-            <EditeurEtiquettes valeurs={modalites} onChange={setModalites} placeholder="Ajouter" disabled={deduit} />
+            <EditeurEtiquettes valeurs={modalites} onChange={setModalites} placeholder="Ajouter" disabled={deduit || lectureSeule} />
           </div>
         ) : (
           <span className="text-xs text-gray-300">—</span>
         )}
       </td>
       <td className="p-3 text-right whitespace-nowrap">
-        {modifie && (
+        {modifie && !lectureSeule && (
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
@@ -189,6 +194,9 @@ export default function CatalogueDetailPage({
   const typeRegistre = decodeURIComponent(type);
   const anneeVersion = Number(annee);
   const queryClient = useQueryClient();
+  // Catalogue commun à toutes les structures : modifiable par le superadmin seul
+  // (le backend refuse aussi : 403 pour un admin de structure).
+  const lectureSeule = useAuthStore((state) => state.user?.role) !== 'SUPERADMIN';
 
   const { data: catalogue, isLoading, isError } = useQuery({
     queryKey: ['catalogue', typeRegistre, anneeVersion],
@@ -222,6 +230,13 @@ export default function CatalogueDetailPage({
           </span>
         )}
       </div>
+
+      {lectureSeule && (
+        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700">
+          <Lock className="w-4 h-4 shrink-0 text-gray-400" />
+          Consultation seule : le catalogue est commun à toutes les structures, seul un superadmin peut le modifier.
+        </div>
+      )}
 
       <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
         <strong>Alias</strong> : ajoutez les intitulés que vous voyez sur les registres terrain quand ils diffèrent du
@@ -258,6 +273,7 @@ export default function CatalogueDetailPage({
                     champ={champ}
                     enCours={mutation.isPending && mutation.variables?.nom === champ.nom}
                     enregistrer={(nom, modification) => mutation.mutate({ nom, modification })}
+                    lectureSeule={lectureSeule}
                   />
                 ))}
             </tbody>

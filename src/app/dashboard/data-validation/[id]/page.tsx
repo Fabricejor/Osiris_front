@@ -19,7 +19,9 @@ import {
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 import { SessionsService, pageCategory, toPageView, type PageView, type SessionScan } from '@/services/sessions.service';
 
 
@@ -48,6 +50,20 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
   });
 
   const pages: PageView[] = useMemo(() => (pagesData?.items ?? []).map(toPageView), [pagesData]);
+
+  // Relance de l'OCR d'une page en échec (admin de la structure / superadmin).
+  const role = useAuthStore((state) => state.user?.role);
+  const peutRelancer = role === 'ADMIN' || role === 'SUPERADMIN';
+  const queryClient = useQueryClient();
+  const relancerMutation = useMutation({
+    mutationFn: (pageId: string) => SessionsService.retraiterPage(batchId, pageId),
+    onSuccess: () => {
+      toast.success(language === 'fr' ? 'OCR relancé : la page va être relue.' : 'OCR restarted: the page will be read again.');
+      queryClient.invalidateQueries({ queryKey: ['session-pages', batchId] });
+      queryClient.invalidateQueries({ queryKey: ['session-timeline', batchId] });
+    },
+    onError: (err: Error) => toast.error(err.message || (language === 'fr' ? 'Relance impossible' : 'Restart failed')),
+  });
   const session: Partial<SessionScan> = sessionData ?? {};
   const timelineSteps = timelineData ?? [];
 
@@ -298,6 +314,30 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                         <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(pageCategory(page))}`}>
                           {page.statusText}
                         </span>
+                        {(page.status === 'ECHEC_OCR' || page.ocrBloque) && (
+                          <>
+                            {page.erreurOcr && (
+                              <span className="mt-1 text-[11px] leading-snug text-red-600">{page.erreurOcr}</span>
+                            )}
+                            {page.ocrBloque && (
+                              <span className="mt-1 text-[11px] leading-snug text-amber-700">
+                                {language === 'fr'
+                                  ? 'En traitement depuis plus de 30 min : le traitement semble bloqué.'
+                                  : 'Processing for over 30 min: it seems stuck.'}
+                              </span>
+                            )}
+                            {peutRelancer && (
+                              <button
+                                type="button"
+                                onClick={() => relancerMutation.mutate(page.id)}
+                                disabled={relancerMutation.isPending}
+                                className="mt-2 self-start rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                              >
+                                {language === 'fr' ? "Relancer l'OCR" : 'Restart OCR'}
+                              </button>
+                            )}
+                          </>
+                        )}
                       </div>
 
                       {/* Right side info for list mode, or status dot for grid */}
