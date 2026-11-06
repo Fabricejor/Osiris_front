@@ -194,7 +194,7 @@ export default function OCRProcessingPage() {
                   {/* Image Section */}
                   <div className={`relative bg-gray-100 overflow-hidden ${pageViewMode === 'grid' ? 'aspect-4/3 w-full rounded-t-xl' : 'w-32 h-24 rounded-lg shrink-0'
                     }`}>
-                    {pageImage && <Image src={pageImage} alt={pageName} fill className="object-cover" />}
+                    {pageImage && <Image src={pageImage} alt={pageName} fill unoptimized className="object-cover" />}
 
                     {/* Status Badge Over Image */}
                     <div className="absolute top-3 left-3 flex gap-2">

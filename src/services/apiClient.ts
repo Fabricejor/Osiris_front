@@ -17,6 +17,40 @@ interface FetchOptions extends RequestInit {
   // Vous pouvez ajouter des options personnalisées ici (ex: requireAuth: boolean)
 }
 
+/**
+ * Endpoints d'auth pour lesquels un 401 ne doit PAS déclencher de refresh :
+ * identifiants invalides (login), refresh lui-même, logout.
+ */
+const NO_REFRESH_ENDPOINTS = ['/v1/auth/session', '/v1/auth/session/refresh', '/v1/auth/login', '/v1/auth/logout'];
+
+/**
+ * Refresh partagé : si plusieurs requêtes reçoivent un 401 en même temps
+ * (ex. les 10 appels du dashboard), un seul POST /auth/session/refresh part
+ * et toutes attendent son résultat.
+ */
+let refreshInFlight: Promise<boolean> | null = null;
+
+function refreshSession(): Promise<boolean> {
+  refreshInFlight ??= fetch(`${API_BASE_URL}/v1/auth/session/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+    .then((res) => res.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+function handleSessionExpired() {
+  useAuthStore.getState().logout();
+  // Optionnel : rediriger vers /login, mais le Guard s'en chargera généralement via l'état
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+}
+
 export async function apiClient<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { headers, ...restOptions } = options;
 
@@ -36,17 +70,23 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
 
   try {
     // 2. L'appel HTTP
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, finalOptions);
-    
+    let response = await fetch(`${API_BASE_URL}${endpoint}`, finalOptions);
+
+    // 2b. Access token expiré : on tente UN refresh (cookie httpOnly) puis on
+    // rejoue la requête. On ne déconnecte que si le refresh échoue.
+    const endpointPath = endpoint.split('?')[0];
+    if (response.status === 401 && !NO_REFRESH_ENDPOINTS.includes(endpointPath)) {
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        response = await fetch(`${API_BASE_URL}${endpoint}`, finalOptions);
+      }
+    }
+
     // 3. Gestion des erreurs (ex: 401 Unauthorized, 404 Not Found)
     if (!response.ok) {
-      if (response.status === 401) {
-        // Handle 401 Unauthorized globally
-        useAuthStore.getState().logout();
-        // Optionnel : rediriger vers /login, mais le Guard s'en chargera généralement via l'état
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            window.location.href = '/login';
-        }
+      if (response.status === 401 && !NO_REFRESH_ENDPOINTS.includes(endpointPath)) {
+        // Refresh impossible (refresh token expiré/révoqué) → vraie fin de session.
+        handleSessionExpired();
       }
 
       if (response.status === 403) {

@@ -251,12 +251,13 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                     {/* Image Container */}
                     <div className={`relative bg-gray-100 overflow-hidden ${pageViewMode === 'grid' ? 'aspect-3/4 w-full rounded-t-md' : 'w-24 h-32 rounded-md shrink-0'
                       }`}>
-                      {/* Pas d'URL d'image tant que le backend ne présigne pas les clés MinIO. */}
+                      {/* URL pré-signée MinIO : `unoptimized` (signature éphémère, pas de cache optimiseur). */}
                       {page.image && (
                         <Image
                           src={page.image}
                           alt={page.name}
                           fill
+                          unoptimized
                           className="object-cover"
                         />
                       )}

@@ -62,6 +62,9 @@ export interface RegistreScanne {
   /** Clé objet MinIO (pas une URL affichable). */
   url_image_page_gauche: string | null;
   url_image_page_droite: string | null;
+  /** URLs GET pré-signées (expirent après quelques minutes), null si indisponibles. */
+  image_url_page_gauche?: string | null;
+  image_url_page_droite?: string | null;
   statut_traitement: StatutTraitement;
   /** Decimal sérialisé en chaîne par le backend (ex. "72.50"), 0-100. */
   score_confiance: string | number | null;
@@ -78,7 +81,7 @@ export interface PageView {
   statusText: string;
   isAnomaly: boolean;
   confidence: number;
-  /** URL d'image affichable — vide tant que le backend ne fournit pas d'URL présignée. */
+  /** URL d'image affichable (pré-signée, expire) — vide si indisponible. */
   image: string;
   date_creation: string;
 }
@@ -103,7 +106,7 @@ export function toPageView(page: RegistreScanne): PageView {
     statusText: STATUT_LABEL[page.statut_traitement] ?? page.statut_traitement,
     isAnomaly: page.statut_traitement === "FUSION_INCOMPLETE" || page.statut_traitement === "ECHEC_RECALAGE",
     confidence: Math.round(Number(page.score_confiance ?? 0)),
-    image: "",
+    image: page.image_url_page_gauche ?? page.image_url_page_droite ?? "",
     date_creation: page.date_creation,
   };
 }
