@@ -177,6 +177,19 @@ export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | un
   ];
 }
 
+/**
+ * Valeurs lues par l'OCR sous une colonne qu'on n'a pas pu rattacher à un champ
+ * du catalogue (libellé ou colonne inconnus) — à vérifier par le valideur.
+ */
+export function valeursNonRattachees(donnee: DonneeExtraite): Record<string, string> {
+  const brut = (donnee.donnees_brutes_ocr ?? {}) as { champs_non_mappes?: Record<string, unknown> };
+  const out: Record<string, string> = {};
+  for (const [cle, valeur] of Object.entries(brut.champs_non_mappes ?? {})) {
+    if (valeur !== null && valeur !== undefined && String(valeur).trim()) out[cle] = String(valeur);
+  }
+  return out;
+}
+
 /** Confiance moyenne (%) des champs lus d'une ligne, null si aucun. */
 export function confianceLigne(champs: ChampAffiche[]): number | null {
   const scores = champs.map((c) => c.confiance).filter((c): c is number => c !== null);

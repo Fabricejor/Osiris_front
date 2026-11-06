@@ -40,6 +40,8 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { construireGrille } from '@/services/validation-mapping';
 import RegistreGrid from './RegistreGrid';
+import EcartsRegistre from './EcartsRegistre';
+import { valeursNonRattachees } from '@/services/validation-mapping';
 
 interface ValidationPopupProps {
   isOpen: boolean;
@@ -147,6 +149,14 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   const modifierPii = (idPii: string, valeur: string) =>
     setSaisiesPii((prev) => ({ ...prev, [idPii]: valeur }));
   const vueRegistre = vue === 'registre' && canValidate;
+  const lignesNonRattachees = clinicalData
+    .map((donnee) => ({
+      numeroOrdre: donnee.numero_ordre_ligne,
+      rang: donnee.rang ?? 1,
+      valeurs: valeursNonRattachees(donnee),
+    }))
+    .filter((l) => Object.keys(l.valeurs).length > 0)
+    .sort((a, b) => a.numeroOrdre - b.numeroOrdre || a.rang - b.rang);
 
   const lignes = [...clinicalData]
     .sort((a, b) => a.numero_ordre_ligne - b.numero_ordre_ligne || (a.rang ?? 1) - (b.rang ?? 1))
@@ -180,7 +190,11 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
           }
         }
       }
-      if (currentPage.status === 'A_VALIDER') {
+      // Quand la dernière ligne d'une page est validée (ou rejetée), le backend
+      // passe lui-même la page en VALIDE. Rappeler /pages/{id}/validate
+      // renverrait alors un 409 (page plus « À valider ») : on ne le fait que
+      // pour une page sans aucune ligne extraite.
+      if (lignes.length === 0 && currentPage.status === 'A_VALIDER') {
         await SessionsService.validatePage(currentPage.id);
       }
     },
@@ -433,6 +447,14 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                 {/* Form Scrollable Content */}
                 <div className={`flex-1 min-h-0 overflow-y-auto ${vueRegistre ? 'p-4 space-y-4' : 'p-8 space-y-8'}`} style={{ scrollbarWidth: 'thin' }}>
+
+                  <EcartsRegistre
+                    controle={currentPage.controleEntetes}
+                    lignesNonRattachees={canValidate ? lignesNonRattachees : []}
+                    libelleChamp={(nom) => libelleChamp(catalogue, nom)}
+                    multiVisites={grille.rangsParPatient > 1}
+                    language={language}
+                  />
 
                   {vueRegistre && (
                     <>

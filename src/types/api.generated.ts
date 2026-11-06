@@ -1920,6 +1920,10 @@ export interface components {
         RegistreScanneRead: {
             /** Annee Version */
             annee_version: number;
+            /** Controle Entetes */
+            controle_entetes?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Date Creation
              * Format: date-time

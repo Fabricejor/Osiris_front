@@ -1728,6 +1728,18 @@
             "title": "Annee Version",
             "type": "integer"
           },
+          "controle_entetes": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Controle Entetes"
+          },
           "date_creation": {
             "format": "date-time",
             "title": "Date Creation",

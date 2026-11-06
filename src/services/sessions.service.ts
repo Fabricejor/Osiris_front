@@ -30,6 +30,25 @@ export type StatutTraitement = Schemas["StatutTraitement"];
  */
 export type RegistreScanne = Schemas["RegistreScanneRead"];
 
+/** En-têtes lus sur la page comparés au catalogue (backend : `ControleEntetes`). */
+export interface ControleEntetes {
+  colonnes_inconnues: string[];
+  champs_absents: string[];
+  ordre_different: boolean;
+  cles_non_mappees: string[];
+}
+
+function lireControleEntetes(brut: unknown): ControleEntetes | null {
+  if (!brut || typeof brut !== "object") return null;
+  const c = brut as Partial<ControleEntetes>;
+  return {
+    colonnes_inconnues: Array.isArray(c.colonnes_inconnues) ? c.colonnes_inconnues : [],
+    champs_absents: Array.isArray(c.champs_absents) ? c.champs_absents : [],
+    ordre_different: c.ordre_different === true,
+    cles_non_mappees: Array.isArray(c.cles_non_mappees) ? c.cles_non_mappees : [],
+  };
+}
+
 /** Page prête à afficher (cartes OCR + popup de validation). */
 export interface PageView {
   id: string;
@@ -43,6 +62,8 @@ export interface PageView {
   confidence: number;
   /** URL d'image affichable (pré-signée, expire) — vide si indisponible. */
   image: string;
+  /** Écarts entre la page et le registre de référence (null si non contrôlé). */
+  controleEntetes: ControleEntetes | null;
   date_creation: string;
 }
 
@@ -69,6 +90,7 @@ export function toPageView(page: RegistreScanne): PageView {
     isAnomaly: page.statut_traitement === "FUSION_INCOMPLETE" || page.statut_traitement === "ECHEC_RECALAGE",
     confidence: Math.round(Number(page.score_confiance ?? 0)),
     image: page.image_url_page_gauche ?? page.image_url_page_droite ?? "",
+    controleEntetes: lireControleEntetes(page.controle_entetes),
     date_creation: page.date_creation,
   };
 }
