@@ -219,7 +219,9 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
               {visites.map((v) => {
                 const periode = CHAMPS_PERIODE.map((n) => valeurDe(v, n, saisies)).find(Boolean);
                 const date = CHAMPS_DATE_VISITE.map((n) => valeurDe(v, n, saisies)).find(Boolean);
-                const etat = v.donnee?.valide ? (v.donnee.categorie_rejet ? 'rejetée' : 'validée') : null;
+                const etat = v.donnee?.valide
+                  ? (v.donnee.categorie_rejet ? (fr ? 'rejetée' : 'rejected') : (fr ? 'validée' : 'validated'))
+                  : null;
                 return (
                   <th
                     key={v.rang}
@@ -229,7 +231,7 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
                   >
                     <div className="font-bold">
                       {multiVisites ? `${fr ? 'Visite' : 'Visit'} ${v.rang}` : (fr ? 'Valeur' : 'Value')}
-                      {etat && <span className="ml-1 text-blue-600" title={`Ligne ${etat}`}>✓</span>}
+                      {etat && <span className="ml-1 text-blue-600" title={fr ? `Ligne ${etat}` : `Row ${etat}`}>✓</span>}
                     </div>
                     {(periode || date) && (
                       <div className="font-normal text-gray-500">{[periode, date].filter(Boolean).join(' · ')}</div>

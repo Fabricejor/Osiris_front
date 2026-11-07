@@ -99,8 +99,8 @@ export default function DataValidationPage() {
       status: sessionFolderStatus(session),
       createdAt: session.date_creation || new Date().toISOString(),
       lastModified: session.date_modification || session.date_creation || new Date().toISOString(),
-      tags: [session.type_registre, `Year ${session.annee_version}`],
-      description: `Type: ${session.type_registre}`,
+      tags: [session.type_registre, t('year_value', { year: session.annee_version })],
+      description: t('type_value', { type: session.type_registre }),
       subtitle: sessionSousTitre(session),
       operateur: session.operateur ?? null,
       clinique: session.clinique ?? null,
@@ -108,7 +108,8 @@ export default function DataValidationPage() {
       dernierUpload: session.date_dernier_upload ?? null,
       searchText: sessionTexteRecherche(session),
     }));
-  }, [data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, language]);
 
   const filteredFolders = useMemo(() => {
     return folders.filter((f) => {
@@ -130,7 +131,7 @@ export default function DataValidationPage() {
   return (
     <div className="h-full flex flex-col gap-4 p-5 overflow-hidden">
       {/* Header */}
-      <PageHeader title="Data Validation" />
+      <PageHeader title={t("data_validation")} />
 
       {/* Toolbar: Search + Filters + View Toggle */}
       <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -218,8 +219,8 @@ export default function DataValidationPage() {
                   {filteredFolders.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-60 text-gray-400">
                       <Folder className="w-12 h-12 mb-3 opacity-30" />
-                      <p className="text-sm font-medium">No folders found</p>
-                      <p className="text-xs mt-1">Try adjusting your search or filters</p>
+                      <p className="text-sm font-medium">{t("no_folders")}</p>
+                      <p className="text-xs mt-1">{t("try_adjusting")}</p>
                     </div>
                   )}
                 </>
@@ -244,13 +245,13 @@ export default function DataValidationPage() {
                         onClick={() => router.push(`/dashboard/data-validation/${selectedFolder.id}`)}
                         className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
                       >
-                        Open
+                        {t("open")}
                       </button>
                     </div>
 
                     {/* Panel header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-800">Info</h3>
+                      <h3 className="text-sm font-semibold text-gray-800">{t("info")}</h3>
                       <button
                         onClick={() => setSelectedFolder(null)}
                         className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
@@ -264,10 +265,10 @@ export default function DataValidationPage() {
                       {/* Documents card */}
                       <div className="bg-gray-50 rounded-xl p-3.5">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] text-gray-500 font-medium">Documents</span>
+                          <span className="text-[11px] text-gray-500 font-medium">{t("documents")}</span>
                           <FileText className="w-3.5 h-3.5 text-gray-400" />
                         </div>
-                        <p className="text-xl font-bold text-gray-800">{selectedFolder.filesCount} files</p>
+                        <p className="text-xl font-bold text-gray-800">{t('files_count', { count: selectedFolder.filesCount })}</p>
                         <div className="mt-2 w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${statusTag.bg.replace('100', '500')}`}
@@ -279,7 +280,7 @@ export default function DataValidationPage() {
                       {/* Size card */}
                       <div className="bg-gray-50 rounded-xl p-3.5">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] text-gray-500 font-medium">Storage</span>
+                          <span className="text-[11px] text-gray-500 font-medium">{t("storage")}</span>
                           <HardDrive className="w-3.5 h-3.5 text-gray-400" />
                         </div>
                         <p className="text-xl font-bold text-gray-800">{selectedFolder.size}</p>
@@ -297,44 +298,44 @@ export default function DataValidationPage() {
 
                     {/* Properties */}
                     <div className="p-4 space-y-3">
-                      <h4 className="text-xs font-semibold text-gray-700">Properties</h4>
+                      <h4 className="text-xs font-semibold text-gray-700">{t("properties")}</h4>
                       <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                            <Folder className="w-3 h-3" /> Name
+                            <Folder className="w-3 h-3" /> {t("name")}
                           </span>
                           <span className="text-xs font-medium text-gray-800 truncate max-w-[160px]">{selectedFolder.name}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                            <HardDrive className="w-3 h-3" /> Size
+                            <HardDrive className="w-3 h-3" /> {t("size")}
                           </span>
                           <span className="text-xs font-medium text-gray-800">{selectedFolder.size}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                            <Calendar className="w-3 h-3" /> Created
+                            <Calendar className="w-3 h-3" /> {t("created")}
                           </span>
                           <span className="text-xs font-medium text-gray-800">
                             {formatDateHeure(selectedFolder.createdAt)}
                           </span>
                         </div>
                         {([
-                          ['Operator', selectedFolder.operateur],
-                          ['Clinic', selectedFolder.clinique],
-                          ['District', selectedFolder.district],
-                          ['Last upload', selectedFolder.dernierUpload && formatDateHeure(selectedFolder.dernierUpload)],
+                          [t('operator'), selectedFolder.operateur],
+                          [t('clinic'), selectedFolder.clinique],
+                          [t('district'), selectedFolder.district],
+                          [t('last_upload'), selectedFolder.dernierUpload && formatDateHeure(selectedFolder.dernierUpload)],
                         ] as const).map(([label, valeur]) => (
                           <div key={label} className="flex items-center justify-between gap-2">
                             <span className="text-xs text-gray-500">{label}</span>
                             <span className="text-xs font-medium text-gray-800 truncate max-w-[160px]" title={valeur || ''}>
-                              {valeur || 'N/A'}
+                              {valeur || t('na')}
                             </span>
                           </div>
                         ))}
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                            <Clock className="w-3 h-3" /> Last modified
+                            <Clock className="w-3 h-3" /> {t("last_modified")}
                           </span>
                           <span className="text-xs font-medium text-gray-800">
                             {format(new Date(selectedFolder.lastModified), 'dd/MM/yyyy')}
@@ -342,11 +343,11 @@ export default function DataValidationPage() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                            <Activity className="w-3 h-3" /> Status
+                            <Activity className="w-3 h-3" /> {t("status")}
                           </span>
                           <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTag.bg} ${statusTag.text}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${statusTag.dot}`} />
-                            {selectedFolder.status.charAt(0).toUpperCase() + selectedFolder.status.slice(1)}
+                            {t(selectedFolder.status)}
                           </span>
                         </div>
                       </div>
@@ -358,7 +359,7 @@ export default function DataValidationPage() {
                     {/* Tags */}
                     <div className="p-4 space-y-2">
                       <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                        <Tag className="w-3 h-3" /> Tags
+                        <Tag className="w-3 h-3" /> {t("tags")}
                       </h4>
                       <div className="flex flex-wrap gap-1.5">
                         {selectedFolder.tags.map((tag) => (
@@ -377,7 +378,7 @@ export default function DataValidationPage() {
 
                     {/* Description */}
                     <div className="p-4 space-y-2">
-                      <h4 className="text-xs font-semibold text-gray-700">Description</h4>
+                      <h4 className="text-xs font-semibold text-gray-700">{t("description")}</h4>
                       <p className="text-xs text-gray-500 leading-relaxed">{selectedFolder.description}</p>
                     </div>
 
@@ -387,10 +388,10 @@ export default function DataValidationPage() {
                     {/* Quick actions */}
                     <div className="p-4 space-y-2">
                       <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
-                        <Pin className="w-3.5 h-3.5" /> Pinned items
+                        <Pin className="w-3.5 h-3.5" /> {t("pinned_items")}
                       </button>
                       <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
-                        <Activity className="w-3.5 h-3.5" /> Activity
+                        <Activity className="w-3.5 h-3.5" /> {t("activity")}
                       </button>
                     </div>
 
@@ -400,7 +401,7 @@ export default function DataValidationPage() {
                         onClick={() => setViewMode('details')}
                         className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
                       >
-                        Open Folder Details
+                        {t("open_folder_details")}
                       </button>
                     </div>
                   </div>

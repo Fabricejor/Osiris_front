@@ -58,11 +58,11 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
   const relancerMutation = useMutation({
     mutationFn: (pageId: string) => SessionsService.retraiterPage(batchId, pageId),
     onSuccess: () => {
-      toast.success(language === 'fr' ? 'OCR relancé : la page va être relue.' : 'OCR restarted: the page will be read again.');
+      toast.success(t('ocr_restarted'));
       queryClient.invalidateQueries({ queryKey: ['session-pages', batchId] });
       queryClient.invalidateQueries({ queryKey: ['session-timeline', batchId] });
     },
-    onError: (err: Error) => toast.error(err.message || (language === 'fr' ? 'Relance impossible' : 'Restart failed')),
+    onError: (err: Error) => toast.error(err.message || t('ocr_restart_failed')),
   });
   const session: Partial<SessionScan> = sessionData ?? {};
   const timelineSteps = timelineData ?? [];
@@ -115,7 +115,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
       <div className="shrink-0 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Batch #{batchId}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('batch_title', { id: batchId })}</h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {t("ready_for_validation")}
@@ -157,15 +157,15 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
           <div className="grid grid-cols-3 gap-3 shrink-0">
             {/* Document Type */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Document Type</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t("document_type")}</span>
               <span className="text-xl font-bold text-gray-800 leading-tight">
-                {sessionLoading ? '...' : (session.type_registre || 'Unknown')}
+                {sessionLoading ? '...' : (session.type_registre || t('unknown'))}
               </span>
             </div>
 
             {/* Total Pages */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Pages</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t("total_pages")}</span>
               <span className="text-3xl font-bold text-gray-800">
                 {sessionLoading ? '...' : (session.nombre_pages ?? 0)}
               </span>
@@ -191,7 +191,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
 
             {/* Upload Date */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Upload Date</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t("upload_date")}</span>
               <span className="text-base font-bold text-gray-800">
                 {sessionLoading || !session.date_creation ? '...' : formatDateHeure(session.date_creation)}
               </span>
@@ -199,17 +199,17 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
 
             {/* Operator */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Operator</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t("operator")}</span>
               <span className="text-base font-bold text-gray-800">
-                {sessionLoading ? '...' : (session.operateur || 'N/A')}
+                {sessionLoading ? '...' : (session.operateur || t('na'))}
               </span>
             </div>
 
             {/* Clinic */}
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Clinic</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t("clinic")}</span>
               <span className="text-base font-bold text-gray-800">
-                {sessionLoading ? '...' : (session.clinique || 'N/A')}
+                {sessionLoading ? '...' : (session.clinique || t('na'))}
               </span>
             </div>
           </div>
@@ -219,9 +219,9 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             {/* Section header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Scanned Pages</h3>
+                <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">{t("scanned_pages")}</h3>
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-bold border border-purple-100">
-                  <ShieldAlert className="w-3.5 h-3.5" /> PII Review Pending
+                  <ShieldAlert className="w-3.5 h-3.5" /> {t("pii_review_pending")}
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-gray-500 bg-gray-100 p-0.5 rounded-lg">
@@ -250,12 +250,12 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
               {pagesLoading ? (
                 <div className="flex flex-col items-center gap-3 text-gray-500">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#65b741]" />
-                  <span>Loading pages...</span>
+                  <span>{t("loading_pages")}</span>
                 </div>
               ) : pagesError ? (
-                <div className="text-red-500 text-center">Failed to load pages.</div>
+                <div className="text-red-500 text-center">{t("failed_load_pages")}</div>
               ) : pages.length === 0 ? (
-                <div className="text-gray-500 text-center">No pages found.</div>
+                <div className="text-gray-500 text-center">{t("no_pages_found")}</div>
               ) : (
                 pages.map((page, index) => (
                   <div
@@ -312,7 +312,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                       <div className="flex flex-col">
                         <span className={`font-bold text-gray-900 mb-1 ${pageViewMode === 'grid' ? 'text-sm' : 'text-base'}`}>{page.name}</span>
                         <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(pageCategory(page))}`}>
-                          {page.statusText}
+                          {t(page.statusKey)}
                         </span>
                         {(page.status === 'ECHEC_OCR' || page.ocrBloque) && (
                           <>
@@ -321,9 +321,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                             )}
                             {page.ocrBloque && (
                               <span className="mt-1 text-[11px] leading-snug text-amber-700">
-                                {language === 'fr'
-                                  ? 'En traitement depuis plus de 30 min : le traitement semble bloqué.'
-                                  : 'Processing for over 30 min: it seems stuck.'}
+                                {t('ocr_stuck')}
                               </span>
                             )}
                             {peutRelancer && (
@@ -333,7 +331,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                                 disabled={relancerMutation.isPending}
                                 className="mt-2 self-start rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
                               >
-                                {language === 'fr' ? "Relancer l'OCR" : 'Restart OCR'}
+                                {t('restart_ocr')}
                               </button>
                             )}
                           </>
@@ -345,7 +343,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                         {/* Confidence (List mode) */}
                         {pageViewMode === 'list' && (
                           <div className="flex flex-col items-end">
-                            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Confidence</span>
+                            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">{t("confidence_label")}</span>
                             <span className={`text-sm font-bold ${page.confidence < 80 ? 'text-red-500' : 'text-[#65b741]'}`}>
                               {page.confidence}%
                             </span>
@@ -365,7 +363,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
 
         {/* Right Column: Processing Timeline */}
         <div className="w-[340px] shrink-0 bg-white border border-gray-100 rounded-xl shadow-sm p-6 self-start sticky top-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-8">Processing Timeline</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-8">{t("processing_timeline")}</h2>
 
           <div className="relative pl-3">
             {/* Vertical Line */}
@@ -373,9 +371,9 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
 
             <div className="space-y-8 relative">
               {timelineLoading ? (
-                <div className="text-sm text-gray-500">Loading timeline...</div>
+                <div className="text-sm text-gray-500">{t("loading_timeline")}</div>
               ) : timelineSteps.length === 0 ? (
-                <div className="text-sm text-gray-500">No timeline data available.</div>
+                <div className="text-sm text-gray-500">{t("no_timeline")}</div>
               ) : timelineSteps.map((step) => {
                 const isCompleted = step.status === 'completed';
                 const isCurrent = step.status === 'current';

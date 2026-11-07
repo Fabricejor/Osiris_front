@@ -163,7 +163,7 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
           <tbody>
             {grille.rangees.map((r) => {
               const verrouillee = r.donnee?.valide ?? false;
-              const etat = r.donnee?.categorie_rejet ? 'rejetée' : 'validée';
+              const etat = r.donnee?.categorie_rejet ? (fr ? 'rejetée' : 'rejected') : (fr ? 'validée' : 'validated');
               return (
                 <tr
                   key={`${r.numeroOrdre}:${r.rang}`}
@@ -180,14 +180,14 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
                       className="sticky left-0 z-10 bg-gray-50 border border-gray-200 px-2 text-[12px] font-bold text-gray-700 text-center align-middle"
                     >
                       {r.numeroOrdre}
-                      {!multiVisites && verrouillee && <span className="ml-0.5 text-blue-600" title={`Ligne ${etat}`}>✓</span>}
+                      {!multiVisites && verrouillee && <span className="ml-0.5 text-blue-600" title={fr ? `Ligne ${etat}` : `Row ${etat}`}>✓</span>}
                     </th>
                   )}
                   {multiVisites && (
                     <th
                       scope="row"
                       className="bg-white border border-gray-200 px-2 text-[11px] font-semibold text-gray-500 text-center whitespace-nowrap"
-                      title={verrouillee ? `Visite ${etat}` : undefined}
+                      title={verrouillee ? (fr ? `Visite ${etat}` : `Visit ${etat}`) : undefined}
                     >
                       {r.rang}
                       {verrouillee && <span className="ml-0.5 text-blue-600">✓</span>}

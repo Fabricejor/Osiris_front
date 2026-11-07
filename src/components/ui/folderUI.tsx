@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileText, HardDrive } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type FolderStatus = 'pending' | 'validated' | 'rejected' | 'anomaly';
 
@@ -20,7 +21,6 @@ const STATUS_CONFIG: Record<FolderStatus, {
   frontGradient: string;
   hoverShadow: string;
   tabBg: string;
-  label: string;
   labelColor: string;
   labelBg: string;
   ring: string;
@@ -33,7 +33,6 @@ const STATUS_CONFIG: Record<FolderStatus, {
     frontGradient: 'group-hover:shadow-[inset_0_20px_40px_#fbbf24,_inset_0_-20px_40px_#d97706]',
     hoverShadow: 'group-hover:shadow-[0_20px_40px_rgba(217,119,6,.25)]',
     tabBg: 'bg-amber-600',
-    label: 'Pending',
     labelColor: 'text-amber-700',
     labelBg: 'bg-amber-100',
     ring: 'ring-amber-400/60',
@@ -46,7 +45,6 @@ const STATUS_CONFIG: Record<FolderStatus, {
     frontGradient: 'group-hover:shadow-[inset_0_20px_40px_#34d399,_inset_0_-20px_40px_#059669]',
     hoverShadow: 'group-hover:shadow-[0_20px_40px_rgba(5,150,105,.25)]',
     tabBg: 'bg-emerald-700',
-    label: 'Validated',
     labelColor: 'text-emerald-700',
     labelBg: 'bg-emerald-100',
     ring: 'ring-emerald-400/60',
@@ -59,7 +57,6 @@ const STATUS_CONFIG: Record<FolderStatus, {
     frontGradient: 'group-hover:shadow-[inset_0_20px_40px_#f87171,_inset_0_-20px_40px_#dc2626]',
     hoverShadow: 'group-hover:shadow-[0_20px_40px_rgba(220,38,38,.25)]',
     tabBg: 'bg-red-600',
-    label: 'Rejected',
     labelColor: 'text-red-700',
     labelBg: 'bg-red-100',
     ring: 'ring-red-400/60',
@@ -72,7 +69,6 @@ const STATUS_CONFIG: Record<FolderStatus, {
     frontGradient: 'group-hover:shadow-[inset_0_20px_40px_#60a5fa,_inset_0_-20px_40px_#2563eb]',
     hoverShadow: 'group-hover:shadow-[0_20px_40px_rgba(37,99,235,.25)]',
     tabBg: 'bg-blue-600',
-    label: 'Anomaly',
     labelColor: 'text-blue-700',
     labelBg: 'bg-blue-100',
     ring: 'ring-blue-400/60',
@@ -83,6 +79,7 @@ const STATUS_CONFIG: Record<FolderStatus, {
 
 export default function FolderUI({ name, subtitle, filesCount, size, status, isSelected, onClick }: Readonly<FolderUIProps>) {
   const cfg = STATUS_CONFIG[status];
+  const { t } = useTranslation();
 
   return (
     <button
@@ -131,7 +128,7 @@ export default function FolderUI({ name, subtitle, filesCount, size, status, isS
 
         <div className="flex items-center gap-1 text-gray-400">
           <FileText className="w-3 h-3 shrink-0" />
-          <span className="text-[11px]">{filesCount} files</span>
+          <span className="text-[11px]">{t('files_count', { count: filesCount })}</span>
         </div>
 
         <div className="flex items-center justify-between">
@@ -141,7 +138,7 @@ export default function FolderUI({ name, subtitle, filesCount, size, status, isS
           </span>
           <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.labelBg} ${cfg.labelColor}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-            {cfg.label}
+            {t(status)}
           </span>
         </div>
       </div>

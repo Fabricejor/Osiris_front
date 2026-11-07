@@ -5,12 +5,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { AuthService } from "@/services/auth.service";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Petit délai pour permettre à Zustand de rehydrater l'état depuis le localStorage
@@ -39,7 +41,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-gray-500 font-medium animate-pulse">Vérification de l'accès...</p>
+          <p className="text-gray-500 font-medium animate-pulse">{t("checking_access")}</p>
         </div>
       </div>
     );

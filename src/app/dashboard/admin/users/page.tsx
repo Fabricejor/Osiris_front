@@ -6,8 +6,18 @@ import { Search, Plus, Filter, MoreVertical, Shield, ShieldCheck, User, Loader2,
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UsersService } from '@/services/users.service';
 import { StructuresService } from '@/services/structures.service';
+import { useTranslation } from '@/hooks/useTranslation';
+import type { TranslationKey } from '@/utils/translations';
+
+const ROLE_KEYS: Record<string, TranslationKey> = {
+  AGENT_TERRAIN: 'role_agent_terrain',
+  VALIDEUR_MEDICAL: 'role_valideur_medical',
+  ADMIN: 'role_admin',
+  SUPERADMIN: 'role_superadmin',
+};
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
@@ -59,7 +69,7 @@ export default function UsersPage() {
     },
     onError: (error) => {
       console.error("Failed to create user:", error);
-      alert("Failed to create user. Please try again.");
+      alert(t('user_create_error'));
     }
   });
 
@@ -69,7 +79,7 @@ export default function UsersPage() {
       const user = users.find((u: any) => u.id === variables);
       if (data && data.temporary_password) {
         setCreatedUserAuth({
-          email: user?.email || 'Unknown',
+          email: user?.email || t('unknown'),
           temporary_password: data.temporary_password
         });
         setIsAddModalOpen(true);
@@ -78,7 +88,7 @@ export default function UsersPage() {
     },
     onError: (error) => {
       console.error("Failed to reset password:", error);
-      alert("Failed to reset password.");
+      alert(t('reset_password_error'));
     }
   });
 
@@ -90,7 +100,7 @@ export default function UsersPage() {
     },
     onError: (error) => {
       console.error("Failed to update status:", error);
-      alert("Failed to update status.");
+      alert(t('update_status_error'));
     }
   });
 
@@ -113,12 +123,12 @@ export default function UsersPage() {
 
   return (
     <div className="h-full flex flex-col gap-4 p-5 overflow-y-auto bg-gray-50/50" style={{ scrollbarWidth: 'thin' }}>
-      <PageHeader title="Users Management">
+      <PageHeader title={t("users_management")}>
         <button 
           onClick={() => setIsAddModalOpen(true)}
           className="flex items-center gap-2 px-4 py-2 bg-[#65b741] text-white rounded-lg text-sm font-semibold hover:bg-[#5aa43a] transition-colors shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Add User
+          <Plus className="w-4 h-4" /> {t("add_user")}
         </button>
       </PageHeader>
 
@@ -128,14 +138,14 @@ export default function UsersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
               type="text"
-              placeholder="Search users..."
+              placeholder={t("search_users")}
               className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
-            <Filter className="w-4 h-4" /> Filter
+            <Filter className="w-4 h-4" /> {t("filter")}
           </button>
         </div>
 
@@ -143,10 +153,10 @@ export default function UsersPage() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
               <tr>
-                <th className="p-4 border-b border-gray-100">User</th>
-                <th className="p-4 border-b border-gray-100">Role</th>
-                <th className="p-4 border-b border-gray-100">Status</th>
-                <th className="p-4 border-b border-gray-100 text-right">Actions</th>
+                <th className="p-4 border-b border-gray-100">{t("user_column")}</th>
+                <th className="p-4 border-b border-gray-100">{t("role")}</th>
+                <th className="p-4 border-b border-gray-100">{t("status")}</th>
+                <th className="p-4 border-b border-gray-100 text-right">{t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -155,20 +165,20 @@ export default function UsersPage() {
                   <td colSpan={4} className="p-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-[#65b741]" />
-                      <span>Loading users...</span>
+                      <span>{t("loading_users")}</span>
                     </div>
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-red-500">
-                    Failed to load users. Ensure you are authenticated and the API is running.
+                    {t("users_load_error")}
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-gray-500">
-                    No users found.
+                    {t("no_users")}
                   </td>
                 </tr>
               ) : (
@@ -181,7 +191,7 @@ export default function UsersPage() {
                         </div>
                         <div>
                           <div className="font-semibold text-gray-900 text-sm">
-                            {user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown User'}
+                            {user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : t('unknown_user')}
                           </div>
                           <div className="text-xs text-gray-500">{user.email}</div>
                         </div>
@@ -190,14 +200,14 @@ export default function UsersPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         {getRoleIcon(user.role?.toUpperCase() || '')}
-                        <span className="text-sm font-medium text-gray-700">{user.role}</span>
+                        <span className="text-sm font-medium text-gray-700">{ROLE_KEYS[user.role?.toUpperCase() || ""] ? t(ROLE_KEYS[user.role?.toUpperCase() || ""]) : user.role}</span>
                       </div>
                     </td>
                     <td className="p-4">
                       <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${
                         user.status === 'ACTIF' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                       }`}>
-                        {user.status === 'ACTIF' ? 'Active' : 'Inactive'}
+                        {user.status === 'ACTIF' ? t('status_active_user') : t('status_inactive')}
                       </span>
                     </td>
                     <td className="p-4 text-right relative">
@@ -220,13 +230,13 @@ export default function UsersPage() {
                               onClick={() => resetPasswordMutation.mutate(user.id)}
                               className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                             >
-                              Reset Password
+                              {t("reset_password")}
                             </button>
                             <button
                               onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: user.status === 'ACTIF' ? 'INACTIF' : 'ACTIF' })}
                               className={`w-full px-4 py-2 text-sm text-left hover:bg-gray-50 ${user.status === 'ACTIF' ? 'text-red-600' : 'text-green-600'}`}
                             >
-                              {user.status === 'ACTIF' ? 'Deactivate User' : 'Activate User'}
+                              {user.status === 'ACTIF' ? t('deactivate_user') : t('activate_user')}
                             </button>
                           </div>
                         </>
@@ -245,7 +255,7 @@ export default function UsersPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="font-semibold text-gray-900">
-                {createdUserAuth ? 'User Created Successfully' : 'Add New User'}
+                {createdUserAuth ? t('user_created') : t('add_new_user')}
               </h2>
               <button 
                 onClick={() => {
@@ -264,16 +274,16 @@ export default function UsersPage() {
                   <ShieldCheck className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="text-center space-y-2">
-                  <p className="text-sm text-gray-600">The user has been successfully created. Please copy the temporary password and send it to them securely.</p>
+                  <p className="text-sm text-gray-600">{t("user_created_desc")}</p>
                 </div>
                 
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
                   <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t("email")}</span>
                     <p className="font-medium text-gray-900">{createdUserAuth.email}</p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Temporary Password</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t("temporary_password")}</span>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="flex-1 p-2 bg-white border border-gray-200 rounded text-sm font-mono text-gray-800 break-all">
                         {createdUserAuth.temporary_password}
@@ -281,11 +291,11 @@ export default function UsersPage() {
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(createdUserAuth.temporary_password);
-                          alert("Password copied to clipboard!");
+                          alert(t('password_copied'));
                         }}
                         className="px-3 py-2 bg-white border border-gray-200 rounded shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                        Copy
+                        {t("copy")}
                       </button>
                     </div>
                   </div>
@@ -299,7 +309,7 @@ export default function UsersPage() {
                     }}
                     className="w-full py-2 bg-[#65b741] text-white rounded-lg text-sm font-semibold hover:bg-[#5aa43a] transition-colors"
                   >
-                    Done
+                    {t("done")}
                   </button>
                 </div>
               </div>
@@ -307,7 +317,7 @@ export default function UsersPage() {
               <form onSubmit={handleSubmit} className="p-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-700">First Name</label>
+                    <label className="text-xs font-medium text-gray-700">{t("first_name")}</label>
                     <input
                       type="text"
                       name="firstName"
@@ -318,7 +328,7 @@ export default function UsersPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-700">Last Name</label>
+                    <label className="text-xs font-medium text-gray-700">{t("last_name")}</label>
                     <input
                       type="text"
                       name="lastName"
@@ -331,7 +341,7 @@ export default function UsersPage() {
                 </div>
                 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-700">Email Address</label>
+                  <label className="text-xs font-medium text-gray-700">{t("email_label")}</label>
                   <input
                     type="email"
                     name="email"
@@ -343,7 +353,7 @@ export default function UsersPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-700">Phone Number (Optional)</label>
+                  <label className="text-xs font-medium text-gray-700">{t("phone_optional")}</label>
                   <input
                     type="text"
                     name="numero_telephone"
@@ -354,22 +364,22 @@ export default function UsersPage() {
                 </div>
                 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-700">Role</label>
+                  <label className="text-xs font-medium text-gray-700">{t("role")}</label>
                   <select
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
                   >
-                    <option value="AGENT_TERRAIN">Agent Terrain</option>
-                    <option value="VALIDEUR_MEDICAL">Valideur Médical</option>
-                    <option value="ADMIN">Admin</option>
+                    <option value="AGENT_TERRAIN">{t("role_agent_terrain")}</option>
+                    <option value="VALIDEUR_MEDICAL">{t("role_valideur_medical")}</option>
+                    <option value="ADMIN">{t("role_admin")}</option>
                   </select>
                 </div>
 
                 {formData.role === 'ADMIN' && (
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-700">Structure Sanitaire</label>
+                    <label className="text-xs font-medium text-gray-700">{t("health_facility")}</label>
                     <select
                       name="id_structure_sanitaire"
                       required
@@ -377,7 +387,7 @@ export default function UsersPage() {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
                     >
-                      <option value="" disabled>Select a structure</option>
+                      <option value="" disabled>{t("select_structure")}</option>
                       {structures.map((s: any) => (
                         <option key={s.id} value={s.id}>{s.nom}</option>
                       ))}
@@ -391,7 +401,7 @@ export default function UsersPage() {
                     onClick={() => setIsAddModalOpen(false)}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100"
                   >
-                    Cancel
+                    {t("cancel")}
                   </button>
                   <button
                     type="submit"
@@ -399,7 +409,7 @@ export default function UsersPage() {
                     className="flex items-center gap-2 px-4 py-2 bg-[#65b741] text-white rounded-lg text-sm font-semibold hover:bg-[#5aa43a] transition-colors disabled:opacity-50"
                   >
                     {createUserMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    Create User
+                    {t("create_user")}
                   </button>
                 </div>
               </form>

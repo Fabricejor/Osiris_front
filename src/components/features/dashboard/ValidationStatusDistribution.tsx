@@ -10,6 +10,13 @@ import { Loader2 } from 'lucide-react';
 
 const RADIAN = Math.PI / 180;
 
+// Noms renvoyés par le backend → clés de traduction.
+const STATUS_KEYS: Record<string, 'validated' | 'pending' | 'rejected'> = {
+  'Verified': 'validated',
+  'Pending': 'pending',
+  'Rejected': 'rejected',
+};
+
 const STATUS_COLORS: Record<string, string> = {
   'Verified': '#22c55e',
   'Pending': '#f59e0b',
@@ -53,7 +60,7 @@ export default function ValidationStatusDistribution() {
   if (isError || data.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
-        <p className="text-gray-500 text-sm">No data available</p>
+        <p className="text-gray-500 text-sm">{t("no_data_available")}</p>
       </div>
     );
   }
@@ -100,7 +107,7 @@ export default function ValidationStatusDistribution() {
                 className="w-3 h-3 rounded-full shrink-0"
                 style={{ backgroundColor: STATUS_COLORS[entry.name] || '#9ca3af' }}
               />
-              <span className="text-[11px] text-gray-600">{entry.name}</span>
+              <span className="text-[11px] text-gray-600">{STATUS_KEYS[entry.name] ? t(STATUS_KEYS[entry.name]) : entry.name}</span>
             </div>
           ))}
         </div>

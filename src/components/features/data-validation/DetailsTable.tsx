@@ -38,18 +38,18 @@ interface DetailsTableProps {
   statusFilter: string;
 }
 
-const IdCell = (info: any) => <span className="font-medium text-gray-800">{info.getValue()}</span>;
+const IdCell = ({ value }: Readonly<{ value: string }>) => <span className="font-medium text-gray-800">{value}</span>;
 
-const StatusCell = (info: any) => {
-  const status = info.getValue() as FolderStatus;
+function StatusCell({ status }: Readonly<{ status: FolderStatus }>) {
+  const { t } = useTranslation();
   const statusTag = STATUS_TAG[status] || STATUS_TAG['pending'];
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTag.bg} ${statusTag.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${statusTag.dot}`} />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {t(status)}
     </span>
   );
-};
+}
 
 export default function DetailsTable({ search, statusFilter }: Readonly<DetailsTableProps>) {
   const { t } = useTranslation();
@@ -69,53 +69,53 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
   const columns = useMemo(
     () => [
       columnHelper.accessor('id_session_scan', {
-        header: 'Session ID',
-        cell: IdCell,
+        header: t('col_session_id'),
+        cell: (info) => <IdCell value={info.getValue()} />,
       }),
       columnHelper.accessor('type_registre', {
-        header: 'Type Registre',
+        header: t('col_registry_type'),
       }),
       columnHelper.accessor('annee_version', {
-        header: 'Année',
+        header: t('col_year'),
       }),
       columnHelper.accessor((s) => sessionLabel(s), {
         id: 'libelle',
-        header: 'Libellé',
+        header: t('col_label'),
       }),
       columnHelper.accessor((s) => s.operateur ?? '', {
         id: 'operateur',
-        header: 'Opérateur',
-        cell: (info) => info.getValue() || 'N/A',
+        header: t('operator'),
+        cell: (info) => info.getValue() || t('na'),
       }),
       columnHelper.accessor((s) => s.clinique ?? '', {
         id: 'clinique',
-        header: 'Structure',
-        cell: (info) => info.getValue() || 'N/A',
+        header: t('col_structure'),
+        cell: (info) => info.getValue() || t('na'),
       }),
       columnHelper.accessor((s) => s.district ?? '', {
         id: 'district',
-        header: 'District',
-        cell: (info) => info.getValue() || 'N/A',
+        header: t('district'),
+        cell: (info) => info.getValue() || t('na'),
       }),
       columnHelper.accessor('nombre_pages', {
-        header: 'Pages',
+        header: t('col_pages'),
       }),
       columnHelper.accessor('date_creation', {
-        header: 'Date Création',
+        header: t('col_created'),
         cell: (info) => formatDateHeure(info.getValue() as string),
       }),
       columnHelper.accessor((s) => s.date_dernier_upload ?? '', {
         id: 'dernier_upload',
-        header: 'Dernier upload',
-        cell: (info) => formatDateHeure(info.getValue()) || 'N/A',
+        header: t('last_upload'),
+        cell: (info) => formatDateHeure(info.getValue()) || t('na'),
       }),
       columnHelper.accessor((s) => sessionFolderStatus(s), {
         id: 'statut',
-        header: 'Status',
-        cell: StatusCell,
+        header: t('status'),
+        cell: (info) => <StatusCell status={info.getValue()} />,
       }),
     ],
-    [t, StatusCell]
+    [t]
   );
 
   const filteredData = useMemo(() => {
@@ -145,10 +145,10 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white rounded-xl border border-gray-100 p-4">
         <div className="flex items-center gap-3 mb-4">
           <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors">
-            <Download className="w-4 h-4" /> Export CSV
+            <Download className="w-4 h-4" /> {t("export_csv")}
           </button>
           <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors">
-            <Download className="w-4 h-4" /> Export JSON
+            <Download className="w-4 h-4" /> {t("export_json")}
           </button>
         </div>
 
@@ -203,7 +203,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
               {filteredData.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan={columns.length} className="py-8 text-center text-gray-500">
-                    Aucune session trouvée.
+                    {t("no_sessions_found")}
                   </td>
                 </tr>
               )}
@@ -213,7 +213,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
 
         <div className="flex items-center justify-end gap-1 pt-3 mt-auto">
           <span className="text-[12px] text-gray-500 mr-2">
-            Page {table.getState().pagination.pageIndex + 1}
+            {t('page_n', { page: table.getState().pagination.pageIndex + 1 })}
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -259,26 +259,26 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
             disabled={!selectedSessionId}
             className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
           >
-            Open Selected Session
+            {t("open_selected_session")}
           </button>
         </div>
 
         <div className="p-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-800">Session Summary</h3>
+          <h3 className="text-sm font-semibold text-gray-800">{t("session_summary")}</h3>
         </div>
 
         <div className="p-4 space-y-5">
           {selectedSessionId ? (
-            <p className="text-sm text-gray-600">Selected Session ID: <br /><span className="font-mono text-xs">{selectedSessionId}</span></p>
+            <p className="text-sm text-gray-600">{t("selected_session_id")} <br /><span className="font-mono text-xs">{selectedSessionId}</span></p>
           ) : (
-            <p className="text-sm text-gray-500 italic">Select a session from the table to view details and open it.</p>
+            <p className="text-sm text-gray-500 italic">{t("select_session_hint")}</p>
           )}
 
           <div className="h-px bg-gray-100" />
 
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-1.5">Export Status</h4>
-            <p className="text-xs text-gray-500">Available formats: CSV, JSON</p>
+            <h4 className="text-sm font-medium text-gray-700 mb-1.5">{t("export_status")}</h4>
+            <p className="text-xs text-gray-500">{t("available_formats")}</p>
           </div>
 
           <div className="h-px bg-gray-100" />
@@ -286,7 +286,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
           <div>
             <h4 className="text-xs font-semibold text-gray-700 mb-2">{t("tags")}</h4>
             <div className="flex flex-wrap gap-1.5">
-              {['OCR', 'Pending Validation'].map(tag => (
+              {['OCR', t('tag_pending_validation')].map(tag => (
                 <span key={tag} className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
                   {tag}
                 </span>

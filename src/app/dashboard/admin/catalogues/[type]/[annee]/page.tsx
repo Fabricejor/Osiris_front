@@ -35,6 +35,8 @@ import PageHeader from '@/components/ui/PageHeader';
 import { useAuthStore } from '@/store/authStore';
 import { CataloguesService, type ChampCatalogueUpdate } from '@/services/catalogues.service';
 import type { components } from '@/types/api.generated';
+import { useTranslation } from '@/hooks/useTranslation';
+import type { TranslationKey } from '@/utils/translations';
 
 type ChampCatalogue = components['schemas']['ChampCatalogue'];
 
@@ -42,15 +44,15 @@ const TYPES_A_MODALITES = new Set(['CATEGORIELLE', 'CATEGORIELLE_MULTI', 'BINAIR
 /** Au-delà, les modalités sont résumées en lecture (« +N »). */
 const MODALITES_VISIBLES = 6;
 
-const LIBELLE_TYPE: Record<string, string> = {
-  TEXTE: 'Texte',
-  NOMBRE: 'Nombre',
-  DATE: 'Date',
-  HEURE: 'Heure',
-  BINAIRE: 'Oui / non',
-  CATEGORIELLE: 'Choix',
-  CATEGORIELLE_MULTI: 'Choix multiple',
-  TENSION_ARTERIELLE: 'Tension',
+const LIBELLE_TYPE: Record<string, TranslationKey> = {
+  TEXTE: 'type_texte',
+  NOMBRE: 'type_nombre',
+  DATE: 'type_date',
+  HEURE: 'type_heure',
+  BINAIRE: 'type_binaire',
+  CATEGORIELLE: 'type_categorielle',
+  CATEGORIELLE_MULTI: 'type_categorielle_multi',
+  TENSION_ARTERIELLE: 'type_tension',
 };
 
 function aliasDe(champ: ChampCatalogue): string[] {
@@ -83,18 +85,19 @@ function Etiquette({ children, couleur = 'bg-gray-100 text-gray-700' }: Readonly
 }
 
 function MetaChamp({ champ }: Readonly<{ champ: ChampCatalogue }>) {
+  const { t } = useTranslation();
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400">
       <code className="rounded bg-gray-50 px-1 text-gray-500">{champ.nom}</code>
-      <span>{LIBELLE_TYPE[champ.type_champ] ?? champ.type_champ}</span>
+      <span>{LIBELLE_TYPE[champ.type_champ] ? t(LIBELLE_TYPE[champ.type_champ]) : champ.type_champ}</span>
       {champ.unite && <span>· {champ.unite}</span>}
       {champ.is_pii && (
         <span className="inline-flex items-center gap-0.5 rounded bg-purple-50 px-1 text-purple-700">
-          <ShieldAlert className="w-3 h-3" /> Donnée personnelle
+          <ShieldAlert className="w-3 h-3" /> {t("personal_data")}
         </span>
       )}
-      {champ.niveau_patiente && <span className="rounded bg-blue-50 px-1 text-blue-700">1 fois / patiente</span>}
-      {estDeduit(champ) && <span className="rounded bg-slate-100 px-1 text-slate-600">déduit de la ligne</span>}
+      {champ.niveau_patiente && <span className="rounded bg-blue-50 px-1 text-blue-700">{t("once_per_patient")}</span>}
+      {estDeduit(champ) && <span className="rounded bg-slate-100 px-1 text-slate-600">{t("deduced_from_row")}</span>}
     </div>
   );
 }
@@ -106,6 +109,7 @@ function EditeurEtiquettes({
   placeholder,
   id,
 }: Readonly<{ valeurs: string[]; onChange: (v: string[]) => void; placeholder: string; id: string }>) {
+  const { t } = useTranslation();
   const [saisie, setSaisie] = useState('');
   const ajouter = () => {
     const v = saisie.trim();
@@ -119,7 +123,7 @@ function EditeurEtiquettes({
           {v}
           <button
             type="button"
-            aria-label={`Retirer ${v}`}
+            aria-label={t('remove_value', { value: v })}
             onClick={() => onChange(valeurs.filter((x) => x !== v))}
             className="text-gray-400 hover:text-red-600"
           >
@@ -147,10 +151,10 @@ function EditeurEtiquettes({
         type="button"
         onClick={ajouter}
         disabled={!saisie.trim()}
-        aria-label="Ajouter"
+        aria-label={t("add")}
         className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold text-[#08704F] hover:bg-emerald-50 disabled:opacity-30"
       >
-        <Plus className="w-3.5 h-3.5" /> Ajouter
+        <Plus className="w-3.5 h-3.5" /> {t("add")}
       </button>
     </div>
   );
@@ -176,6 +180,7 @@ function LigneChamp({
   /** Admin de structure : consultation seulement (édition réservée au superadmin). */
   lectureSeule: boolean;
 }>) {
+  const { t } = useTranslation();
   const aliasInitiaux = aliasDe(champ);
   const modalitesInitiales = champ.modalites ?? [];
   const [libelle, setLibelle] = useState(champ.libelle);
@@ -210,18 +215,18 @@ function LigneChamp({
         </div>
 
         <div className="min-w-0">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 md:hidden">Alias</div>
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 md:hidden">{t("alias")}</div>
           {aliasInitiaux.length ? (
             <div className="flex flex-wrap gap-1">
               {aliasInitiaux.map((a) => <Etiquette key={a}>{a}</Etiquette>)}
             </div>
           ) : (
-            <span className="text-xs text-gray-300">Aucun alias</span>
+            <span className="text-xs text-gray-300">{t("no_alias")}</span>
           )}
         </div>
 
         <div className="min-w-0">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 md:hidden">Modalités</div>
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 md:hidden">{t("modalities")}</div>
           {aModalites && modalitesInitiales.length ? (
             <div className="flex flex-wrap items-center gap-1">
               {modalitesAffichees.map((m) => (
@@ -233,7 +238,7 @@ function LigneChamp({
                   onClick={() => setToutesModalites((v) => !v)}
                   className="text-xs font-semibold text-gray-500 hover:text-gray-800"
                 >
-                  {toutesModalites ? 'Réduire' : `+${modalitesInitiales.length - MODALITES_VISIBLES}`}
+                  {toutesModalites ? t('collapse') : `+${modalitesInitiales.length - MODALITES_VISIBLES}`}
                 </button>
               )}
             </div>
@@ -249,7 +254,7 @@ function LigneChamp({
               onClick={ouvrir}
               className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:border-[#65b741] hover:text-[#08704F]"
             >
-              <Pencil className="w-3.5 h-3.5" /> Modifier
+              <Pencil className="w-3.5 h-3.5" /> {t("edit")}
             </button>
           )}
         </div>
@@ -263,7 +268,7 @@ function LigneChamp({
     <li className="border-l-4 border-l-[#65b741] bg-emerald-50/30 px-4 py-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#08704F]">Modification du champ</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#08704F]">{t("field_editing")}</div>
           <MetaChamp champ={champ} />
         </div>
       </div>
@@ -271,7 +276,7 @@ function LigneChamp({
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="lg:col-span-2">
           <label htmlFor={`${idBase}-libelle`} className="mb-1 block text-sm font-semibold text-gray-700">
-            Libellé
+            {t("label")}
           </label>
           <input
             id={`${idBase}-libelle`}
@@ -280,35 +285,35 @@ function LigneChamp({
             autoFocus
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#65b741] focus:ring-1 focus:ring-[#65b741]/30"
           />
-          <p className="mt-1 text-xs text-gray-500">Nom affiché aux valideurs et en en-tête de colonne.</p>
+          <p className="mt-1 text-xs text-gray-500">{t("label_help")}</p>
         </div>
 
         <div>
           <label htmlFor={`${idBase}-alias`} className="mb-1 block text-sm font-semibold text-gray-700">
-            Alias (intitulés vus sur le terrain)
+            {t("alias_field_label")}
           </label>
-          <EditeurEtiquettes id={`${idBase}-alias`} valeurs={alias} onChange={setAlias} placeholder="ex. Prestataire, H U…" />
+          <EditeurEtiquettes id={`${idBase}-alias`} valeurs={alias} onChange={setAlias} placeholder={t("alias_placeholder")} />
           <p className="mt-1 text-xs text-gray-500">
-            Entrée pour ajouter. L&apos;OCR reconnaît la colonne sous ces intitulés, même à une autre place.
+            {t("alias_help")}
           </p>
         </div>
 
         {aModalites && (
           <div>
             <label htmlFor={`${idBase}-modalites`} className="mb-1 block text-sm font-semibold text-gray-700">
-              Modalités (valeurs possibles)
+              {t("modalities_field_label")}
             </label>
             {deduit ? (
               <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600">
                 <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <span>
-                  Déduites de la ligne du registre ({modalitesInitiales.join(', ')}) : non modifiables ici.
+                  {t('modalities_deduced', { values: modalitesInitiales.join(', ') })}
                 </span>
               </div>
             ) : (
               <>
-                <EditeurEtiquettes id={`${idBase}-modalites`} valeurs={modalites} onChange={setModalites} placeholder="Ajouter une valeur" />
-                <p className="mt-1 text-xs text-gray-500">Les valeurs lues sont rapprochées de cette liste.</p>
+                <EditeurEtiquettes id={`${idBase}-modalites`} valeurs={modalites} onChange={setModalites} placeholder={t("add_value")} />
+                <p className="mt-1 text-xs text-gray-500">{t("modalities_help")}</p>
               </>
             )}
           </div>
@@ -316,13 +321,13 @@ function LigneChamp({
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-2 border-t border-emerald-100 pt-3">
-        {modifie && <span className="mr-auto text-xs text-amber-700">Modifications non enregistrées</span>}
+        {modifie && <span className="mr-auto text-xs text-amber-700">{t("unsaved_changes")}</span>}
         <button
           type="button"
           onClick={annuler}
           className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
         >
-          Annuler
+          {t("cancel")}
         </button>
         <button
           type="button"
@@ -331,7 +336,7 @@ function LigneChamp({
           className="inline-flex items-center gap-1.5 rounded-lg bg-[#65b741] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#5aa43a] disabled:opacity-50"
         >
           {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Enregistrer
+          {t("save")}
         </button>
       </div>
     </li>
@@ -347,6 +352,7 @@ export default function CatalogueDetailPage({
   const typeRegistre = decodeURIComponent(type);
   const anneeVersion = Number(annee);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   // Catalogue commun à toutes les structures : modifiable par le superadmin seul
   // (le backend refuse aussi : 403 pour un admin de structure).
   const lectureSeule = useAuthStore((state) => state.user?.role) !== 'SUPERADMIN';
@@ -366,9 +372,9 @@ export default function CatalogueDetailPage({
       // Même clé que le popup de validation : il voit le nouveau libellé sans rechargement.
       queryClient.setQueryData(['catalogue', typeRegistre, anneeVersion], catalogueAJour);
       setEnEdition(null);
-      toast.success(`Champ « ${nom} » enregistré. Pris en compte par l'OCR sous une minute.`);
+      toast.success(t('field_saved', { name: nom }));
     },
-    onError: (err: Error) => toast.error(err.message || "Échec de l'enregistrement"),
+    onError: (err: Error) => toast.error(err.message || t('save_failed')),
   });
 
   const sections = [...(catalogue?.sections ?? [])]
@@ -395,13 +401,13 @@ export default function CatalogueDetailPage({
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/dashboard/admin/catalogues" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
-            <ChevronLeft className="w-4 h-4" /> Catalogues
+            <ChevronLeft className="w-4 h-4" /> {t("catalogues")}
           </Link>
           {catalogue && (
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
               <Etiquette>{catalogue.type_registre} {catalogue.annee_version}</Etiquette>
-              {catalogue.rangs_par_patient > 1 && <Etiquette>{catalogue.rangs_par_patient} lignes par patiente</Etiquette>}
-              <Etiquette>{total} champs</Etiquette>
+              {catalogue.rangs_par_patient > 1 && <Etiquette>{t('rows_per_patient', { count: catalogue.rangs_par_patient })}</Etiquette>}
+              <Etiquette>{t('fields_count', { count: total })}</Etiquette>
             </div>
           )}
         </div>
@@ -409,15 +415,14 @@ export default function CatalogueDetailPage({
         {lectureSeule ? (
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700">
             <Lock className="w-4 h-4 shrink-0 text-gray-400" />
-            Consultation seule : le catalogue est commun à toutes les structures, seul un superadmin peut le modifier.
+            {t("catalogue_read_only")}
           </div>
         ) : (
           <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
             <Info className="w-4 h-4 mt-0.5 shrink-0" />
             <span>
-              Un intitulé différent sur un registre terrain (abréviation, autre formulation) ? Cliquez sur
-              <strong> Modifier</strong> et ajoutez-le en <strong>alias</strong> : l&apos;OCR reconnaîtra la colonne.
-              Un même intitulé ne peut pas désigner deux champs.
+              {t("catalogue_hint_before")} <strong>{t("edit")}</strong> {t("catalogue_hint_middle")}{' '}
+              <strong>{t("catalogue_hint_alias")}</strong>{t("catalogue_hint_after")}
             </span>
           </div>
         )}
@@ -429,8 +434,8 @@ export default function CatalogueDetailPage({
             <input
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
-              placeholder="Rechercher un champ (libellé, nom ou alias)…"
-              aria-label="Rechercher un champ"
+              placeholder={t("search_field_placeholder")}
+              aria-label={t("search_field")}
               className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-24 text-sm outline-none focus:border-[#65b741] focus:ring-1 focus:ring-[#65b741]/30"
             />
             {recherche && (
@@ -444,10 +449,10 @@ export default function CatalogueDetailPage({
         {isLoading && (
           <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[#65b741]" /></div>
         )}
-        {isError && <div className="p-4 text-red-600">Catalogue introuvable.</div>}
+        {isError && <div className="p-4 text-red-600">{t("catalogue_not_found")}</div>}
         {catalogue && trouves === 0 && (
           <div className="rounded-xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-500">
-            Aucun champ ne correspond à « {recherche} ».
+            {t('no_field_matches', { query: recherche })}
           </div>
         )}
 
@@ -466,14 +471,14 @@ export default function CatalogueDetailPage({
                 >
                   {replie ? <ChevronRight className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-700">{section.libelle}</span>
-                  <span className="text-xs text-gray-400">{section.champs.length} champ(s)</span>
+                  <span className="text-xs text-gray-400">{t('fields_count_short', { count: section.champs.length })}</span>
                 </button>
                 {!replie && (
                   <>
                     <div className="hidden grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,3fr)_auto] gap-4 px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 md:grid">
-                      <span>Champ</span>
-                      <span>Alias (intitulés terrain)</span>
-                      <span>Modalités</span>
+                      <span>{t("col_field")}</span>
+                      <span>{t("col_alias_field")}</span>
+                      <span>{t("modalities")}</span>
                       <span className="w-[5.5rem]" />
                     </div>
                     <ul className="divide-y divide-gray-50">

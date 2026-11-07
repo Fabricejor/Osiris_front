@@ -2,6 +2,7 @@ import { apiClient } from "./apiClient";
 
 import type { FolderStatus } from "@/components/ui/folderUI";
 import type { components } from "@/types/api.generated";
+import type { TranslationKey } from "@/utils/translations";
 
 // Types générés depuis l'OpenAPI du backend (`npm run gen:api`) : un champ
 // renommé côté backend casse la compilation au lieu de donner `undefined`.
@@ -79,7 +80,8 @@ export interface PageView {
   annee_version: number;
   name: string;
   status: StatutTraitement;
-  statusText: string;
+  /** Clé de traduction du statut (afficher avec `t(page.statusKey)`). */
+  statusKey: TranslationKey;
   isAnomaly: boolean;
   confidence: number;
   /** URL d'image affichable (pré-signée, expire) — vide si indisponible. */
@@ -96,15 +98,15 @@ export interface PageView {
 /** Au-delà, une page encore en OCR est considérée bloquée (job perdu, worker arrêté). */
 const DELAI_OCR_BLOQUE_MS = 30 * 60 * 1000;
 
-const STATUT_LABEL: Record<StatutTraitement, string> = {
-  RECU: "En traitement",
-  EN_TRAITEMENT: "En traitement",
-  A_VALIDER: "À valider",
-  VALIDE: "Validée",
-  FUSION_INCOMPLETE: "Anomalie",
-  ECHEC_RECALAGE: "Échec recalage",
-  ECHEC_OCR: "Échec OCR",
-  REJETEE: "Rejetée",
+const STATUT_LABEL: Record<StatutTraitement, TranslationKey> = {
+  RECU: "statut_en_traitement",
+  EN_TRAITEMENT: "statut_en_traitement",
+  A_VALIDER: "statut_a_valider",
+  VALIDE: "statut_valide",
+  FUSION_INCOMPLETE: "statut_anomalie",
+  ECHEC_RECALAGE: "statut_echec_recalage",
+  ECHEC_OCR: "statut_echec_ocr",
+  REJETEE: "statut_rejetee",
 };
 
 export function toPageView(page: RegistreScanne): PageView {
@@ -116,7 +118,7 @@ export function toPageView(page: RegistreScanne): PageView {
     annee_version: page.annee_version,
     name: `${page.type_registre} ${page.annee_version}${ligne} · ${page.id_registre_scanne.slice(0, 8)}`,
     status: page.statut_traitement,
-    statusText: STATUT_LABEL[page.statut_traitement] ?? page.statut_traitement,
+    statusKey: STATUT_LABEL[page.statut_traitement] ?? "statut_en_traitement",
     isAnomaly:
       page.statut_traitement === "FUSION_INCOMPLETE" ||
       page.statut_traitement === "ECHEC_RECALAGE" ||

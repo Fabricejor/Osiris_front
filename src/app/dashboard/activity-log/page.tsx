@@ -14,6 +14,7 @@ import {
 import { AuditService } from '@/services/audit.service';
 import { useQuery } from '@tanstack/react-query';
 import { format, isToday, isYesterday } from 'date-fns';
+import { enGB, fr as frLocale } from 'date-fns/locale';
 import type { AuditLog } from '@/types';
 import PageHeader from '@/components/ui/PageHeader';
 import AvatarInitiales from '@/components/ui/AvatarInitiales';
@@ -74,16 +75,17 @@ export default function ActivityLogPage() {
 
     filteredLogs.forEach((log) => {
       const date = new Date(log.date_action);
-      let dateStr = format(date, 'MMM d, yyyy');
+      const locale = language === 'fr' ? frLocale : enGB;
+      let dateStr = format(date, 'PP', { locale });
 
-      if (isToday(date)) dateStr = `Today - ${dateStr}`;
-      else if (isYesterday(date)) dateStr = `Yesterday - ${dateStr}`;
+      if (isToday(date)) dateStr = t('today_prefix', { date: dateStr });
+      else if (isYesterday(date)) dateStr = t('yesterday_prefix', { date: dateStr });
 
       if (!groups[dateStr]) groups[dateStr] = [];
       groups[dateStr].push({
         id: log.id,
-        time: format(date, 'hh:mm a'),
-        user: log.user_name || log.id_utilisateur_acteur || 'System',
+        time: format(date, 'p', { locale }),
+        user: log.user_name || log.id_utilisateur_acteur || t('system'),
         action: log.type_action,
         docId: log.id_ressource || '-',
         status: log.status || 'Success',
@@ -95,13 +97,14 @@ export default function ActivityLogPage() {
       dateStr,
       logs
     }));
-  }, [filteredLogs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredLogs, language]);
 
   return (
     <div className="h-full flex flex-col p-6 bg-gray-50/50 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
 
       {/* Header */}
-      <PageHeader title="Activity Log" />
+      <PageHeader title={t("activity_log")} />
       <div className="mb-6">
         <p className="text-gray-500 text-sm">{t("activity_log_subtitle")}</p>
       </div>
@@ -111,7 +114,7 @@ export default function ActivityLogPage() {
 
         {/* Search */}
         <div className="flex-1 min-w-[200px]">
-          <label htmlFor="searchInput" className="block text-xs font-bold text-gray-700 mb-1.5">{t("search_folders")}</label>
+          <label htmlFor="searchInput" className="block text-xs font-bold text-gray-700 mb-1.5">{t("search")}</label>
           <div className="relative">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -131,7 +134,7 @@ export default function ActivityLogPage() {
           <button aria-labelledby="dateRangeLabel" className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="font-medium">Oct 1, 2023 - Oct 31, 2023</span>
+              <span className="font-medium">{t("all_dates")}</span>
             </div>
           </button>
         </div>
@@ -152,16 +155,16 @@ export default function ActivityLogPage() {
           <legend className="block text-xs font-bold text-gray-700 mb-1.5">{t("action_type")}</legend>
           <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white h-[38px]">
             <button onClick={() => setActionFilter('All')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t("all_filter")}</button>
-            <button onClick={() => setActionFilter('Access')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Access' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>{language === 'fr' ? 'Accès' : 'Access'}</button>
+            <button onClick={() => setActionFilter('Access')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Access' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>{t("action_access")}</button>
             <button onClick={() => setActionFilter('Edit')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Edit' ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}>{t("edit_action")}</button>
-            <button onClick={() => setActionFilter('Upload')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Upload' ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}>{language === 'fr' ? 'Téléchargement' : 'Upload'}</button>
+            <button onClick={() => setActionFilter('Upload')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Upload' ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}>{t("action_upload")}</button>
           </div>
         </fieldset>
 
         {/* Filter Button */}
         <div className="flex items-end h-[58px]">
           <button className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors h-[38px] shadow-sm">
-            <Filter className="w-4 h-4" /> {language === 'fr' ? 'Filtrer' : 'Filter'}
+            <Filter className="w-4 h-4" /> {t("filter")}
           </button>
         </div>
       </div>
@@ -171,7 +174,7 @@ export default function ActivityLogPage() {
 
         {/* Table Headers */}
         <div className={`grid ${gridTemplate} gap-4 mb-6 ml-10 text-sm font-bold text-gray-500`}>
-          <div>Timestamp</div>
+          <div>{t("col_timestamp")}</div>
           <div>{t("user_column")}</div>
           <div>{t("action_column")}</div>
           <div>{t("doc_id_column")}</div>
@@ -184,7 +187,7 @@ export default function ActivityLogPage() {
           {groupedLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
               <Search className="w-8 h-8 opacity-50" />
-              <p>No activity logs match your filters.</p>
+              <p>{t("no_logs_match")}</p>
             </div>
           ) : groupedLogs.map((group) => (
             <div key={group.dateStr} className="mb-10 last:mb-0">

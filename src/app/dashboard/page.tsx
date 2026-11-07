@@ -15,8 +15,10 @@ import OperatorPerformanceComparison from "@/components/features/dashboard/Opera
 import ValidationStatusDistribution from "@/components/features/dashboard/ValidationStatusDistribution";
 import OperatorActivityHeatmap from "@/components/features/dashboard/OperatorActivityHeatmap";
 import PageHeader from "@/components/ui/PageHeader";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const [expandedWidget, setExpandedWidget] = useState<{ id: string, node: React.ReactNode } | null>(null);
 
   const wrapChart = (id: string, node: React.ReactNode) => (
@@ -41,7 +43,7 @@ export default function DashboardPage() {
     <>
       <div className="h-full flex flex-col gap-4 p-5 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
         {/* Header */}
-        <PageHeader title="Dashboard" />
+        <PageHeader title={t("dashboard")} />
 
         {/* Stats Cards */}
         <div className="shrink-0">
