@@ -7,6 +7,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { StructuresService } from '@/services/structures.service';
 import { useTranslation } from '@/hooks/useTranslation';
 
+/** Comparaison sans accents ni casse (« hopital » trouve « Hôpital »). */
+function normaliser(texte: string | null | undefined): string {
+  return (texte ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 export default function StructuresPage() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,6 +56,13 @@ export default function StructuresPage() {
       alert(t('structure_delete_error'));
     }
   });
+
+  const q = normaliser(searchTerm.trim());
+  const structuresFiltrees = q
+    ? structures.filter((s) =>
+        [s.nom, s.district_sanitaire, s.region, s.type_structure].some((v) => normaliser(v).includes(q)),
+      )
+    : structures;
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,14 +124,14 @@ export default function StructuresPage() {
                     {t("structures_load_error")}
                   </td>
                 </tr>
-              ) : structures.length === 0 ? (
+              ) : structuresFiltrees.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-gray-500">
-                    {t("no_structures")}
+                    {structures.length === 0 ? t("no_structures") : t('no_search_results', { query: searchTerm.trim() })}
                   </td>
                 </tr>
               ) : (
-                structures.map((structure) => (
+                structuresFiltrees.map((structure) => (
                   <tr key={structure.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">

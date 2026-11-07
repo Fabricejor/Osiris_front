@@ -553,4 +553,16 @@ export const fr: Record<keyof typeof en, string> = {
   logging_in: "Connexion en cours…",
   login_success: "Connexion réussie !",
   all_rights_reserved: "Tous droits réservés Osiris Healthcare © 2025",
+
+  // Exports (statuts / portée)
+  export_scope_info: "L'export couvre les données validées de votre structure, au format CSV.",
+  export_period_invalid: "La date de début doit précéder la date de fin.",
+  export_filters: "Export",
+  export_all_period: "Toute la période",
+  export_rows: "{count} lignes",
+  export_statut_en_attente: "En attente",
+  export_statut_en_cours: "En cours",
+  export_statut_pret: "Prêt",
+  export_statut_echec: "Échec",
+  no_search_results: "Aucun résultat pour « {query} ».",
 };

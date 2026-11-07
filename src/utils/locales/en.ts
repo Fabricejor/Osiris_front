@@ -550,4 +550,16 @@ export const en = {
   logging_in: "Logging in...",
   login_success: "Login successful!",
   all_rights_reserved: "All rights reserved Osiris Healthcare © 2025",
+
+  // Exports (statuts / portée)
+  export_scope_info: "The export covers the validated data of your facility, in CSV format.",
+  export_period_invalid: "The start date must be before the end date.",
+  export_filters: "Export",
+  export_all_period: "Whole period",
+  export_rows: "{count} rows",
+  export_statut_en_attente: "Queued",
+  export_statut_en_cours: "In progress",
+  export_statut_pret: "Ready",
+  export_statut_echec: "Failed",
+  no_search_results: "No results for “{query}”.",
 };

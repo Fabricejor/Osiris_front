@@ -9,6 +9,11 @@ import { StructuresService } from '@/services/structures.service';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/utils/translations';
 
+/** Comparaison sans accents ni casse (« hopital » trouve « Hôpital »). */
+function normaliser(texte: string | null | undefined): string {
+  return (texte ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 const ROLE_KEYS: Record<string, TranslationKey> = {
   AGENT_TERRAIN: 'role_agent_terrain',
   VALIDEUR_MEDICAL: 'role_valideur_medical',
@@ -104,6 +109,15 @@ export default function UsersPage() {
     }
   });
 
+  const q = normaliser(searchTerm.trim());
+  const usersFiltres = q
+    ? users.filter((u) => {
+        const role = ROLE_KEYS[u.role?.toUpperCase() || ''];
+        return [u.firstName, u.lastName, `${u.firstName ?? ''} ${u.lastName ?? ''}`, u.email, u.role, role && t(role)]
+          .some((v) => normaliser(v || '').includes(q));
+      })
+    : users;
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -175,14 +189,14 @@ export default function UsersPage() {
                     {t("users_load_error")}
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : usersFiltres.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-gray-500">
-                    {t("no_users")}
+                    {users.length === 0 ? t("no_users") : t('no_search_results', { query: searchTerm.trim() })}
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                usersFiltres.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">

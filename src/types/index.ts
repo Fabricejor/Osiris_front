@@ -167,19 +167,4 @@ export interface UpdateCatalogueDto {
   rangs_par_patient?: number;
 }
 
-export type ExportFormat = 'csv' | 'pdf';
-
-export interface ExportRecord {
-  id: string;
-  fileName: string;
-  date: string;
-  status: string;
-  downloadUrl?: string;
-}
-
-export interface ExportFilterOptions {
-  structure_id?: string;
-  catalogue_id?: string;
-  date_debut?: string;
-  date_fin?: string;
-}
+// Exports : types générés depuis l'API, voir `services/exports.service.ts`.
