@@ -20,22 +20,35 @@ import { Loader2 } from 'lucide-react';
 type Operator = {
   name: string;
   totalValidations: number;
-  avgTime: string;
-  efficiencyScore: number;
-  status: 'Active' | 'On Track' | 'Inactive';
+  /** Délai moyen envoi → validation, en secondes (null : aucune donnée). */
+  delaiSecondes: number | null;
+  /** Lignes validées / lignes revues, en % (null : aucune ligne revue). */
+  tauxValidation: number | null;
+  status: 'Active' | 'Inactive';
 };
+
+/** Actif = au moins une ligne revue dans les 7 derniers jours. */
+const DELAI_ACTIF_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** 5400 → « 1 h 30 min » ; 90 → « 2 min » ; 2 j+ → « 2 j 3 h ». */
+function formaterDelai(secondes: number | null): string {
+  if (secondes == null) return '—';
+  const minutes = Math.round(secondes / 60);
+  if (minutes < 60) return `${Math.max(1, minutes)} min`;
+  const heures = Math.floor(minutes / 60);
+  if (heures < 48) return `${heures} h ${String(minutes % 60).padStart(2, '0')} min`;
+  return `${Math.floor(heures / 24)} j ${heures % 24} h`;
+}
 
 const columnHelper = createColumnHelper<Operator>();
 
 const statusStyles: Record<string, string> = {
   Active: 'bg-emerald-50 text-emerald-700',
-  'On Track': 'bg-emerald-50 text-emerald-700',
   Inactive: 'bg-gray-100 text-gray-600',
 };
 
 const STATUS_LABEL_KEYS = {
   'Active': 'efficiency_status_active',
-  'On Track': 'efficiency_status_on_track',
   'Inactive': 'efficiency_status_inactive',
 } as const;
 
@@ -51,9 +64,11 @@ export default function OperatorEfficiencyTable() {
       return res.map(op => ({
         name: op.operator,
         totalValidations: op.processed,
-        avgTime: op.avgTime,
-        efficiencyScore: op.accuracy,
-        status: op.status === 'Online' ? 'Active' : (op.status === 'Busy' ? 'On Track' : 'Inactive')
+        delaiSecondes: op.delai_moyen_secondes ?? null,
+        tauxValidation: op.taux_validation ?? null,
+        status: op.derniere_activite && Date.now() - new Date(op.derniere_activite).getTime() < DELAI_ACTIF_MS
+          ? 'Active'
+          : 'Inactive',
       } as Operator));
     },
   });
@@ -68,12 +83,13 @@ export default function OperatorEfficiencyTable() {
         header: t("efficiency_column_validated"),
         cell: (info) => info.getValue().toLocaleString(),
       }),
-      columnHelper.accessor('avgTime', {
+      columnHelper.accessor('delaiSecondes', {
         header: t("efficiency_column_time"),
+        cell: (info) => formaterDelai(info.getValue()),
       }),
-      columnHelper.accessor('efficiencyScore', {
+      columnHelper.accessor('tauxValidation', {
         header: t("efficiency_column_accuracy"),
-        cell: (info) => info.getValue(),
+        cell: (info) => (info.getValue() == null ? '—' : `${info.getValue()} %`),
       }),
       columnHelper.accessor('status', {
         header: t("efficiency_column_status"),

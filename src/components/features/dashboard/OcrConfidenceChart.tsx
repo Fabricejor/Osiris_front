@@ -8,14 +8,17 @@ import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
 import { Loader2 } from 'lucide-react';
 
+import { TRANCHES_CONFIANCE } from './libelles';
+
 const COLORS = ['#08704F', '#7BC148', '#d1fae5'];
 
 export default function OcrConfidenceChart() {
   const { t } = useTranslation();
-  const { data = [], isLoading, isError } = useQuery({
+  const { data: brut = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-ocr-confidence'],
     queryFn: DashboardService.getOcrConfidence,
   });
+  const data = brut.map((d) => ({ ...d, name: d.code && TRANCHES_CONFIANCE[d.code] ? t(TRANCHES_CONFIANCE[d.code]) : d.name }));
 
   if (isLoading) {
     return (
@@ -62,7 +65,7 @@ export default function OcrConfidenceChart() {
                   fontSize: '12px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 }}
-                formatter={(value: any, name: any) => [`${value}%`, name]}
+                formatter={(value: any, name: any) => [t('pages_count', { count: value }), name]}
               />
             </PieChart>
           </ResponsiveContainer>

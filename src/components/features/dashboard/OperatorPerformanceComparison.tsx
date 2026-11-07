@@ -74,8 +74,8 @@ export default function OperatorPerformanceComparison() {
               iconSize={10}
               wrapperStyle={{ fontSize: '11px', color: '#6b7280' }}
             />
-            <Bar dataKey="processed" name={t("processed")} fill="#1e40af" radius={[3, 3, 0, 0]} barSize={18} />
-            <Bar dataKey="errors" name={t("errors_label")} fill="#22c55e" radius={[3, 3, 0, 0]} barSize={18} />
+            <Bar dataKey="validees" name={t("validated")} fill="#22c55e" radius={[3, 3, 0, 0]} barSize={18} />
+            <Bar dataKey="rejetees" name={t("rejected")} fill="#ef4444" radius={[3, 3, 0, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </div>

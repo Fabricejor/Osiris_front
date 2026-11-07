@@ -2,10 +2,15 @@
 
 import React, { useState } from 'react';
 import PageHeader from "@/components/ui/PageHeader";
-import { Search, Plus, Filter, MoreVertical, Building2, MapPin, Loader2, X } from 'lucide-react';
+import { Search, Plus, MoreVertical, Building2, MapPin, Loader2, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { StructuresService } from '@/services/structures.service';
 import { useTranslation } from '@/hooks/useTranslation';
+
+/** Comparaison sans accents ni casse (« hopital » trouve « Hôpital »). */
+function normaliser(texte: string | null | undefined): string {
+  return (texte ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 export default function StructuresPage() {
   const { t } = useTranslation();
@@ -52,6 +57,13 @@ export default function StructuresPage() {
     }
   });
 
+  const q = normaliser(searchTerm.trim());
+  const structuresFiltrees = q
+    ? structures.filter((s) =>
+        [s.nom, s.district_sanitaire, s.region, s.type_structure].some((v) => normaliser(v).includes(q)),
+      )
+    : structures;
+
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createMutation.mutate(formData);
@@ -80,9 +92,6 @@ export default function StructuresPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
-            <Filter className="w-4 h-4" /> {t("filter")}
-          </button>
         </div>
 
         <div className="flex-1 overflow-auto">
@@ -112,14 +121,14 @@ export default function StructuresPage() {
                     {t("structures_load_error")}
                   </td>
                 </tr>
-              ) : structures.length === 0 ? (
+              ) : structuresFiltrees.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-gray-500">
-                    {t("no_structures")}
+                    {structures.length === 0 ? t("no_structures") : t('no_search_results', { query: searchTerm.trim() })}
                   </td>
                 </tr>
               ) : (
-                structures.map((structure) => (
+                structuresFiltrees.map((structure) => (
                   <tr key={structure.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">

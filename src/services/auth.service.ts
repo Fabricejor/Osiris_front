@@ -32,6 +32,8 @@ function toUser(me: MeResponse): User {
     lastName: rest.join(' '),
     role: deriveRole(me),
     roles: me.roles,
+    fullName: me.nom_prenom,
+    phone: me.numero_telephone,
     status: me.status,
     createdAt: me.date_creation,
     updatedAt: me.date_modification,

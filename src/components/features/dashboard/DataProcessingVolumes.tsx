@@ -21,7 +21,7 @@ import { Loader2 } from 'lucide-react';
 const BAR_COLORS = ['#08704F', '#0a8a63', '#7BC148', '#4ade80', '#08704F', '#0a8a63'];
 
 export default function DataProcessingVolumes() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { data = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-processing-volumes'],
     queryFn: DashboardService.getProcessingVolumes,
@@ -87,9 +87,12 @@ export default function DataProcessingVolumes() {
               }}
               formatter={(value: any, name: any) => {
                 if (name === 'records') return [`${value.toLocaleString()} ${t("records").toLowerCase()}`, t("volume_scanned")];
-                return [`${value}%`, t("efficiency")];
+                return [`${value} %`, t("pages_validated_share")];
               }}
-              labelFormatter={(label) => `${label}, 2024`}
+              labelFormatter={(label) =>
+                new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'en-GB', { dateStyle: 'medium', timeZone: 'UTC' })
+                  .format(new Date(`${label}T00:00:00Z`))
+              }
             />
             <Bar yAxisId="left" dataKey="records" radius={[3, 3, 0, 0]} barSize={20}>
               {data.map((_, index) => (

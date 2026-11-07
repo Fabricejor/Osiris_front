@@ -477,7 +477,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Activity Heatmap */
+        /**
+         * Get Activity Heatmap
+         * @description Lignes validées par jour sur 12 mois.
+         */
         get: operations["get_activity_heatmap_api_v1_dashboard_activity_heatmap_get"];
         put?: never;
         post?: never;
@@ -504,23 +507,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/dashboard/ocr-performance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Ocr Performance */
-        get: operations["get_ocr_performance_api_v1_dashboard_ocr_performance_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/dashboard/operator-activity-heatmap": {
         parameters: {
             query?: never;
@@ -528,7 +514,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Operator Activity Heatmap */
+        /**
+         * Get Operator Activity Heatmap
+         * @description Actions par jour × tranche horaire sur 4 semaines.
+         */
         get: operations["get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get"];
         put?: never;
         post?: never;
@@ -773,8 +762,9 @@ export interface paths {
          *     Celery `generer_export`. L'admin polle `GET /exports/{id_export}` jusqu'à
          *     obtenir `statut=PRET` + `download_url`.
          *
-         *     Le scope structure est **implicite** : l'admin exporte uniquement les
-         *     données de sa propre `structure_sanitaire` (invariant Option A).
+         *     Scope structure : un ADMIN exporte uniquement sa `structure_sanitaire`
+         *     (invariant Option A, `id_structure` différent → 403) ; un SUPERADMIN
+         *     exporte toutes les structures ou celle passée dans `id_structure`.
          */
         post: operations["post_export_api_v1_exports_post"];
         delete?: never;
@@ -1263,14 +1253,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ActivityHeatmapData */
+        /**
+         * ActivityHeatmapData
+         * @description Calendrier : lignes validées par jour (jours sans activité omis).
+         */
         ActivityHeatmapData: {
-            /** Data */
-            data: number[][];
-            /** Months */
-            months: string[];
-            /** Weeks */
-            weeks: number[];
+            /**
+             * Date Debut
+             * Format: date
+             */
+            date_debut: string;
+            /**
+             * Date Fin
+             * Format: date
+             */
+            date_fin: string;
+            /** Jours */
+            jours: components["schemas"]["JourActivite"][];
+            /** Maximum */
+            maximum: number;
+            /** Total */
+            total: number;
         };
         /**
          * AdminCreate
@@ -1351,6 +1354,11 @@ export interface components {
              * @description UUID Keycloak de l'utilisateur qui a fait l'action. NULL si action publique (ex: change-password) ou utilisateur supprimé.
              */
             id_utilisateur_acteur: string | null;
+            /**
+             * Nom Acteur
+             * @description Nom de l'auteur (`utilisateur.nom_prenom`), None si inconnu ou supprimé.
+             */
+            nom_acteur?: string | null;
             /**
              * Payload
              * @description Données spécifiques à l'action (structure libre par type_action).
@@ -1433,6 +1441,21 @@ export interface components {
          * @enum {string}
          */
         CategorieRejet: "ILLISIBLE" | "HORS_SUJET" | "DOUBLON" | "AUTRE";
+        /** CelluleActivite */
+        CelluleActivite: {
+            /**
+             * Jour
+             * @description 0 = lundi … 6 = dimanche.
+             */
+            jour: number;
+            /** Nombre */
+            nombre: number;
+            /**
+             * Tranche
+             * @description Index dans `tranches` ; len(tranches) = hors heures.
+             */
+            tranche: number;
+        };
         /**
          * ChampCatalogue
          * @description Un champ à extraire par l'OCR pour un registre donné.
@@ -1519,12 +1542,20 @@ export interface components {
         };
         /** DashboardStat */
         DashboardStat: {
-            /** Change */
-            change: string;
+            /** Code */
+            code?: string | null;
+            /**
+             * Evolution Pct
+             * @description Variation des 30 derniers jours vs les 30 précédents (%). None si non pertinent ou sans base de comparaison.
+             */
+            evolution_pct?: number | null;
+            /**
+             * Hausse Favorable
+             * @description Une hausse est-elle une bonne nouvelle (couleur côté front) ?
+             */
+            hausse_favorable: boolean;
             /** Icon */
             icon?: string | null;
-            /** Positive */
-            positive: boolean;
             /** Title */
             title: string;
             /** Value */
@@ -1675,12 +1706,10 @@ export interface components {
          * ExportCreate
          * @description Body de `POST /exports` — filtres tous optionnels.
          *
-         *     Un export sans filtre (aucun paramètre) = tout ce que voit l'admin
-         *     demandeur (scope implicite : sa structure sanitaire).
-         *
-         *     Le filtre `id_structure_filtre` est ignoré côté service — le scope
-         *     de l'admin est appliqué implicitement (impossible d'exporter la
-         *     structure d'un autre admin, invariant Option A du chantier Auth).
+         *     Un export sans filtre (aucun paramètre) = tout ce que voit le demandeur :
+         *     - ADMIN : sa structure sanitaire, toujours (invariant Option A) — un
+         *       `id_structure` différent est refusé (403) ;
+         *     - SUPERADMIN : toutes les structures, ou celle passée dans `id_structure`.
          */
         ExportCreate: {
             /** Annee Version */
@@ -1689,6 +1718,11 @@ export interface components {
             date_debut?: string | null;
             /** Date Fin */
             date_fin?: string | null;
+            /**
+             * Id Structure
+             * @description SUPERADMIN : limiter à une structure (absent = toutes). ADMIN : sa structure seulement.
+             */
+            id_structure?: string | null;
             type_registre?: components["schemas"]["TypeRegistre"] | null;
         };
         /**
@@ -1745,6 +1779,16 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** JourActivite */
+        JourActivite: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Nombre */
+            nombre: number;
+        };
         /**
          * LoginRequest
          * @description Identifiants soumis par le client (mobile ou web).
@@ -1766,54 +1810,97 @@ export interface components {
             /** Refresh Token */
             refresh_token?: string | null;
         };
-        /** OcrConfidenceData */
+        /**
+         * OcrConfidenceData
+         * @description Nombre de pages par tranche de score de confiance OCR.
+         */
         OcrConfidenceData: {
+            /**
+             * Code
+             * @description HIGH (≥ 80), MEDIUM (50–80), LOW (< 50).
+             */
+            code?: string | null;
             /** Name */
             name: string;
             /** Value */
             value: number;
         };
-        /** OcrPerformanceData */
-        OcrPerformanceData: {
-            /** Name */
-            name: string;
-            /** Value */
-            value: number;
+        /** OperateurActivite */
+        OperateurActivite: {
+            /**
+             * Id Keycloak
+             * Format: uuid
+             */
+            id_keycloak: string;
+            /** Nom */
+            nom?: string | null;
         };
-        /** OperatorActivityHeatmapData */
+        /**
+         * OperatorActivityHeatmapData
+         * @description Actions (lignes revues + pages envoyées) par jour × tranche de 2 h (cellules vides omises).
+         */
         OperatorActivityHeatmapData: {
-            /** Data */
-            data: number[][];
-            /** Days */
-            days: string[];
-            /** Hours */
-            hours: string[];
+            /** Cellules */
+            cellules: components["schemas"]["CelluleActivite"][];
+            /**
+             * Date Debut
+             * Format: date
+             */
+            date_debut: string;
+            /**
+             * Date Fin
+             * Format: date
+             */
+            date_fin: string;
+            /** Maximum */
+            maximum: number;
+            /** Operateurs */
+            operateurs: components["schemas"]["OperateurActivite"][];
+            /** Total */
+            total: number;
+            /**
+             * Tranches
+             * @description Heure de début de chaque tranche de 2 h (UTC).
+             */
+            tranches: number[];
         };
         /** OperatorEfficiencyData */
         OperatorEfficiencyData: {
-            /** Accuracy */
-            accuracy: number;
-            /** Avgtime */
-            avgTime: string;
+            /**
+             * Delai Moyen Secondes
+             * @description Délai moyen entre l'envoi de la page et la validation de la ligne.
+             */
+            delai_moyen_secondes: number | null;
+            /**
+             * Derniere Activite
+             * @description Dernière ligne revue.
+             */
+            derniere_activite: string | null;
             /** Id */
             id: string;
             /** Operator */
             operator: string;
-            /** Processed */
+            /**
+             * Processed
+             * @description Lignes revues (validées + rejetées).
+             */
             processed: number;
             /** Role */
             role: string;
-            /** Status */
-            status: string;
+            /**
+             * Taux Validation
+             * @description Lignes validées / lignes revues (%).
+             */
+            taux_validation: number | null;
         };
         /** OperatorPerformanceComparisonData */
         OperatorPerformanceComparisonData: {
-            /** Errors */
-            errors: number;
             /** Name */
             name: string;
-            /** Processed */
-            processed: number;
+            /** Rejetees */
+            rejetees: number;
+            /** Validees */
+            validees: number;
         };
         /**
          * PagesListResponse
@@ -1961,8 +2048,16 @@ export interface components {
             /** Upload Url Page Gauche */
             upload_url_page_gauche?: string | null;
         };
-        /** ProcessingEfficiencyData */
+        /**
+         * ProcessingEfficiencyData
+         * @description Nombre de pages par statut de traitement.
+         */
         ProcessingEfficiencyData: {
+            /**
+             * Code
+             * @description Statut de traitement (RECU, A_VALIDER…).
+             */
+            code?: string | null;
             /** Name */
             name: string;
             /** Value */
@@ -1972,7 +2067,10 @@ export interface components {
         ProcessingVolumesData: {
             /** Date */
             date: string;
-            /** Rate */
+            /**
+             * Rate
+             * @description Part des pages envoyées ce jour-là déjà validées (%).
+             */
             rate: number;
             /** Records */
             records: number;
@@ -3618,40 +3716,12 @@ export interface operations {
             };
         };
     };
-    get_ocr_performance_api_v1_dashboard_ocr_performance_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                osiris_access?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OcrPerformanceData"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Limiter à un opérateur (id_keycloak). */
+                id_operateur?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -4869,6 +4939,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description Recherche libre : nom de l'agent, structure, district, type, année, début d'ID. */
+                q?: string | null;
                 /** @description Filtre par statut. */
                 statut?: components["schemas"]["StatutSession"] | null;
                 /** @description Filtre par type de registre. */

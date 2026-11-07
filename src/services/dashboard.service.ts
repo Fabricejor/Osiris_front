@@ -1,16 +1,17 @@
 import { apiClient } from './apiClient';
-import {
-  DashboardStat,
-  ProcessingEfficiencyData,
-  OcrPerformanceData,
-  OcrConfidenceData,
-  ActivityHeatmapData,
-  ProcessingVolumesData,
-  OperatorEfficiencyData,
-  OperatorPerformanceComparisonData,
-  ValidationStatusData,
-  OperatorActivityHeatmapData
-} from '@/types';
+import { ValidationStatusData } from '@/types';
+import type { components } from '@/types/api.generated';
+
+// Types générés depuis l'OpenAPI du backend (`npm run gen:api`).
+type Schemas = components['schemas'];
+export type DashboardStat = Schemas['DashboardStat'];
+export type ActivityHeatmapData = Schemas['ActivityHeatmapData'];
+export type OperatorActivityHeatmapData = Schemas['OperatorActivityHeatmapData'];
+export type ProcessingVolumesData = Schemas['ProcessingVolumesData'];
+export type ProcessingEfficiencyData = Schemas['ProcessingEfficiencyData'];
+export type OcrConfidenceData = Schemas['OcrConfidenceData'];
+export type OperatorEfficiencyData = Schemas['OperatorEfficiencyData'];
+export type OperatorPerformanceComparisonData = Schemas['OperatorPerformanceComparisonData'];
 
 export const DashboardService = {
   getStats: () => {
@@ -19,10 +20,6 @@ export const DashboardService = {
 
   getProcessingEfficiency: () => {
     return apiClient<ProcessingEfficiencyData[]>('/v1/dashboard/processing-efficiency', { method: 'GET' });
-  },
-
-  getOcrPerformance: () => {
-    return apiClient<OcrPerformanceData[]>('/v1/dashboard/ocr-performance', { method: 'GET' });
   },
 
   getOcrConfidence: () => {
@@ -49,7 +46,9 @@ export const DashboardService = {
     return apiClient<ValidationStatusData[]>('/v1/dashboard/validation-status', { method: 'GET' });
   },
 
-  getOperatorActivityHeatmap: () => {
-    return apiClient<OperatorActivityHeatmapData>('/v1/dashboard/operator-activity-heatmap', { method: 'GET' });
+  /** `idOperateur` (id_keycloak) : limiter à un opérateur ; absent = tous. */
+  getOperatorActivityHeatmap: (idOperateur?: string) => {
+    const params = idOperateur ? `?id_operateur=${encodeURIComponent(idOperateur)}` : '';
+    return apiClient<OperatorActivityHeatmapData>(`/v1/dashboard/operator-activity-heatmap${params}`, { method: 'GET' });
   }
 };

@@ -15,6 +15,9 @@ export interface User {
   /** Rôles Keycloak bruts (ex. ["admin", "superadmin"]). */
   roles?: string[];
   avatarUrl?: string;
+  /** Nom complet tel qu'enregistré (`nom_prenom`). */
+  fullName?: string;
+  phone?: string | null;
   status?: string;
   createdAt: string;
   updatedAt: string;
@@ -46,67 +49,9 @@ export interface AuditLog {
   user_name?: string;
 }
 
-export interface DashboardStat {
-  title: string;
-  value: string | number;
-  change: string;
-  positive: boolean;
-  icon?: any; // Just for frontend mapping if needed, usually we don't return icon from backend
-}
-
-export interface ProcessingEfficiencyData {
-  name: string;
-  value: number;
-}
-
-export interface OcrPerformanceData {
-  name: string;
-  value: number;
-}
-
-export interface OcrConfidenceData {
-  name: string;
-  value: number;
-}
-
-export interface ActivityHeatmapData {
-  // 6 weeks x 12 months array for instance, or any structure
-  weeks: number[];
-  months: string[];
-  data: number[][]; // [weekIndex][monthIndex]
-}
-
-export interface ProcessingVolumesData {
-  date: string;
-  records: number;
-  rate: number;
-}
-
-export interface OperatorEfficiencyData {
-  id: string;
-  operator: string;
-  role: string;
-  processed: number;
-  accuracy: number;
-  avgTime: string;
-  status: 'Online' | 'Offline' | 'Busy';
-}
-
-export interface OperatorPerformanceComparisonData {
-  name: string;
-  processed: number;
-  errors: number;
-}
-
 export interface ValidationStatusData {
   name: string;
   value: number;
-}
-
-export interface OperatorActivityHeatmapData {
-  hours: string[];
-  days: string[];
-  data: number[][]; // [hourIndex][dayIndex]
 }
 
 export interface StructureSanitaire {
@@ -167,19 +112,4 @@ export interface UpdateCatalogueDto {
   rangs_par_patient?: number;
 }
 
-export type ExportFormat = 'csv' | 'pdf';
-
-export interface ExportRecord {
-  id: string;
-  fileName: string;
-  date: string;
-  status: string;
-  downloadUrl?: string;
-}
-
-export interface ExportFilterOptions {
-  structure_id?: string;
-  catalogue_id?: string;
-  date_debut?: string;
-  date_fin?: string;
-}
+// Exports : types générés depuis l'API, voir `services/exports.service.ts`.

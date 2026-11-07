@@ -2,36 +2,40 @@
   "components": {
     "schemas": {
       "ActivityHeatmapData": {
+        "description": "Calendrier : lignes validées par jour (jours sans activité omis).",
         "properties": {
-          "data": {
+          "date_debut": {
+            "format": "date",
+            "title": "Date Debut",
+            "type": "string"
+          },
+          "date_fin": {
+            "format": "date",
+            "title": "Date Fin",
+            "type": "string"
+          },
+          "jours": {
             "items": {
-              "items": {
-                "type": "integer"
-              },
-              "type": "array"
+              "$ref": "#/components/schemas/JourActivite"
             },
-            "title": "Data",
+            "title": "Jours",
             "type": "array"
           },
-          "months": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Months",
-            "type": "array"
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
           },
-          "weeks": {
-            "items": {
-              "type": "integer"
-            },
-            "title": "Weeks",
-            "type": "array"
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
-          "weeks",
-          "months",
-          "data"
+          "date_debut",
+          "date_fin",
+          "jours",
+          "total",
+          "maximum"
         ],
         "title": "ActivityHeatmapData",
         "type": "object"
@@ -179,6 +183,18 @@
             ],
             "description": "UUID Keycloak de l'utilisateur qui a fait l'action. NULL si action publique (ex: change-password) ou utilisateur supprimé.",
             "title": "Id Utilisateur Acteur"
+          },
+          "nom_acteur": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nom de l'auteur (`utilisateur.nom_prenom`), None si inconnu ou supprimé.",
+            "title": "Nom Acteur"
           },
           "payload": {
             "anyOf": [
@@ -367,6 +383,31 @@
         ],
         "title": "CategorieRejet",
         "type": "string"
+      },
+      "CelluleActivite": {
+        "properties": {
+          "jour": {
+            "description": "0 = lundi … 6 = dimanche.",
+            "title": "Jour",
+            "type": "integer"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "integer"
+          },
+          "tranche": {
+            "description": "Index dans `tranches` ; len(tranches) = hors heures.",
+            "title": "Tranche",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jour",
+          "tranche",
+          "nombre"
+        ],
+        "title": "CelluleActivite",
+        "type": "object"
       },
       "ChampCatalogue": {
         "description": "Un champ à extraire par l'OCR pour un registre donné.",
@@ -564,9 +605,33 @@
       },
       "DashboardStat": {
         "properties": {
-          "change": {
-            "title": "Change",
-            "type": "string"
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "evolution_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Variation des 30 derniers jours vs les 30 précédents (%). None si non pertinent ou sans base de comparaison.",
+            "title": "Evolution Pct"
+          },
+          "hausse_favorable": {
+            "description": "Une hausse est-elle une bonne nouvelle (couleur côté front) ?",
+            "title": "Hausse Favorable",
+            "type": "boolean"
           },
           "icon": {
             "anyOf": [
@@ -578,10 +643,6 @@
               }
             ],
             "title": "Icon"
-          },
-          "positive": {
-            "title": "Positive",
-            "type": "boolean"
           },
           "title": {
             "title": "Title",
@@ -605,8 +666,7 @@
         "required": [
           "title",
           "value",
-          "change",
-          "positive"
+          "hausse_favorable"
         ],
         "title": "DashboardStat",
         "type": "object"
@@ -931,7 +991,7 @@
       },
       "ExportCreate": {
         "additionalProperties": false,
-        "description": "Body de `POST /exports` — filtres tous optionnels.\n\nUn export sans filtre (aucun paramètre) = tout ce que voit l'admin\ndemandeur (scope implicite : sa structure sanitaire).\n\nLe filtre `id_structure_filtre` est ignoré côté service — le scope\nde l'admin est appliqué implicitement (impossible d'exporter la\nstructure d'un autre admin, invariant Option A du chantier Auth).",
+        "description": "Body de `POST /exports` — filtres tous optionnels.\n\nUn export sans filtre (aucun paramètre) = tout ce que voit le demandeur :\n- ADMIN : sa structure sanitaire, toujours (invariant Option A) — un\n  `id_structure` différent est refusé (403) ;\n- SUPERADMIN : toutes les structures, ou celle passée dans `id_structure`.",
         "examples": [
           {
             "annee_version": 2018,
@@ -978,6 +1038,19 @@
               }
             ],
             "title": "Date Fin"
+          },
+          "id_structure": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SUPERADMIN : limiter à une structure (absent = toutes). ADMIN : sa structure seulement.",
+            "title": "Id Structure"
           },
           "type_registre": {
             "anyOf": [
@@ -1180,6 +1253,25 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "JourActivite": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "nombre"
+        ],
+        "title": "JourActivite",
+        "type": "object"
+      },
       "LoginRequest": {
         "additionalProperties": false,
         "description": "Identifiants soumis par le client (mobile ou web).",
@@ -1230,7 +1322,20 @@
         "type": "object"
       },
       "OcrConfidenceData": {
+        "description": "Nombre de pages par tranche de score de confiance OCR.",
         "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "HIGH (≥ 80), MEDIUM (50–80), LOW (< 50).",
+            "title": "Code"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1247,68 +1352,113 @@
         "title": "OcrConfidenceData",
         "type": "object"
       },
-      "OcrPerformanceData": {
+      "OperateurActivite": {
         "properties": {
-          "name": {
-            "title": "Name",
+          "id_keycloak": {
+            "format": "uuid",
+            "title": "Id Keycloak",
             "type": "string"
           },
-          "value": {
-            "title": "Value",
-            "type": "number"
+          "nom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nom"
           }
         },
         "required": [
-          "name",
-          "value"
+          "id_keycloak"
         ],
-        "title": "OcrPerformanceData",
+        "title": "OperateurActivite",
         "type": "object"
       },
       "OperatorActivityHeatmapData": {
+        "description": "Actions (lignes revues + pages envoyées) par jour × tranche de 2 h (cellules vides omises).",
         "properties": {
-          "data": {
+          "cellules": {
             "items": {
-              "items": {
-                "type": "integer"
-              },
-              "type": "array"
+              "$ref": "#/components/schemas/CelluleActivite"
             },
-            "title": "Data",
+            "title": "Cellules",
             "type": "array"
           },
-          "days": {
+          "date_debut": {
+            "format": "date",
+            "title": "Date Debut",
+            "type": "string"
+          },
+          "date_fin": {
+            "format": "date",
+            "title": "Date Fin",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "operateurs": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/OperateurActivite"
             },
-            "title": "Days",
+            "title": "Operateurs",
             "type": "array"
           },
-          "hours": {
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "tranches": {
+            "description": "Heure de début de chaque tranche de 2 h (UTC).",
             "items": {
-              "type": "string"
+              "type": "integer"
             },
-            "title": "Hours",
+            "title": "Tranches",
             "type": "array"
           }
         },
         "required": [
-          "hours",
-          "days",
-          "data"
+          "date_debut",
+          "date_fin",
+          "tranches",
+          "cellules",
+          "total",
+          "maximum",
+          "operateurs"
         ],
         "title": "OperatorActivityHeatmapData",
         "type": "object"
       },
       "OperatorEfficiencyData": {
         "properties": {
-          "accuracy": {
-            "title": "Accuracy",
-            "type": "number"
+          "delai_moyen_secondes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Délai moyen entre l'envoi de la page et la validation de la ligne.",
+            "title": "Delai Moyen Secondes"
           },
-          "avgTime": {
-            "title": "Avgtime",
-            "type": "string"
+          "derniere_activite": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dernière ligne revue.",
+            "title": "Derniere Activite"
           },
           "id": {
             "title": "Id",
@@ -1319,6 +1469,7 @@
             "type": "string"
           },
           "processed": {
+            "description": "Lignes revues (validées + rejetées).",
             "title": "Processed",
             "type": "integer"
           },
@@ -1326,9 +1477,17 @@
             "title": "Role",
             "type": "string"
           },
-          "status": {
-            "title": "Status",
-            "type": "string"
+          "taux_validation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lignes validées / lignes revues (%).",
+            "title": "Taux Validation"
           }
         },
         "required": [
@@ -1336,32 +1495,32 @@
           "operator",
           "role",
           "processed",
-          "accuracy",
-          "avgTime",
-          "status"
+          "taux_validation",
+          "delai_moyen_secondes",
+          "derniere_activite"
         ],
         "title": "OperatorEfficiencyData",
         "type": "object"
       },
       "OperatorPerformanceComparisonData": {
         "properties": {
-          "errors": {
-            "title": "Errors",
-            "type": "integer"
-          },
           "name": {
             "title": "Name",
             "type": "string"
           },
-          "processed": {
-            "title": "Processed",
+          "rejetees": {
+            "title": "Rejetees",
+            "type": "integer"
+          },
+          "validees": {
+            "title": "Validees",
             "type": "integer"
           }
         },
         "required": [
           "name",
-          "processed",
-          "errors"
+          "validees",
+          "rejetees"
         ],
         "title": "OperatorPerformanceComparisonData",
         "type": "object"
@@ -1677,7 +1836,20 @@
         "type": "object"
       },
       "ProcessingEfficiencyData": {
+        "description": "Nombre de pages par statut de traitement.",
         "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Statut de traitement (RECU, A_VALIDER…).",
+            "title": "Code"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1701,6 +1873,7 @@
             "type": "string"
           },
           "rate": {
+            "description": "Part des pages envoyées ce jour-là déjà validées (%).",
             "title": "Rate",
             "type": "number"
           },
@@ -4456,6 +4629,7 @@
     },
     "/api/v1/dashboard/activity-heatmap": {
       "get": {
+        "description": "Lignes validées par jour sur 12 mois.",
         "operationId": "get_activity_heatmap_api_v1_dashboard_activity_heatmap_get",
         "parameters": [
           {
@@ -4566,68 +4740,30 @@
         ]
       }
     },
-    "/api/v1/dashboard/ocr-performance": {
+    "/api/v1/dashboard/operator-activity-heatmap": {
       "get": {
-        "operationId": "get_ocr_performance_api_v1_dashboard_ocr_performance_get",
+        "description": "Actions par jour × tranche horaire sur 4 semaines.",
+        "operationId": "get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get",
         "parameters": [
           {
-            "in": "cookie",
-            "name": "osiris_access",
+            "description": "Limiter à un opérateur (id_keycloak).",
+            "in": "query",
+            "name": "id_operateur",
             "required": false,
             "schema": {
               "anyOf": [
                 {
+                  "format": "uuid",
                   "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Osiris Access"
+              "description": "Limiter à un opérateur (id_keycloak).",
+              "title": "Id Operateur"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/OcrPerformanceData"
-                  },
-                  "title": "Response Get Ocr Performance Api V1 Dashboard Ocr Performance Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
           },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Get Ocr Performance",
-        "tags": [
-          "Dashboard"
-        ]
-      }
-    },
-    "/api/v1/dashboard/operator-activity-heatmap": {
-      "get": {
-        "operationId": "get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get",
-        "parameters": [
           {
             "in": "cookie",
             "name": "osiris_access",
@@ -5599,7 +5735,7 @@
         ]
       },
       "post": {
-        "description": "Crée une demande d'export (statut `EN_ATTENTE`) et dispatch une tâche\nCelery `generer_export`. L'admin polle `GET /exports/{id_export}` jusqu'à\nobtenir `statut=PRET` + `download_url`.\n\nLe scope structure est **implicite** : l'admin exporte uniquement les\ndonnées de sa propre `structure_sanitaire` (invariant Option A).",
+        "description": "Crée une demande d'export (statut `EN_ATTENTE`) et dispatch une tâche\nCelery `generer_export`. L'admin polle `GET /exports/{id_export}` jusqu'à\nobtenir `statut=PRET` + `download_url`.\n\nScope structure : un ADMIN exporte uniquement sa `structure_sanitaire`\n(invariant Option A, `id_structure` différent → 403) ; un SUPERADMIN\nexporte toutes les structures ou celle passée dans `id_structure`.",
         "operationId": "post_export_api_v1_exports_post",
         "parameters": [
           {
@@ -6607,6 +6743,25 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "description": "Recherche libre : nom de l'agent, structure, district, type, année, début d'ID.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Recherche libre : nom de l'agent, structure, district, type, année, début d'ID.",
+              "title": "Q"
             }
           },
           {

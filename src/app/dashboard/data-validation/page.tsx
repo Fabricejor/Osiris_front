@@ -13,8 +13,8 @@ import {
   sessionFolderStatus,
   sessionLabel,
   sessionSousTitre,
-  sessionTexteRecherche,
 } from '@/services/sessions.service';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Loader2 } from 'lucide-react';
 import {
   Search,
@@ -26,7 +26,6 @@ import {
   Calendar,
   Clock,
   Tag,
-  Pin,
   Activity,
   List,
   LayoutGrid,
@@ -53,7 +52,6 @@ type FolderData = {
   clinique: string | null;
   district: string | null;
   dernierUpload: string | null;
-  searchText: string;
 };
 
 // ── Mock Data Removed ──────────────────────────────────────────
@@ -83,9 +81,12 @@ export default function DataValidationPage() {
   const [selectedFolder, setSelectedFolder] = useState<FolderData | null>(null);
   const { language, t } = useTranslation();
 
+  // Recherche faite par l'API sur toutes les sessions visibles (pas seulement les 50 chargées).
+  const rechercheServeur = useDebounce(search.trim());
   const { data, isLoading } = useQuery({
-    queryKey: ['sessions'],
-    queryFn: () => SessionsService.getSessions(50, 0),
+    queryKey: ['sessions', rechercheServeur],
+    queryFn: () => SessionsService.getSessions(50, 0, rechercheServeur),
+    placeholderData: (precedent) => precedent,
   });
 
   const folders: FolderData[] = useMemo(() => {
@@ -106,16 +107,13 @@ export default function DataValidationPage() {
       clinique: session.clinique ?? null,
       district: session.district ?? null,
       dernierUpload: session.date_dernier_upload ?? null,
-      searchText: sessionTexteRecherche(session),
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, language]);
 
   const filteredFolders = useMemo(() => {
     return folders.filter((f) => {
-      const matchesSearch = f.searchText.includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || f.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      return statusFilter === 'all' || f.status === statusFilter;
     });
   }, [folders, search, statusFilter, language]);
 
@@ -164,6 +162,12 @@ export default function DataValidationPage() {
           ))}
         </div>
 
+        {data && viewMode === 'folders' && (
+          <span className="text-[11px] text-gray-400">
+            {t('sessions_total', { shown: data.items.length, total: data.total })}
+          </span>
+        )}
+
         {/* View Toggle */}
         <div className="ml-auto flex items-center bg-white border border-gray-200 p-0.5 rounded-xl shadow-sm gap-0.5">
           <button
@@ -186,7 +190,7 @@ export default function DataValidationPage() {
       {/* Main content area */}
       <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
         {viewMode === 'details' ? (
-          <DetailsTable search={search} statusFilter={statusFilter} />
+          <DetailsTable search={rechercheServeur} statusFilter={statusFilter} />
         ) : (
           <>
             {/* Folders Grid */}
@@ -383,17 +387,6 @@ export default function DataValidationPage() {
                     </div>
 
                     {/* Divider */}
-                    <div className="mx-4 h-px bg-gray-100" />
-
-                    {/* Quick actions */}
-                    <div className="p-4 space-y-2">
-                      <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
-                        <Pin className="w-3.5 h-3.5" /> {t("pinned_items")}
-                      </button>
-                      <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
-                        <Activity className="w-3.5 h-3.5" /> {t("activity")}
-                      </button>
-                    </div>
 
                     {/* Open button */}
                     <div className="p-4 mt-auto border-t border-gray-100">

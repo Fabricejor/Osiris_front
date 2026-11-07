@@ -7,6 +7,7 @@ import { Mail, Lock, Eye, EyeOff, Globe, ChevronDown } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Toaster, toast } from "sonner";
 import { AuthService } from "@/services/auth.service";
+import { ApiError } from "@/services/apiErrors";
 import { useAuthStore } from "@/store/authStore";
 import { isLockedOut, recordFailedLoginAttempt, resetFailedLoginAttempts } from "@/utils/authLockout";
 
@@ -43,6 +44,8 @@ export default function Login() {
         return t('login_success');
       },
       error: (err) => {
+        // 401 au login = identifiants refusés : message dédié plutôt que « authentification requise ».
+        if (err instanceof ApiError && err.status === 401) return t("login_error");
         return err.message || t("login_error");
       },
     });
