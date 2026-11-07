@@ -568,4 +568,27 @@ export const fr: Record<keyof typeof en, string> = {
 
   // Sessions search
   sessions_total: "{shown} sur {total} sessions",
+
+  // API errors
+  error_invalid_token: "Votre session est invalide. Veuillez vous reconnecter.",
+  error_token_expired: "Votre session a expiré. Veuillez vous reconnecter.",
+  error_agent_terrain_manquant: "Aucun profil agent terrain n'est associé à ce compte. Contactez un administrateur.",
+  error_session_not_found: "La session de scan est introuvable.",
+  error_session_forbidden: "Vous n'avez pas accès à cette session de scan.",
+  error_session_closed: "Cette session de scan est déjà clôturée.",
+  error_session_conflict: "Les paramètres de la session ne correspondent pas à la session existante.",
+  error_catalogue_not_found: "Aucun catalogue n'existe pour ce type de registre et cette année.",
+  error_storage_object_missing: "L'image est introuvable dans le stockage.",
+  error_bad_request: "La requête est invalide.",
+  error_unauthorized: "Authentification requise.",
+  error_forbidden: "Vous n'avez pas les droits pour effectuer cette action.",
+  error_not_found: "La ressource demandée est introuvable.",
+  error_conflict: "Cette action est en conflit avec l'état actuel (modifié entre-temps ?). Rafraîchissez puis réessayez.",
+  error_payload_too_large: "Le fichier est trop volumineux.",
+  error_validation: "Certaines données envoyées sont invalides.",
+  error_rate_limited: "Trop de requêtes. Patientez un instant puis réessayez.",
+  error_internal: "Une erreur inattendue est survenue sur le serveur.",
+  error_service_unavailable: "Le service est temporairement indisponible. Réessayez dans un instant.",
+  error_unknown: "Une erreur est survenue.",
+  error_network: "Impossible de joindre le serveur. Vérifiez votre connexion.",
 };

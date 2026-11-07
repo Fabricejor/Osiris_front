@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { env } from '@/utils/env';
 import { logger } from '@/utils/logger';
 import { logSecurityEventClient } from '@/utils/securityMonitor';
+import { creerApiError, creerErreurReseau } from './apiErrors';
 
 const API_BASE_URL = env.NEXT_PUBLIC_API_URL;
 
@@ -69,8 +70,11 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
   };
 
   try {
-    // 2. L'appel HTTP
-    let response = await fetch(`${API_BASE_URL}${endpoint}`, finalOptions);
+    // 2. L'appel HTTP (une TypeError = API injoignable → message traduit)
+    const appeler = () => fetch(`${API_BASE_URL}${endpoint}`, finalOptions).catch((e: unknown) => {
+      throw creerErreurReseau(e);
+    });
+    let response = await appeler();
 
     // 2b. Access token expiré : on tente UN refresh (cookie httpOnly) puis on
     // rejoue la requête. On ne déconnecte que si le refresh échoue.
@@ -78,7 +82,7 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
     if (response.status === 401 && !NO_REFRESH_ENDPOINTS.includes(endpointPath)) {
       const refreshed = await refreshSession();
       if (refreshed) {
-        response = await fetch(`${API_BASE_URL}${endpoint}`, finalOptions);
+        response = await appeler();
       }
     }
 
@@ -98,20 +102,14 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
          });
       }
       
-      // Tentative de lecture du body JSON pour extraire le "detail"
-      let errorMessage = `Erreur HTTP: ${response.status} - ${response.statusText}`;
+      // Corps `{detail, code}` : message traduit d'après `code` (cf. apiErrors.ts).
+      let corps: unknown = null;
       try {
-        const errorData = await response.json();
-        if (errorData && errorData.detail) {
-          errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
-        }
-      } catch (e) {
-        // Le body n'est pas du JSON, on garde le message générique
+        corps = await response.json();
+      } catch {
+        // Corps non JSON (proxy, page d'erreur) : code déduit du statut HTTP.
       }
-      
-      const error = new Error(errorMessage);
-      (error as any).status = response.status;
-      throw error;
+      throw creerApiError(response.status, corps);
     }
     
     // Si la réponse est 204 No Content, on ne parse pas le JSON

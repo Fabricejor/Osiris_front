@@ -565,4 +565,27 @@ export const en = {
 
   // Sessions search
   sessions_total: "{shown} of {total} sessions",
+
+  // API errors
+  error_invalid_token: "Your session is invalid. Please sign in again.",
+  error_token_expired: "Your session has expired. Please sign in again.",
+  error_agent_terrain_manquant: "No field agent profile is linked to this account. Contact an administrator.",
+  error_session_not_found: "The scan session was not found.",
+  error_session_forbidden: "You do not have access to this scan session.",
+  error_session_closed: "This scan session is already closed.",
+  error_session_conflict: "The session parameters do not match the existing session.",
+  error_catalogue_not_found: "No catalogue exists for this register type and year.",
+  error_storage_object_missing: "The image was not found in storage.",
+  error_bad_request: "The request is invalid.",
+  error_unauthorized: "Authentication required.",
+  error_forbidden: "You do not have permission to perform this action.",
+  error_not_found: "The requested resource was not found.",
+  error_conflict: "This action conflicts with the current state (it may have been changed by someone else). Refresh and try again.",
+  error_payload_too_large: "The file is too large.",
+  error_validation: "Some of the data sent is invalid.",
+  error_rate_limited: "Too many requests. Please wait a moment and try again.",
+  error_internal: "An unexpected server error occurred.",
+  error_service_unavailable: "The service is temporarily unavailable. Try again shortly.",
+  error_unknown: "An error occurred.",
+  error_network: "Unable to reach the server. Check your connection.",
 };
