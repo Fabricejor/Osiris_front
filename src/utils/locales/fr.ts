@@ -667,4 +667,15 @@ export const fr: Record<keyof typeof en, string> = {
   wrong_current_password: "Le mot de passe actuel est incorrect.",
   profile_managed_by_admin: "Pour modifier votre nom, e-mail ou téléphone, contactez un administrateur.",
   profile_load_error: "Impossible de charger votre profil.",
+
+  // Exports scope
+  export_scope_admin: "L'export couvre uniquement les données validées de votre structure, au format CSV.",
+  export_scope_superadmin: "En tant que superadmin, vous pouvez exporter toutes les structures ou une seule. Format : CSV.",
+  export_all_structures: "Toutes les structures",
+
+  // Exports stuck / delete
+  export_statut_bloque: "Bloqué",
+  export_bloque_title: "Aucune progression depuis plus de 2 h : la tâche a sans doute été perdue. Vous pouvez la supprimer et relancer l'export.",
+  confirm_delete_export: "Supprimer cet export ?",
+  export_deleted: "Export supprimé.",
 };

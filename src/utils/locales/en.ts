@@ -664,4 +664,15 @@ export const en = {
   wrong_current_password: "Current password is incorrect.",
   profile_managed_by_admin: "To change your name, email or phone, contact an administrator.",
   profile_load_error: "Unable to load your profile.",
+
+  // Exports scope
+  export_scope_admin: "The export covers the validated data of your facility only, in CSV format.",
+  export_scope_superadmin: "As a superadmin, you can export all facilities or a single one. Format: CSV.",
+  export_all_structures: "All facilities",
+
+  // Exports stuck / delete
+  export_statut_bloque: "Stuck",
+  export_bloque_title: "No progress for over 2 hours: the task was probably lost. You can delete it and start again.",
+  confirm_delete_export: "Delete this export?",
+  export_deleted: "Export deleted.",
 };

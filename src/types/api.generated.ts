@@ -773,8 +773,9 @@ export interface paths {
          *     Celery `generer_export`. L'admin polle `GET /exports/{id_export}` jusqu'à
          *     obtenir `statut=PRET` + `download_url`.
          *
-         *     Le scope structure est **implicite** : l'admin exporte uniquement les
-         *     données de sa propre `structure_sanitaire` (invariant Option A).
+         *     Scope structure : un ADMIN exporte uniquement sa `structure_sanitaire`
+         *     (invariant Option A, `id_structure` différent → 403) ; un SUPERADMIN
+         *     exporte toutes les structures ou celle passée dans `id_structure`.
          */
         post: operations["post_export_api_v1_exports_post"];
         delete?: never;
@@ -1680,12 +1681,10 @@ export interface components {
          * ExportCreate
          * @description Body de `POST /exports` — filtres tous optionnels.
          *
-         *     Un export sans filtre (aucun paramètre) = tout ce que voit l'admin
-         *     demandeur (scope implicite : sa structure sanitaire).
-         *
-         *     Le filtre `id_structure_filtre` est ignoré côté service — le scope
-         *     de l'admin est appliqué implicitement (impossible d'exporter la
-         *     structure d'un autre admin, invariant Option A du chantier Auth).
+         *     Un export sans filtre (aucun paramètre) = tout ce que voit le demandeur :
+         *     - ADMIN : sa structure sanitaire, toujours (invariant Option A) — un
+         *       `id_structure` différent est refusé (403) ;
+         *     - SUPERADMIN : toutes les structures, ou celle passée dans `id_structure`.
          */
         ExportCreate: {
             /** Annee Version */
@@ -1694,6 +1693,11 @@ export interface components {
             date_debut?: string | null;
             /** Date Fin */
             date_fin?: string | null;
+            /**
+             * Id Structure
+             * @description SUPERADMIN : limiter à une structure (absent = toutes). ADMIN : sa structure seulement.
+             */
+            id_structure?: string | null;
             type_registre?: components["schemas"]["TypeRegistre"] | null;
         };
         /**

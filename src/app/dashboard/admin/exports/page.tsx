@@ -3,9 +3,9 @@
 /**
  * Exports CSV des données validées.
  *
- * Le backend (`POST /exports`, `extra="forbid"`) ne prend que : type de registre,
- * année de version, période. L'export couvre implicitement la structure de
- * l'admin et est toujours en CSV — d'où l'absence de choix de structure / format.
+ * Le backend (`POST /exports`) prend : type de registre, année de version,
+ * période et, pour un SUPERADMIN seulement, la structure (absente = toutes).
+ * Un ADMIN exporte toujours sa propre structure. Format : toujours CSV.
  * La génération est asynchrone : la liste se rafraîchit tant qu'un export est en cours.
  */
 import React, { useState } from 'react';
@@ -13,9 +13,11 @@ import PageHeader from "@/components/ui/PageHeader";
 import { Download, FileText, Calendar, Loader2, Info } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ExportsService, type ExportCreate, type StatutExport } from '@/services/exports.service';
+import { ExportsService, type ExportCreate, type ExportRead, type StatutExport } from '@/services/exports.service';
 import { formatDateHeure } from '@/services/sessions.service';
 import { CataloguesService } from '@/services/catalogues.service';
+import { StructuresService } from '@/services/structures.service';
+import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -28,13 +30,30 @@ const STATUT: Record<StatutExport, { key: TranslationKey; classes: string }> = {
 
 const EN_COURS: StatutExport[] = ['EN_ATTENTE', 'EN_COURS'];
 
+/** Même seuil que le backend (`DELAI_EXPORT_BLOQUE`) : au-delà, l'export est supprimable. */
+const DELAI_BLOQUE_MS = 2 * 60 * 60 * 1000;
+
+function estBloque(exp: ExportRead): boolean {
+  if (!EN_COURS.includes(exp.statut)) return false;
+  const depuis = exp.date_debut_traitement ?? exp.date_creation;
+  return Date.now() - new Date(depuis).getTime() > DELAI_BLOQUE_MS;
+}
+
 export default function ExportsPage() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const estSuperadmin = useAuthStore((state) => state.user?.role) === 'SUPERADMIN';
   const [formData, setFormData] = useState({
+    structure_id: '',
     catalogue_id: '',
     date_debut: '',
     date_fin: '',
+  });
+
+  const { data: structures = [] } = useQuery({
+    queryKey: ['structures'],
+    queryFn: StructuresService.getAll,
+    enabled: estSuperadmin,
   });
 
   const { data: catalogues = [] } = useQuery({
@@ -46,8 +65,9 @@ export default function ExportsPage() {
     queryKey: ['recentExports'],
     queryFn: ExportsService.getRecentExports,
     // Génération asynchrone : on suit les exports tant qu'il y en a un en cours.
+    // Un export bloqué n'évoluera plus : inutile de le suivre.
     refetchInterval: (query) =>
-      (query.state.data ?? []).some((e) => EN_COURS.includes(e.statut)) ? 5000 : false,
+      (query.state.data ?? []).some((e) => EN_COURS.includes(e.statut) && !estBloque(e)) ? 5000 : false,
   });
 
   const exportMutation = useMutation({
@@ -72,6 +92,15 @@ export default function ExportsPage() {
     onError: (error: Error) => toast.error(error.message || t('download_error')),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => ExportsService.deleteExport(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recentExports'] });
+      toast.success(t('export_deleted'));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const handleGenerate = () => {
     const payload: ExportCreate = {};
     const catalogue = catalogues.find((c) => c.id === formData.catalogue_id);
@@ -79,6 +108,7 @@ export default function ExportsPage() {
       payload.type_registre = catalogue.type_registre as ExportCreate['type_registre'];
       payload.annee_version = catalogue.version;
     }
+    if (estSuperadmin && formData.structure_id) payload.id_structure = formData.structure_id;
     if (formData.date_debut) payload.date_debut = formData.date_debut;
     if (formData.date_fin) payload.date_fin = formData.date_fin;
     exportMutation.mutate(payload);
@@ -99,10 +129,27 @@ export default function ExportsPage() {
 
         <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
-          <span>{t("export_scope_info")}</span>
+          <span>{estSuperadmin ? t("export_scope_superadmin") : t("export_scope_admin")}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {estSuperadmin && (
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="export-structure" className="text-sm font-semibold text-gray-700">{t("health_facility")}</label>
+              <select
+                id="export-structure"
+                value={formData.structure_id}
+                onChange={e => setFormData({ ...formData, structure_id: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
+              >
+                <option value="">{t("export_all_structures")}</option>
+                {structures.map((s) => (
+                  <option key={s.id} value={s.id}>{s.nom}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="space-y-2 md:col-span-2">
             <label htmlFor="export-catalogue" className="text-sm font-semibold text-gray-700">{t("catalogue_register")}</label>
             <select
@@ -191,7 +238,11 @@ export default function ExportsPage() {
                 </tr>
               ) : (
                 recentExports.map((exp) => {
-                  const statut = STATUT[exp.statut];
+                  const bloque = estBloque(exp);
+                  const statut = bloque
+                    ? { key: 'export_statut_bloque' as TranslationKey, classes: 'bg-red-100 text-red-700' }
+                    : STATUT[exp.statut];
+                  const supprimable = !EN_COURS.includes(exp.statut) || bloque;
                   const registre = exp.type_registre_filtre
                     ? `${exp.type_registre_filtre}${exp.annee_version_filtre ? ` ${exp.annee_version_filtre}` : ''}`
                     : t('all_registers');
@@ -216,14 +267,14 @@ export default function ExportsPage() {
                       <td className="p-4 text-sm text-gray-600">{formatDateHeure(exp.date_creation)}</td>
                       <td className="p-4">
                         <span
-                          title={exp.message_erreur ?? undefined}
+                          title={bloque ? t('export_bloque_title') : (exp.message_erreur ?? undefined)}
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statut?.classes ?? 'bg-gray-100 text-gray-600'}`}
                         >
-                          {EN_COURS.includes(exp.statut) && <Loader2 className="w-3 h-3 animate-spin" />}
+                          {EN_COURS.includes(exp.statut) && !bloque && <Loader2 className="w-3 h-3 animate-spin" />}
                           {statut ? t(statut.key) : exp.statut}
                         </span>
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="p-4 text-right whitespace-nowrap">
                         {exp.statut === 'PRET' && (
                           <button
                             onClick={() => downloadMutation.mutate(exp.id_export)}
@@ -231,6 +282,17 @@ export default function ExportsPage() {
                             className="text-sm font-semibold text-[#65b741] hover:text-[#5aa43a] disabled:opacity-50"
                           >
                             {enTelechargement ? t('downloading') : t('download')}
+                          </button>
+                        )}
+                        {supprimable && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm(t('confirm_delete_export'))) deleteMutation.mutate(exp.id_export);
+                            }}
+                            disabled={deleteMutation.isPending && deleteMutation.variables === exp.id_export}
+                            className="ml-3 text-sm font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
+                          >
+                            {t('delete')}
                           </button>
                         )}
                       </td>

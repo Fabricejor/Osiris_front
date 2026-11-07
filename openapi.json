@@ -943,7 +943,7 @@
       },
       "ExportCreate": {
         "additionalProperties": false,
-        "description": "Body de `POST /exports` — filtres tous optionnels.\n\nUn export sans filtre (aucun paramètre) = tout ce que voit l'admin\ndemandeur (scope implicite : sa structure sanitaire).\n\nLe filtre `id_structure_filtre` est ignoré côté service — le scope\nde l'admin est appliqué implicitement (impossible d'exporter la\nstructure d'un autre admin, invariant Option A du chantier Auth).",
+        "description": "Body de `POST /exports` — filtres tous optionnels.\n\nUn export sans filtre (aucun paramètre) = tout ce que voit le demandeur :\n- ADMIN : sa structure sanitaire, toujours (invariant Option A) — un\n  `id_structure` différent est refusé (403) ;\n- SUPERADMIN : toutes les structures, ou celle passée dans `id_structure`.",
         "examples": [
           {
             "annee_version": 2018,
@@ -990,6 +990,19 @@
               }
             ],
             "title": "Date Fin"
+          },
+          "id_structure": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SUPERADMIN : limiter à une structure (absent = toutes). ADMIN : sa structure seulement.",
+            "title": "Id Structure"
           },
           "type_registre": {
             "anyOf": [
@@ -5611,7 +5624,7 @@
         ]
       },
       "post": {
-        "description": "Crée une demande d'export (statut `EN_ATTENTE`) et dispatch une tâche\nCelery `generer_export`. L'admin polle `GET /exports/{id_export}` jusqu'à\nobtenir `statut=PRET` + `download_url`.\n\nLe scope structure est **implicite** : l'admin exporte uniquement les\ndonnées de sa propre `structure_sanitaire` (invariant Option A).",
+        "description": "Crée une demande d'export (statut `EN_ATTENTE`) et dispatch une tâche\nCelery `generer_export`. L'admin polle `GET /exports/{id_export}` jusqu'à\nobtenir `statut=PRET` + `download_url`.\n\nScope structure : un ADMIN exporte uniquement sa `structure_sanitaire`\n(invariant Option A, `id_structure` différent → 403) ; un SUPERADMIN\nexporte toutes les structures ou celle passée dans `id_structure`.",
         "operationId": "post_export_api_v1_exports_post",
         "parameters": [
           {

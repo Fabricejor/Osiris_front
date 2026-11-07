@@ -35,4 +35,9 @@ export const ExportsService = {
       method: "GET",
     });
   },
+
+  /** Refusé (409) tant que l'export est en cours, sauf s'il est bloqué depuis plus de 2 h. */
+  deleteExport: async (id: string) => {
+    return apiClient<void>(`/v1/exports/${id}`, { method: "DELETE" });
+  },
 };
