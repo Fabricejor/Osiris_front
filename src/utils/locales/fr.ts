@@ -667,8 +667,8 @@ export const fr: Record<keyof typeof en, string> = {
   profile_load_error: "Impossible de charger votre profil.",
 
   // Exports scope
-  export_scope_admin: "L'export couvre uniquement les données validées de votre structure, au format CSV.",
-  export_scope_superadmin: "En tant que superadmin, vous pouvez exporter toutes les structures ou une seule. Format : CSV.",
+  export_scope_admin: "L'export couvre uniquement les données validées de votre structure.",
+  export_scope_superadmin: "En tant que superadmin, vous pouvez exporter toutes les structures ou une seule.",
   export_all_structures: "Toutes les structures",
 
   // Exports stuck / delete
@@ -707,4 +707,10 @@ export const fr: Record<keyof typeof en, string> = {
   ocr_band_low: "Faible (< 50 %)",
   pages_count: "{count} page(s)",
   statut_recu: "Reçue",
+
+  // Exports format
+  format_xlsx_title: "Rapport Excel (.xlsx)",
+  format_xlsx_desc: "Synthèse, une feuille par registre, complétude des champs et dictionnaire. Pour lire et partager.",
+  format_csv_title: "Données brutes (.csv)",
+  format_csv_desc: "Une ligne par visite, séparateur « ; ». Pour les outils d'analyse (Excel, R, Stata…).",
 };

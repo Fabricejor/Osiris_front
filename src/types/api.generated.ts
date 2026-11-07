@@ -1719,6 +1719,11 @@ export interface components {
             /** Date Fin */
             date_fin?: string | null;
             /**
+             * @description CSV (données brutes) ou XLSX (rapport Excel détaillé).
+             * @default CSV
+             */
+            format: components["schemas"]["FormatExport"];
+            /**
              * Id Structure
              * @description SUPERADMIN : limiter à une structure (absent = toutes). ADMIN : sa structure seulement.
              */
@@ -1750,6 +1755,8 @@ export interface components {
              * @description URL MinIO présignée (uniquement si statut=PRET, TTL court).
              */
             download_url?: string | null;
+            /** @default CSV */
+            format: components["schemas"]["FormatExport"];
             /**
              * Id Export
              * Format: uuid
@@ -1774,6 +1781,12 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * FormatExport
+         * @description Format du fichier d'export.
+         * @enum {string}
+         */
+        FormatExport: "CSV" | "XLSX";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */

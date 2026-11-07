@@ -664,8 +664,8 @@ export const en = {
   profile_load_error: "Unable to load your profile.",
 
   // Exports scope
-  export_scope_admin: "The export covers the validated data of your facility only, in CSV format.",
-  export_scope_superadmin: "As a superadmin, you can export all facilities or a single one. Format: CSV.",
+  export_scope_admin: "The export covers the validated data of your facility only.",
+  export_scope_superadmin: "As a superadmin, you can export all facilities or a single one.",
   export_all_structures: "All facilities",
 
   // Exports stuck / delete
@@ -704,4 +704,10 @@ export const en = {
   ocr_band_low: "Low (< 50 %)",
   pages_count: "{count} page(s)",
   statut_recu: "Received",
+
+  // Exports format
+  format_xlsx_title: "Excel report (.xlsx)",
+  format_xlsx_desc: "Summary, one sheet per register, field completeness and data dictionary. For reading and sharing.",
+  format_csv_title: "Raw data (.csv)",
+  format_csv_desc: "One row per visit, « ; » separator. For analysis tools (Excel, R, Stata…).",
 };

@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Exports CSV des données validées.
+ * Exports des données validées : rapport Excel détaillé (par défaut) ou CSV brut.
  *
  * Le backend (`POST /exports`) prend : type de registre, année de version,
  * période et, pour un SUPERADMIN seulement, la structure (absente = toutes).
- * Un ADMIN exporte toujours sa propre structure. Format : toujours CSV.
+ * Un ADMIN exporte toujours sa propre structure. Format : XLSX (rapport) ou CSV.
  * La génération est asynchrone : la liste se rafraîchit tant qu'un export est en cours.
  */
 import React, { useState } from 'react';
 import PageHeader from "@/components/ui/PageHeader";
-import { Download, FileText, Calendar, Loader2, Info } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Calendar, Loader2, Info } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ExportsService, type ExportCreate, type ExportRead, type StatutExport } from '@/services/exports.service';
@@ -43,7 +43,14 @@ export default function ExportsPage() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const estSuperadmin = useAuthStore((state) => state.user?.role) === 'SUPERADMIN';
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    format: ExportCreate['format'];
+    structure_id: string;
+    catalogue_id: string;
+    date_debut: string;
+    date_fin: string;
+  }>({
+    format: 'XLSX',
     structure_id: '',
     catalogue_id: '',
     date_debut: '',
@@ -102,7 +109,7 @@ export default function ExportsPage() {
   });
 
   const handleGenerate = () => {
-    const payload: ExportCreate = {};
+    const payload: ExportCreate = { format: formData.format };
     const catalogue = catalogues.find((c) => c.id === formData.catalogue_id);
     if (catalogue) {
       payload.type_registre = catalogue.type_registre as ExportCreate['type_registre'];
@@ -197,6 +204,37 @@ export default function ExportsPage() {
         <p className="-mt-3 text-xs text-gray-500">{t("export_period_hint")}</p>
         {periodeInvalide && <p className="text-sm text-red-600">{t("export_period_invalid")}</p>}
 
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-semibold text-gray-700 mb-2">{t("export_format")}</legend>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {([
+              ['XLSX', FileSpreadsheet, 'format_xlsx_title', 'format_xlsx_desc'],
+              ['CSV', FileText, 'format_csv_title', 'format_csv_desc'],
+            ] as const).map(([valeur, Icone, titre, desc]) => (
+              <label
+                key={valeur}
+                className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                  formData.format === valeur ? 'border-[#65b741] bg-emerald-50/60 ring-1 ring-[#65b741]/30' : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="format"
+                  value={valeur}
+                  checked={formData.format === valeur}
+                  onChange={() => setFormData({ ...formData, format: valeur })}
+                  className="mt-1 accent-[#65b741]"
+                />
+                <Icone className={`w-5 h-5 mt-0.5 shrink-0 ${valeur === 'XLSX' ? 'text-emerald-600' : 'text-gray-500'}`} />
+                <span>
+                  <span className="block text-sm font-semibold text-gray-800">{t(titre)}</span>
+                  <span className="block text-xs text-gray-500">{t(desc)}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <div className="pt-4 border-t border-gray-100 flex justify-end">
           <button
             onClick={handleGenerate}
@@ -255,9 +293,16 @@ export default function ExportsPage() {
                     <tr key={exp.id_export} className="hover:bg-gray-50/50 transition-colors">
                       <td className="p-4">
                         <div className="flex items-start gap-3">
-                          <FileText className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
+                          {exp.format === 'XLSX'
+                            ? <FileSpreadsheet className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
+                            : <FileText className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />}
                           <div>
-                            <div className="font-semibold text-gray-900 text-sm">{registre}</div>
+                            <div className="font-semibold text-gray-900 text-sm">
+                              {registre}
+                              <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">
+                                {exp.format === 'XLSX' ? 'Excel' : 'CSV'}
+                              </span>
+                            </div>
                             <div className="text-xs text-gray-500">{periode}</div>
                             {exp.nb_lignes_exportees != null && (
                               <div className="text-xs text-gray-500">{t('export_rows', { count: exp.nb_lignes_exportees })}</div>
