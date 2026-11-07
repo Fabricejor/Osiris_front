@@ -15,6 +15,9 @@ export interface User {
   /** Rôles Keycloak bruts (ex. ["admin", "superadmin"]). */
   roles?: string[];
   avatarUrl?: string;
+  /** Nom complet tel qu'enregistré (`nom_prenom`). */
+  fullName?: string;
+  phone?: string | null;
   status?: string;
   createdAt: string;
   updatedAt: string;

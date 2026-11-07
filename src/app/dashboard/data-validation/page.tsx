@@ -26,7 +26,6 @@ import {
   Calendar,
   Clock,
   Tag,
-  Pin,
   Activity,
   List,
   LayoutGrid,
@@ -388,17 +387,6 @@ export default function DataValidationPage() {
                     </div>
 
                     {/* Divider */}
-                    <div className="mx-4 h-px bg-gray-100" />
-
-                    {/* Quick actions */}
-                    <div className="p-4 space-y-2">
-                      <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
-                        <Pin className="w-3.5 h-3.5" /> {t("pinned_items")}
-                      </button>
-                      <button className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full py-1.5">
-                        <Activity className="w-3.5 h-3.5" /> {t("activity")}
-                      </button>
-                    </div>
 
                     {/* Open button */}
                     <div className="p-4 mt-auto border-t border-gray-100">

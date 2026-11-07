@@ -1352,6 +1352,11 @@ export interface components {
              */
             id_utilisateur_acteur: string | null;
             /**
+             * Nom Acteur
+             * @description Nom de l'auteur (`utilisateur.nom_prenom`), None si inconnu ou supprimé.
+             */
+            nom_acteur?: string | null;
+            /**
              * Payload
              * @description Données spécifiques à l'action (structure libre par type_action).
              */

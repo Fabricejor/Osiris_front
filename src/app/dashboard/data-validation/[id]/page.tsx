@@ -5,11 +5,9 @@ import { useTopBar } from '@/components/ui/TopBarContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   ChevronRight,
-  Download,
   Play,
   LayoutGrid,
   List as ListIcon,
-  Filter,
   Pencil,
   CheckCircle2,
   ShieldAlert,
@@ -22,7 +20,15 @@ import ValidationPopup from '@/components/features/data-validation/ValidationPop
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
-import { SessionsService, formatDateHeure, pageCategory, toPageView, type PageView, type SessionScan } from '@/services/sessions.service';
+import {
+  SessionsService,
+  formatDateHeure,
+  pageCategory,
+  toPageView,
+  type PageCategory,
+  type PageView,
+  type SessionScan,
+} from '@/services/sessions.service';
 
 
 
@@ -50,6 +56,21 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
   });
 
   const pages: PageView[] = useMemo(() => (pagesData?.items ?? []).map(toPageView), [pagesData]);
+  const [filtreCategorie, setFiltreCategorie] = useState<'all' | PageCategory>('all');
+  // Le popup de validation parcourt les pages affichées (même filtre, mêmes index).
+  const pagesAffichees = useMemo(
+    () => (filtreCategorie === 'all' ? pages : pages.filter((p) => pageCategory(p) === filtreCategorie)),
+    [pages, filtreCategorie],
+  );
+
+  /** Ouvre la validation sur la première page qui demande une action (à revoir, puis en attente). */
+  const demarrerValidation = () => {
+    setFiltreCategorie('all');
+    const cible = ['review', 'pending']
+      .map((c) => pages.findIndex((p) => pageCategory(p) === c))
+      .find((i) => i >= 0);
+    setSelectedPageIndex(cible ?? 0);
+  };
 
   // Relance de l'OCR d'une page en échec (admin de la structure / superadmin).
   const role = useAuthStore((state) => state.user?.role);
@@ -72,6 +93,24 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
     pages.forEach((p) => { acc[pageCategory(p)] += 1; });
     return acc;
   }, [pages]);
+
+  // État réel de la session : scan en cours côté mobile, puis d'après ses pages.
+  const badgeSession = (() => {
+    if (pagesLoading || sessionLoading) return null;
+    if (session.statut_session === 'EN_COURS') {
+      return { texte: t('session_badge_scanning'), classes: 'bg-blue-50 text-blue-700 border-blue-200', point: 'bg-blue-500 animate-pulse' };
+    }
+    if (pages.length === 0) {
+      return { texte: t('session_badge_no_pages'), classes: 'bg-gray-100 text-gray-600 border-gray-200', point: 'bg-gray-400' };
+    }
+    if (pageStats.review > 0) {
+      return { texte: t('session_badge_review', { count: pageStats.review }), classes: 'bg-red-50 text-red-700 border-red-200', point: 'bg-red-500' };
+    }
+    if (pageStats.pending > 0) {
+      return { texte: t('ready_for_validation'), classes: 'bg-amber-50 text-amber-700 border-amber-200', point: 'bg-amber-500 animate-pulse' };
+    }
+    return { texte: t('session_badge_validated'), classes: 'bg-emerald-100 text-emerald-700 border-emerald-200', point: 'bg-emerald-500' };
+  })();
 
   const getStatusColorClass = (status: string) => {
     if (status === 'review') return 'text-red-500';
@@ -116,17 +155,20 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('batch_title', { id: batchId })}</h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {t("ready_for_validation")}
-            </span>
+            {badgeSession && (
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${badgeSession.classes}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${badgeSession.point}`} />
+                {badgeSession.texte}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
-              <Download className="w-4 h-4" /> {t("export")}
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-emerald-200">
+            <button
+              type="button"
+              onClick={demarrerValidation}
+              disabled={pages.length === 0}
+              className="flex items-center gap-2 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-emerald-200">
               <Play className="w-4 h-4" /> {t("start_validation")}
             </button>
           </div>
@@ -220,9 +262,6 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase">{t("scanned_pages")}</h3>
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-bold border border-purple-100">
-                  <ShieldAlert className="w-3.5 h-3.5" /> {t("pii_review_pending")}
-                </div>
               </div>
               <div className="flex items-center gap-1.5 text-gray-500 bg-gray-100 p-0.5 rounded-lg">
                 <button
@@ -237,13 +276,21 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                 >
                   <ListIcon className="w-4 h-4" />
                 </button>
-                <button className="p-1.5 hover:bg-gray-200 rounded-md transition-colors ml-2">
-                  <Filter className="w-4 h-4" />
-                </button>
+                <select
+                  value={filtreCategorie}
+                  onChange={(e) => setFiltreCategorie(e.target.value as 'all' | PageCategory)}
+                  aria-label={t("show_pages")}
+                  className="ml-2 rounded-md border-none bg-transparent py-1 pl-2 pr-7 text-xs font-semibold text-gray-700 focus:ring-2 focus:ring-[#65b741]"
+                >
+                  <option value="all">{t("filter_all_pages")} ({pages.length})</option>
+                  <option value="review">{t("filter_review_pages")} ({pageStats.review})</option>
+                  <option value="pending">{t("filter_pending_pages")} ({pageStats.pending})</option>
+                  <option value="validated">{t("filter_validated_pages")} ({pageStats.validated})</option>
+                </select>
               </div>
             </div>
 
-            <div className={`p-5 overflow-y-auto flex-1 max-h-[640px] ${pagesLoading || pagesError || pages.length === 0
+            <div className={`p-5 overflow-y-auto flex-1 max-h-[640px] ${pagesLoading || pagesError || pagesAffichees.length === 0
                 ? 'flex items-center justify-center'
                 : `grid gap-4 ${pageViewMode === 'grid' ? 'grid-cols-4' : 'grid-cols-1'}`
               }`} style={{ scrollbarWidth: 'thin', gridAutoRows: 'max-content' }}>
@@ -254,10 +301,12 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                 </div>
               ) : pagesError ? (
                 <div className="text-red-500 text-center">{t("failed_load_pages")}</div>
-              ) : pages.length === 0 ? (
-                <div className="text-gray-500 text-center">{t("no_pages_found")}</div>
+              ) : pagesAffichees.length === 0 ? (
+                <div className="text-gray-500 text-center">
+                  {pages.length === 0 ? t("no_pages_found") : t("no_pages_in_filter")}
+                </div>
               ) : (
-                pages.map((page, index) => (
+                pagesAffichees.map((page, index) => (
                   <div
                     key={page.id}
                     className={`group relative flex bg-white rounded-lg border-2 transition-all ${pageViewMode === 'grid' ? 'flex-col' : 'flex-row items-center p-2'
@@ -424,7 +473,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
       <ValidationPopup
         isOpen={selectedPageIndex !== null}
         onClose={() => setSelectedPageIndex(null)}
-        pages={pages}
+        pages={pagesAffichees}
         initialPageIndex={selectedPageIndex || 0}
         sessionId={batchId}
       />

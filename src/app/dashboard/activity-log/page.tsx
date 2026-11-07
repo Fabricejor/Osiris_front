@@ -1,104 +1,125 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import {
-  Search,
-  Calendar,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight
-} from 'lucide-react';
+/**
+ * Journal d'activité (audit des actions métier).
+ *
+ * Filtres et pagination faits par l'API (`GET /audit` : type_action,
+ * date_debut, date_fin, limit/offset) — ils portent sur tout l'historique,
+ * pas seulement sur la page affichée. La recherche texte filtre la page chargée.
+ */
+import React, { useMemo, useState } from 'react';
+import { Search, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from 'lucide-react';
 
-import { AuditService } from '@/services/audit.service';
+import { AuditService, type AuditLogRead } from '@/services/audit.service';
 import { useQuery } from '@tanstack/react-query';
 import { format, isToday, isYesterday } from 'date-fns';
 import { enGB, fr as frLocale } from 'date-fns/locale';
-import type { AuditLog } from '@/types';
 import PageHeader from '@/components/ui/PageHeader';
 import AvatarInitiales from '@/components/ui/AvatarInitiales';
 import { useTranslation } from '@/hooks/useTranslation';
+import type { TranslationKey } from '@/utils/translations';
 
-// Mock data removed
+const PAR_PAGE = 50;
+
+/** Types d'action du backend (`TypeActionAudit`) → libellé traduit. */
+const ACTIONS: Record<string, TranslationKey> = {
+  VALIDATION_CLINIQUE: 'audit_validation_clinique',
+  REJET_CLINIQUE: 'audit_rejet_clinique',
+  SAISIE_PII: 'audit_saisie_pii',
+  CORRECTION_CLINIQUE: 'audit_correction_clinique',
+  CORRECTION_PII: 'audit_correction_pii',
+  CHANGE_PASSWORD: 'audit_change_password',
+  RESET_PASSWORD: 'audit_reset_password',
+  CREATE_USER: 'audit_create_user',
+  UPDATE_USER: 'audit_update_user',
+  OUVRIR_SESSION: 'audit_ouvrir_session',
+  ENREGISTRER_PAGE: 'audit_enregistrer_page',
+  CLOTURER_SESSION: 'audit_cloturer_session',
+  RETRAITER_PAGE: 'audit_retraiter_page',
+  SUPPRIMER_PAGE: 'audit_supprimer_page',
+  VALIDATION_PAGE: 'audit_validation_page',
+  REJET_PAGE: 'audit_rejet_page',
+  CREATE_STRUCTURE: 'audit_create_structure',
+  UPDATE_STRUCTURE: 'audit_update_structure',
+  CREATE_EXPORT: 'audit_create_export',
+  DELETE_EXPORT: 'audit_delete_export',
+  UPDATE_CATALOGUE: 'audit_update_catalogue',
+};
+
+/** Types de ressource (`TypeRessourceAudit`) → libellé traduit. */
+const RESSOURCES: Record<string, TranslationKey> = {
+  DONNEE_EXTRAITE: 'audit_res_donnee_extraite',
+  PII_CELLULE: 'audit_res_pii_cellule',
+  UTILISATEUR: 'audit_res_utilisateur',
+  SESSION_SCAN: 'audit_res_session_scan',
+  REGISTRE_SCANNE: 'audit_res_registre_scanne',
+  STRUCTURE_SANITAIRE: 'audit_res_structure_sanitaire',
+};
+
+type LigneJournal = { id: string; time: string; user: string; action: string; ressource: string; idRessource: string };
 
 export default function ActivityLogPage() {
   const { t, language } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [actionFilter, setActionFilter] = useState('All');
+  const [actionFilter, setActionFilter] = useState('');
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
+  const [page, setPage] = useState(0);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['audit-logs'],
-    queryFn: () => AuditService.getLogs(100, 0),
-  });
-
-  const gridTemplate = "grid-cols-[100px_200px_minmax(250px,_1fr)_120px_100px_120px]";
-
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'success':
-        return <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">{t("success_status")}</span>;
-      case 'pending':
-        return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold border border-amber-200">{t("pending")}</span>;
-      case 'error':
-        return <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold border border-rose-200">{t("error_status")}</span>;
-      default:
-        return <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold border border-gray-200">{status}</span>;
-    }
+  // Tout changement de filtre serveur repart de la première page.
+  const changerFiltre = (maj: () => void) => {
+    maj();
+    setPage(0);
   };
 
-  const filteredLogs = React.useMemo(() => {
-    if (!data?.items) return [];
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ['audit-logs', page, actionFilter, dateDebut, dateFin],
+    queryFn: () =>
+      AuditService.getLogs(PAR_PAGE, page * PAR_PAGE, {
+        type_action: actionFilter || undefined,
+        date_debut: dateDebut || undefined,
+        date_fin: dateFin || undefined,
+      }),
+    placeholderData: (precedent) => precedent,
+  });
 
-    return data.items.filter((log: AuditLog) => {
-      const logUser = log.id_utilisateur_acteur || 'System';
-      const logAction = log.type_action || '';
-      const logStatus = log.status || 'Success'; // Fallback if still missing
+  const total = data?.total ?? 0;
+  const nbPages = Math.max(1, Math.ceil(total / PAR_PAGE));
+  const libelleAction = (code: string) => (ACTIONS[code] ? t(ACTIONS[code]) : code);
 
-      const matchSearch = logUser.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        logAction.toLowerCase().includes(searchQuery.toLowerCase());
+  const groupedLogs = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const locale = language === 'fr' ? frLocale : enGB;
+    const groups: Record<string, LigneJournal[]> = {};
 
-      const matchStatus = statusFilter === 'All' || logStatus.toLowerCase() === statusFilter.toLowerCase();
+    (data?.items ?? []).forEach((log: AuditLogRead) => {
+      // Nom joint par l'API ; à défaut (compte supprimé) début de l'identifiant ; sans acteur = système.
+      const user = log.nom_acteur
+        || (log.id_utilisateur_acteur ? log.id_utilisateur_acteur.slice(0, 8) : t('system'));
+      const action = ACTIONS[log.type_action] ? t(ACTIONS[log.type_action]) : log.type_action;
+      if (q && ![user, action, log.type_action, log.id_ressource ?? ''].some((v) => v.toLowerCase().includes(q))) return;
 
-      let matchAction = true;
-      if (actionFilter !== 'All') {
-        matchAction = logAction.toLowerCase().includes(actionFilter.toLowerCase());
-      }
-
-      return matchSearch && matchStatus && matchAction;
-    });
-  }, [data, searchQuery, statusFilter, actionFilter]);
-
-  const groupedLogs = React.useMemo(() => {
-    const groups: Record<string, any[]> = {};
-
-    filteredLogs.forEach((log) => {
       const date = new Date(log.date_action);
-      const locale = language === 'fr' ? frLocale : enGB;
       let dateStr = format(date, 'PP', { locale });
-
       if (isToday(date)) dateStr = t('today_prefix', { date: dateStr });
       else if (isYesterday(date)) dateStr = t('yesterday_prefix', { date: dateStr });
 
-      if (!groups[dateStr]) groups[dateStr] = [];
-      groups[dateStr].push({
-        id: log.id,
+      (groups[dateStr] ??= []).push({
+        id: log.id_audit_log,
         time: format(date, 'p', { locale }),
-        user: log.user_name || log.id_utilisateur_acteur || t('system'),
-        action: log.type_action,
-        docId: log.id_ressource || '-',
-        status: log.status || 'Success',
-        ip: log.ip_address || '-',
+        user,
+        action,
+        ressource: RESSOURCES[log.type_ressource] ? t(RESSOURCES[log.type_ressource]) : log.type_ressource,
+        idRessource: log.id_ressource ? log.id_ressource.slice(0, 8) : '-',
       });
     });
 
-    return Object.entries(groups).map(([dateStr, logs]) => ({
-      dateStr,
-      logs
-    }));
+    return Object.entries(groups).map(([dateStr, logs]) => ({ dateStr, logs }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredLogs, language]);
+  }, [data, searchQuery, language]);
+
+  const gridTemplate = "grid-cols-[90px_220px_minmax(220px,_1fr)_180px_110px]";
+  const periodeInvalide = Boolean(dateDebut && dateFin && dateDebut > dateFin);
 
   return (
     <div className="h-full flex flex-col p-6 bg-gray-50/50 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
@@ -110,9 +131,9 @@ export default function ActivityLogPage() {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-8 flex-wrap">
+      <div className="flex items-end gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-8 flex-wrap">
 
-        {/* Search */}
+        {/* Search (page chargée) */}
         <div className="flex-1 min-w-[200px]">
           <label htmlFor="searchInput" className="block text-xs font-bold text-gray-700 mb-1.5">{t("search")}</label>
           <div className="relative">
@@ -128,46 +149,59 @@ export default function ActivityLogPage() {
           </div>
         </div>
 
-        {/* Date Range */}
-        <div className="w-[240px]">
-          <span id="dateRangeLabel" className="block text-xs font-bold text-gray-700 mb-1.5">{t("date_range")}</span>
-          <button aria-labelledby="dateRangeLabel" className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="font-medium">{t("all_dates")}</span>
+        {/* Période */}
+        <fieldset className="flex flex-col">
+          <legend className="block text-xs font-bold text-gray-700 mb-1.5">{t("date_range")}</legend>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="date"
+                aria-label={t("start_date_label")}
+                value={dateDebut}
+                onChange={(e) => changerFiltre(() => setDateDebut(e.target.value))}
+                className="pl-9 pr-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-600 outline-none focus:ring-2 focus:ring-[#65b741]"
+              />
             </div>
-          </button>
-        </div>
-
-        {/* Status */}
-        <fieldset className="flex flex-col">
-          <legend className="block text-xs font-bold text-gray-700 mb-1.5">{t("status")}</legend>
-          <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white h-[38px]">
-            <button onClick={() => setStatusFilter('All')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t("all_filter")}</button>
-            <button onClick={() => setStatusFilter('Success')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'Success' ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}>{t("success_status")}</button>
-            <button onClick={() => setStatusFilter('Pending')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'Pending' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>{t("pending")}</button>
-            <button onClick={() => setStatusFilter('Error')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${statusFilter === 'Error' ? 'bg-rose-500 text-white' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}>{t("error_status")}</button>
+            <span className="text-gray-400">→</span>
+            <input
+              type="date"
+              aria-label={t("end_date_label")}
+              value={dateFin}
+              onChange={(e) => changerFiltre(() => setDateFin(e.target.value))}
+              className="px-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-600 outline-none focus:ring-2 focus:ring-[#65b741]"
+            />
           </div>
         </fieldset>
 
-        {/* Action Type */}
-        <fieldset className="flex flex-col">
-          <legend className="block text-xs font-bold text-gray-700 mb-1.5">{t("action_type")}</legend>
-          <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white h-[38px]">
-            <button onClick={() => setActionFilter('All')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t("all_filter")}</button>
-            <button onClick={() => setActionFilter('Access')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Access' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>{t("action_access")}</button>
-            <button onClick={() => setActionFilter('Edit')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Edit' ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}>{t("edit_action")}</button>
-            <button onClick={() => setActionFilter('Upload')} className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${actionFilter === 'Upload' ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}>{t("action_upload")}</button>
-          </div>
-        </fieldset>
-
-        {/* Filter Button */}
-        <div className="flex items-end h-[58px]">
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors h-[38px] shadow-sm">
-            <Filter className="w-4 h-4" /> {t("filter")}
-          </button>
+        {/* Type d'action */}
+        <div className="flex flex-col">
+          <label htmlFor="actionFilter" className="block text-xs font-bold text-gray-700 mb-1.5">{t("action_type")}</label>
+          <select
+            id="actionFilter"
+            value={actionFilter}
+            onChange={(e) => changerFiltre(() => setActionFilter(e.target.value))}
+            className="py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 outline-none focus:ring-2 focus:ring-[#65b741]"
+          >
+            <option value="">{t("all_filter")}</option>
+            {Object.keys(ACTIONS).map((code) => (
+              <option key={code} value={code}>{libelleAction(code)}</option>
+            ))}
+          </select>
         </div>
+
+        {(actionFilter || dateDebut || dateFin) && (
+          <button
+            type="button"
+            onClick={() => changerFiltre(() => { setActionFilter(''); setDateDebut(''); setDateFin(''); })}
+            className="px-3 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900"
+          >
+            {t("reset_filters")}
+          </button>
+        )}
       </div>
+
+      {periodeInvalide && <p className="-mt-6 mb-6 text-sm text-red-600">{t("export_period_invalid")}</p>}
 
       {/* Main Content Area */}
       <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
@@ -177,55 +211,44 @@ export default function ActivityLogPage() {
           <div>{t("col_timestamp")}</div>
           <div>{t("user_column")}</div>
           <div>{t("action_column")}</div>
+          <div>{t("col_resource")}</div>
           <div>{t("doc_id_column")}</div>
-          <div>{t("status")}</div>
-          <div>{t("ip_column")}</div>
         </div>
 
         {/* Timeline List */}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-          {groupedLogs.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full text-gray-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-[#65b741]" />
+            </div>
+          ) : isError ? (
+            <div className="text-center text-red-500 py-8">{t("audit_load_error")}</div>
+          ) : groupedLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
               <Search className="w-8 h-8 opacity-50" />
               <p>{t("no_logs_match")}</p>
             </div>
           ) : groupedLogs.map((group) => (
             <div key={group.dateStr} className="mb-10 last:mb-0">
-              {/* Group Date Header */}
               <h2 className="text-lg font-bold text-gray-900 mb-4">{group.dateStr}</h2>
 
               <div className="relative pl-10 space-y-4">
-                {/* Vertical Timeline Line */}
                 <div className="absolute left-[19px] top-4 bottom-[-16px] w-[2px] bg-gray-200" />
 
-                {group.logs.map((log, index) => (
-                  <div key={log.id || `log-${index}`} className="relative group">
-                    {/* Timeline Node */}
+                {group.logs.map((log) => (
+                  <div key={log.id} className="relative group">
                     <div className="absolute left-[-26px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-[3px] border-gray-300 bg-white z-10 group-hover:border-[#65b741] transition-colors" />
 
-                    {/* Row Card */}
                     <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow hover:border-[#65b741]/30">
                       <div className={`grid ${gridTemplate} gap-4 items-center`}>
-                        {/* Timestamp */}
                         <div className="text-sm font-bold text-gray-600">{log.time}</div>
-
-                        {/* User */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <AvatarInitiales nom={log.user} />
-                          <span className="text-sm font-bold text-gray-800">{log.user}</span>
+                          <span className="text-sm font-bold text-gray-800 truncate" title={log.user}>{log.user}</span>
                         </div>
-
-                        {/* Action */}
                         <div className="text-sm font-semibold text-gray-700 truncate pr-4">{log.action}</div>
-
-                        {/* Document ID */}
-                        <div className="text-sm font-bold text-gray-500">{log.docId}</div>
-
-                        {/* Status */}
-                        <div>{getStatusBadge(log.status)}</div>
-
-                        {/* IP Address */}
-                        <div className="text-sm font-medium text-gray-500">{log.ip}</div>
+                        <div className="text-sm text-gray-600 truncate">{log.ressource}</div>
+                        <div className="text-sm font-mono text-gray-500">{log.idRessource}</div>
                       </div>
                     </div>
                   </div>
@@ -235,31 +258,48 @@ export default function ActivityLogPage() {
           ))}
         </div>
 
-        {/* Pagination Controls */}
+        {/* Pagination (serveur) */}
         <div className="flex items-center justify-center gap-2 mt-8 border-t border-gray-100 pt-6">
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors disabled:opacity-50">
+          <button
+            onClick={() => setPage(0)}
+            disabled={page === 0}
+            aria-label={t("first_page")}
+            className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <ChevronsLeft className="w-4 h-4" />
           </button>
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors disabled:opacity-50">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            aria-label={t("previous_page")}
+            className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-1">
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 border border-gray-300 text-gray-800 text-sm font-bold">1</button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-transparent text-gray-500 hover:bg-gray-50 text-sm font-bold">2</button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-transparent text-gray-500 hover:bg-gray-50 text-sm font-bold">3</button>
-            <span className="px-1 text-gray-400">...</span>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-transparent text-gray-500 hover:bg-gray-50 text-sm font-bold">10</button>
-          </div>
+          <span className="px-3 text-sm font-semibold text-gray-700 flex items-center gap-2">
+            {t('page_of_total', { page: page + 1, total: nbPages })}
+            <span className="text-xs font-normal text-gray-400">({t('entries_count', { count: total })})</span>
+            {isFetching && !isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+          </span>
 
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
+          <button
+            onClick={() => setPage((p) => Math.min(nbPages - 1, p + 1))}
+            disabled={page >= nbPages - 1}
+            aria-label={t("next_page")}
+            className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <button className="p-2 border border-gray-200 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
+          <button
+            onClick={() => setPage(nbPages - 1)}
+            disabled={page >= nbPages - 1}
+            aria-label={t("last_page")}
+            className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <ChevronsRight className="w-4 h-4" />
           </button>
         </div>
-
       </div>
     </div>
   );

@@ -25,6 +25,32 @@ import {
 
 const columnHelper = createColumnHelper<SessionScan>();
 
+/** Télécharge `contenu` sous `nomFichier` (fichier généré dans le navigateur). */
+function telecharger(contenu: string, nomFichier: string, type: string) {
+  const url = URL.createObjectURL(new Blob([contenu], { type }));
+  const lien = document.createElement('a');
+  lien.href = url;
+  lien.download = nomFichier;
+  lien.click();
+  URL.revokeObjectURL(url);
+}
+
+const COLONNES_EXPORT = [
+  'id_session_scan', 'type_registre', 'annee_version', 'statut_session', 'statut_validation',
+  'operateur', 'clinique', 'district', 'nombre_pages', 'nb_pages_validees', 'nb_pages_rejetees',
+  'nb_pages_anomalie', 'score_confiance_moyen', 'date_debut', 'date_fin', 'date_dernier_upload',
+] as const;
+
+function enCsv(sessions: SessionScan[]): string {
+  const cellule = (v: unknown) => {
+    const texte = v === null || v === undefined ? '' : String(v);
+    return /[";\n,]/.test(texte) ? `"${texte.replace(/"/g, '""')}"` : texte;
+  };
+  const lignes = sessions.map((s) => COLONNES_EXPORT.map((c) => cellule(s[c])).join(';'));
+  // BOM UTF-8 : Excel lit correctement les accents.
+  return '\uFEFF' + [COLONNES_EXPORT.join(';'), ...lignes].join('\r\n');
+}
+
 const STATUS_TAG: Record<string, { bg: string; text: string; dot: string }> = {
   pending: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
   validated: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
@@ -147,11 +173,23 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
     <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white rounded-xl border border-gray-100 p-4">
         <div className="flex items-center gap-3 mb-4">
-          <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors">
-            <Download className="w-4 h-4" /> {t("export_csv")}
+          <button
+            type="button"
+            title={t("export_list_hint")}
+            disabled={filteredData.length === 0}
+            onClick={() => telecharger(enCsv(filteredData), `sessions_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv;charset=utf-8')}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" /> {t("export_list_csv")}
           </button>
-          <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors">
-            <Download className="w-4 h-4" /> {t("export_json")}
+          <button
+            type="button"
+            title={t("export_list_hint")}
+            disabled={filteredData.length === 0}
+            onClick={() => telecharger(JSON.stringify(filteredData, null, 2), `sessions_${new Date().toISOString().slice(0, 10)}.json`, 'application/json')}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" /> {t("export_list_json")}
           </button>
         </div>
 

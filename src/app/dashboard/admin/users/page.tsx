@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import PageHeader from "@/components/ui/PageHeader";
-import { Search, Plus, Filter, MoreVertical, Shield, ShieldCheck, User, Loader2, X } from 'lucide-react';
+import { Search, Plus, MoreVertical, Shield, ShieldCheck, User, Loader2, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UsersService } from '@/services/users.service';
 import { StructuresService } from '@/services/structures.service';
@@ -158,9 +158,6 @@ export default function UsersPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
-            <Filter className="w-4 h-4" /> {t("filter")}
-          </button>
         </div>
 
         <div className="flex-1 overflow-auto">

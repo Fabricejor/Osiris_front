@@ -180,6 +180,18 @@
             "description": "UUID Keycloak de l'utilisateur qui a fait l'action. NULL si action publique (ex: change-password) ou utilisateur supprimé.",
             "title": "Id Utilisateur Acteur"
           },
+          "nom_acteur": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nom de l'auteur (`utilisateur.nom_prenom`), None si inconnu ou supprimé.",
+            "title": "Nom Acteur"
+          },
           "payload": {
             "anyOf": [
               {
