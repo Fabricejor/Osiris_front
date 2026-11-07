@@ -1039,6 +1039,11 @@
             ],
             "title": "Date Fin"
           },
+          "format": {
+            "$ref": "#/components/schemas/FormatExport",
+            "default": "CSV",
+            "description": "CSV (données brutes) ou XLSX (rapport Excel détaillé)."
+          },
           "id_structure": {
             "anyOf": [
               {
@@ -1146,6 +1151,10 @@
             "description": "URL MinIO présignée (uniquement si statut=PRET, TTL court).",
             "title": "Download Url"
           },
+          "format": {
+            "$ref": "#/components/schemas/FormatExport",
+            "default": "CSV"
+          },
           "id_export": {
             "format": "uuid",
             "title": "Id Export",
@@ -1239,6 +1248,15 @@
         ],
         "title": "ExportsListResponse",
         "type": "object"
+      },
+      "FormatExport": {
+        "description": "Format du fichier d'export.",
+        "enum": [
+          "CSV",
+          "XLSX"
+        ],
+        "title": "FormatExport",
+        "type": "string"
       },
       "HTTPValidationError": {
         "properties": {
