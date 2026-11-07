@@ -1,10 +1,5 @@
 import { apiClient } from './apiClient';
-import {
-  ProcessingEfficiencyData,
-  OcrPerformanceData,
-  OcrConfidenceData,
-  ValidationStatusData,
-} from '@/types';
+import { ValidationStatusData } from '@/types';
 import type { components } from '@/types/api.generated';
 
 // Types générés depuis l'OpenAPI du backend (`npm run gen:api`).
@@ -13,6 +8,8 @@ export type DashboardStat = Schemas['DashboardStat'];
 export type ActivityHeatmapData = Schemas['ActivityHeatmapData'];
 export type OperatorActivityHeatmapData = Schemas['OperatorActivityHeatmapData'];
 export type ProcessingVolumesData = Schemas['ProcessingVolumesData'];
+export type ProcessingEfficiencyData = Schemas['ProcessingEfficiencyData'];
+export type OcrConfidenceData = Schemas['OcrConfidenceData'];
 export type OperatorEfficiencyData = Schemas['OperatorEfficiencyData'];
 export type OperatorPerformanceComparisonData = Schemas['OperatorPerformanceComparisonData'];
 
@@ -23,10 +20,6 @@ export const DashboardService = {
 
   getProcessingEfficiency: () => {
     return apiClient<ProcessingEfficiencyData[]>('/v1/dashboard/processing-efficiency', { method: 'GET' });
-  },
-
-  getOcrPerformance: () => {
-    return apiClient<OcrPerformanceData[]>('/v1/dashboard/ocr-performance', { method: 'GET' });
   },
 
   getOcrConfidence: () => {

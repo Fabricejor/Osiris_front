@@ -49,21 +49,6 @@ export interface AuditLog {
   user_name?: string;
 }
 
-export interface ProcessingEfficiencyData {
-  name: string;
-  value: number;
-}
-
-export interface OcrPerformanceData {
-  name: string;
-  value: number;
-}
-
-export interface OcrConfidenceData {
-  name: string;
-  value: number;
-}
-
 export interface ValidationStatusData {
   name: string;
   value: number;

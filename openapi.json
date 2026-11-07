@@ -1322,7 +1322,20 @@
         "type": "object"
       },
       "OcrConfidenceData": {
+        "description": "Nombre de pages par tranche de score de confiance OCR.",
         "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "HIGH (≥ 80), MEDIUM (50–80), LOW (< 50).",
+            "title": "Code"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1337,24 +1350,6 @@
           "value"
         ],
         "title": "OcrConfidenceData",
-        "type": "object"
-      },
-      "OcrPerformanceData": {
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "value": {
-            "title": "Value",
-            "type": "number"
-          }
-        },
-        "required": [
-          "name",
-          "value"
-        ],
-        "title": "OcrPerformanceData",
         "type": "object"
       },
       "OperateurActivite": {
@@ -1841,7 +1836,20 @@
         "type": "object"
       },
       "ProcessingEfficiencyData": {
+        "description": "Nombre de pages par statut de traitement.",
         "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Statut de traitement (RECU, A_VALIDER…).",
+            "title": "Code"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -4727,64 +4735,6 @@
           }
         ],
         "summary": "Get Ocr Confidence",
-        "tags": [
-          "Dashboard"
-        ]
-      }
-    },
-    "/api/v1/dashboard/ocr-performance": {
-      "get": {
-        "operationId": "get_ocr_performance_api_v1_dashboard_ocr_performance_get",
-        "parameters": [
-          {
-            "in": "cookie",
-            "name": "osiris_access",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Osiris Access"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/OcrPerformanceData"
-                  },
-                  "title": "Response Get Ocr Performance Api V1 Dashboard Ocr Performance Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Get Ocr Performance",
         "tags": [
           "Dashboard"
         ]

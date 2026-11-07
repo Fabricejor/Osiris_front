@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import StatsCards from "@/components/features/dashboard/StatsCards";
 import ProcessingEfficiencyChart from "@/components/features/dashboard/ProcessingEfficiencyChart";
-import OcrPerformanceChart from "@/components/features/dashboard/OcrPerformanceChart";
 import OcrConfidenceChart from "@/components/features/dashboard/OcrConfidenceChart";
 import ActivityHeatmap from "@/components/features/dashboard/ActivityHeatmap";
 import DataProcessingVolumes from "@/components/features/dashboard/DataProcessingVolumes";
@@ -50,13 +49,12 @@ export default function DashboardPage() {
           <StatsCards />
         </div>
 
-        {/* Row 2: Processing Efficiency (left) + OCR Performance & Confidence (right) */}
+        {/* Row 2: Pages par statut (gauche) + Confiance OCR (droite) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
           <div className="h-[300px]">
             {wrapChart('processing-efficiency', <ProcessingEfficiencyChart />)}
           </div>
-          <div className="grid grid-cols-2 gap-4 h-[300px]">
-            {wrapChart('ocr-performance', <OcrPerformanceChart />)}
+          <div className="h-[300px]">
             {wrapChart('ocr-confidence', <OcrConfidenceChart />)}
           </div>
         </div>

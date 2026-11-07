@@ -507,23 +507,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/dashboard/ocr-performance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Ocr Performance */
-        get: operations["get_ocr_performance_api_v1_dashboard_ocr_performance_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/dashboard/operator-activity-heatmap": {
         parameters: {
             query?: never;
@@ -1827,15 +1810,16 @@ export interface components {
             /** Refresh Token */
             refresh_token?: string | null;
         };
-        /** OcrConfidenceData */
+        /**
+         * OcrConfidenceData
+         * @description Nombre de pages par tranche de score de confiance OCR.
+         */
         OcrConfidenceData: {
-            /** Name */
-            name: string;
-            /** Value */
-            value: number;
-        };
-        /** OcrPerformanceData */
-        OcrPerformanceData: {
+            /**
+             * Code
+             * @description HIGH (≥ 80), MEDIUM (50–80), LOW (< 50).
+             */
+            code?: string | null;
             /** Name */
             name: string;
             /** Value */
@@ -2064,8 +2048,16 @@ export interface components {
             /** Upload Url Page Gauche */
             upload_url_page_gauche?: string | null;
         };
-        /** ProcessingEfficiencyData */
+        /**
+         * ProcessingEfficiencyData
+         * @description Nombre de pages par statut de traitement.
+         */
         ProcessingEfficiencyData: {
+            /**
+             * Code
+             * @description Statut de traitement (RECU, A_VALIDER…).
+             */
+            code?: string | null;
             /** Name */
             name: string;
             /** Value */
@@ -3711,37 +3703,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OcrConfidenceData"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_ocr_performance_api_v1_dashboard_ocr_performance_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                osiris_access?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OcrPerformanceData"][];
                 };
             };
             /** @description Validation Error */

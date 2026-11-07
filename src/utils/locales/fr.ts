@@ -39,7 +39,7 @@ export const fr: Record<keyof typeof en, string> = {
   avg_confidence: "Confiance Moyenne",
   ocr_accuracy: "Précision OCR",
   vs_last_month: "vs mois dernier",
-  processing_efficiency: "Efficacité du traitement",
+  processing_efficiency: "Pages par statut",
   ocr_performance: "Performance OCR",
   ocr_confidence: "Confiance OCR",
   data_processing_volumes: "Volumes de traitement de données",
@@ -702,4 +702,11 @@ export const fr: Record<keyof typeof en, string> = {
   vs_previous_30_days: "par rapport aux 30 jours précédents",
   pages_validated_share: "Pages validées",
   never: "Jamais",
+
+  // Dashboard codes (OCR bands, statuses)
+  ocr_band_high: "Élevée (≥ 80 %)",
+  ocr_band_medium: "Moyenne (50–80 %)",
+  ocr_band_low: "Faible (< 50 %)",
+  pages_count: "{count} page(s)",
+  statut_recu: "Reçue",
 };

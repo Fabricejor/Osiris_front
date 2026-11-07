@@ -36,7 +36,7 @@ export const en = {
   avg_confidence: "Avg Confidence",
   ocr_accuracy: "OCR Accuracy",
   vs_last_month: "vs last month",
-  processing_efficiency: "Processing Efficiency",
+  processing_efficiency: "Pages by status",
   ocr_performance: "OCR Performance",
   ocr_confidence: "OCR Confidence",
   data_processing_volumes: "Data Processing Volumes",
@@ -699,4 +699,11 @@ export const en = {
   vs_previous_30_days: "vs the previous 30 days",
   pages_validated_share: "Pages validated",
   never: "Never",
+
+  // Dashboard codes (OCR bands, statuses)
+  ocr_band_high: "High (≥ 80 %)",
+  ocr_band_medium: "Medium (50–80 %)",
+  ocr_band_low: "Low (< 50 %)",
+  pages_count: "{count} page(s)",
+  statut_recu: "Received",
 };
