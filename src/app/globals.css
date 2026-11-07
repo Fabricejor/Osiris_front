@@ -34,3 +34,37 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/*
+ * Curseur des éléments cliquables. Tailwind v4 a retiré `cursor: pointer` des
+ * boutons (preflight) : on le rétablit pour tous les contrôles interactifs, et
+ * « interdit » quand ils sont désactivés. Couche `base` : une classe utilitaire
+ * (`cursor-*`, `disabled:cursor-*`) sur un élément l'emporte toujours.
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  summary,
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="color"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  label:has(> input[type="checkbox"]:not(:disabled)),
+  label:has(> input[type="radio"]:not(:disabled)),
+  ::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
