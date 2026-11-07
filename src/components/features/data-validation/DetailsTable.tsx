@@ -21,7 +21,6 @@ import {
   formatDateHeure,
   sessionFolderStatus,
   sessionLabel,
-  sessionTexteRecherche,
 } from '@/services/sessions.service';
 
 const columnHelper = createColumnHelper<SessionScan>();
@@ -61,9 +60,17 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
     pageSize: 10,
   });
 
+  // Nouvelle recherche → retour à la première page (sinon on resterait sur une page vide).
+  const [rechercheCourante, setRechercheCourante] = React.useState(search);
+  if (rechercheCourante !== search) {
+    setRechercheCourante(search);
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
+  }
+
   const { data, isLoading } = useQuery({
-    queryKey: ['sessions-table', pagination.pageIndex, pagination.pageSize],
-    queryFn: () => SessionsService.getSessions(pagination.pageSize, pagination.pageIndex * pagination.pageSize),
+    queryKey: ['sessions-table', search, pagination.pageIndex, pagination.pageSize],
+    queryFn: () => SessionsService.getSessions(pagination.pageSize, pagination.pageIndex * pagination.pageSize, search),
+    placeholderData: (precedent) => precedent,
   });
 
   const columns = useMemo(
@@ -120,13 +127,9 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
 
   const filteredData = useMemo(() => {
     const items = data?.items || [];
-    return items.filter((s) => {
-      const q = search.toLowerCase();
-      const matchesSearch = sessionTexteRecherche(s).includes(q);
-      const matchesStatus = statusFilter === 'all' || sessionFolderStatus(s) === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [data, search, statusFilter]);
+    // La recherche est faite par l'API ; seul le statut agrégé (calculé) reste filtré ici.
+    return items.filter((s) => statusFilter === 'all' || sessionFolderStatus(s) === statusFilter);
+  }, [data, statusFilter]);
 
   const table = useReactTable({
     data: filteredData,

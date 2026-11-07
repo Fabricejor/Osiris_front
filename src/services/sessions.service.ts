@@ -39,11 +39,7 @@ export function sessionSousTitre(session: SessionScan): string {
   return [session.operateur, ...structure].filter(Boolean).join(" · ");
 }
 
-/** Texte de recherche d'une session (libellé, agent, structure, district, id). */
-export function sessionTexteRecherche(session: SessionScan): string {
-  return [session.id_session_scan, sessionLabel(session), session.operateur, session.clinique, session.district]
-    .filter(Boolean).join(" ").toLowerCase();
-}
+
 
 export type StatutTraitement = Schemas["StatutTraitement"];
 /**
@@ -162,8 +158,12 @@ export const SessionsService = {
   /**
    * Récupère la liste des sessions
    */
-  getSessions: async (limit: number = 50, offset: number = 0) => {
-    return apiClient<ListResponse<SessionScan>>(`/v1/sessions?limit=${limit}&offset=${offset}`, {
+  /** `q` : recherche côté serveur (agent, structure, district, type, année, début d'ID) —
+   *  porte sur toutes les sessions visibles, pas seulement la page chargée. */
+  getSessions: async (limit: number = 50, offset: number = 0, q?: string) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (q?.trim()) params.set("q", q.trim());
+    return apiClient<ListResponse<SessionScan>>(`/v1/sessions?${params.toString()}`, {
       method: "GET",
     });
   },

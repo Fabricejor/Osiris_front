@@ -562,4 +562,7 @@ export const en = {
   export_statut_pret: "Ready",
   export_statut_echec: "Failed",
   no_search_results: "No results for “{query}”.",
+
+  // Sessions search
+  sessions_total: "{shown} of {total} sessions",
 };

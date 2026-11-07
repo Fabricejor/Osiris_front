@@ -565,4 +565,7 @@ export const fr: Record<keyof typeof en, string> = {
   export_statut_pret: "Prêt",
   export_statut_echec: "Échec",
   no_search_results: "Aucun résultat pour « {query} ».",
+
+  // Sessions search
+  sessions_total: "{shown} sur {total} sessions",
 };

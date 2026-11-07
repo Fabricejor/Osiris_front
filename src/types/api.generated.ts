@@ -4869,6 +4869,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description Recherche libre : nom de l'agent, structure, district, type, année, début d'ID. */
+                q?: string | null;
                 /** @description Filtre par statut. */
                 statut?: components["schemas"]["StatutSession"] | null;
                 /** @description Filtre par type de registre. */

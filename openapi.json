@@ -6610,6 +6610,25 @@
             }
           },
           {
+            "description": "Recherche libre : nom de l'agent, structure, district, type, année, début d'ID.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Recherche libre : nom de l'agent, structure, district, type, année, début d'ID.",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Filtre par statut.",
             "in": "query",
             "name": "statut",
