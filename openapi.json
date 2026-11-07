@@ -2,36 +2,40 @@
   "components": {
     "schemas": {
       "ActivityHeatmapData": {
+        "description": "Calendrier : lignes validées par jour (jours sans activité omis).",
         "properties": {
-          "data": {
+          "date_debut": {
+            "format": "date",
+            "title": "Date Debut",
+            "type": "string"
+          },
+          "date_fin": {
+            "format": "date",
+            "title": "Date Fin",
+            "type": "string"
+          },
+          "jours": {
             "items": {
-              "items": {
-                "type": "integer"
-              },
-              "type": "array"
+              "$ref": "#/components/schemas/JourActivite"
             },
-            "title": "Data",
+            "title": "Jours",
             "type": "array"
           },
-          "months": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Months",
-            "type": "array"
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
           },
-          "weeks": {
-            "items": {
-              "type": "integer"
-            },
-            "title": "Weeks",
-            "type": "array"
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
-          "weeks",
-          "months",
-          "data"
+          "date_debut",
+          "date_fin",
+          "jours",
+          "total",
+          "maximum"
         ],
         "title": "ActivityHeatmapData",
         "type": "object"
@@ -380,6 +384,31 @@
         "title": "CategorieRejet",
         "type": "string"
       },
+      "CelluleActivite": {
+        "properties": {
+          "jour": {
+            "description": "0 = lundi … 6 = dimanche.",
+            "title": "Jour",
+            "type": "integer"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "integer"
+          },
+          "tranche": {
+            "description": "Index dans `tranches` ; len(tranches) = hors heures.",
+            "title": "Tranche",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jour",
+          "tranche",
+          "nombre"
+        ],
+        "title": "CelluleActivite",
+        "type": "object"
+      },
       "ChampCatalogue": {
         "description": "Un champ à extraire par l'OCR pour un registre donné.",
         "properties": {
@@ -579,6 +608,17 @@
           "change": {
             "title": "Change",
             "type": "string"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
           },
           "icon": {
             "anyOf": [
@@ -1205,6 +1245,25 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "JourActivite": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "nombre"
+        ],
+        "title": "JourActivite",
+        "type": "object"
+      },
       "LoginRequest": {
         "additionalProperties": false,
         "description": "Identifiants soumis par le client (mobile ou web).",
@@ -1290,37 +1349,83 @@
         "title": "OcrPerformanceData",
         "type": "object"
       },
-      "OperatorActivityHeatmapData": {
+      "OperateurActivite": {
         "properties": {
-          "data": {
-            "items": {
-              "items": {
-                "type": "integer"
+          "id_keycloak": {
+            "format": "uuid",
+            "title": "Id Keycloak",
+            "type": "string"
+          },
+          "nom": {
+            "anyOf": [
+              {
+                "type": "string"
               },
-              "type": "array"
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nom"
+          }
+        },
+        "required": [
+          "id_keycloak"
+        ],
+        "title": "OperateurActivite",
+        "type": "object"
+      },
+      "OperatorActivityHeatmapData": {
+        "description": "Actions (lignes revues + pages envoyées) par jour × tranche de 2 h (cellules vides omises).",
+        "properties": {
+          "cellules": {
+            "items": {
+              "$ref": "#/components/schemas/CelluleActivite"
             },
-            "title": "Data",
+            "title": "Cellules",
             "type": "array"
           },
-          "days": {
+          "date_debut": {
+            "format": "date",
+            "title": "Date Debut",
+            "type": "string"
+          },
+          "date_fin": {
+            "format": "date",
+            "title": "Date Fin",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "operateurs": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/OperateurActivite"
             },
-            "title": "Days",
+            "title": "Operateurs",
             "type": "array"
           },
-          "hours": {
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "tranches": {
+            "description": "Heure de début de chaque tranche de 2 h (UTC).",
             "items": {
-              "type": "string"
+              "type": "integer"
             },
-            "title": "Hours",
+            "title": "Tranches",
             "type": "array"
           }
         },
         "required": [
-          "hours",
-          "days",
-          "data"
+          "date_debut",
+          "date_fin",
+          "tranches",
+          "cellules",
+          "total",
+          "maximum",
+          "operateurs"
         ],
         "title": "OperatorActivityHeatmapData",
         "type": "object"
@@ -4481,6 +4586,7 @@
     },
     "/api/v1/dashboard/activity-heatmap": {
       "get": {
+        "description": "Lignes validées par jour sur 12 mois (ADMIN : sa structure uniquement).",
         "operationId": "get_activity_heatmap_api_v1_dashboard_activity_heatmap_get",
         "parameters": [
           {
@@ -4651,8 +4757,28 @@
     },
     "/api/v1/dashboard/operator-activity-heatmap": {
       "get": {
+        "description": "Actions par jour × tranche horaire sur 4 semaines (ADMIN : sa structure uniquement).",
         "operationId": "get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get",
         "parameters": [
+          {
+            "description": "Limiter à un opérateur (id_keycloak).",
+            "in": "query",
+            "name": "id_operateur",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limiter à un opérateur (id_keycloak).",
+              "title": "Id Operateur"
+            }
+          },
           {
             "in": "cookie",
             "name": "osiris_access",

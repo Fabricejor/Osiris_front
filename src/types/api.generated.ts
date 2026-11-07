@@ -477,7 +477,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Activity Heatmap */
+        /**
+         * Get Activity Heatmap
+         * @description Lignes validées par jour sur 12 mois (ADMIN : sa structure uniquement).
+         */
         get: operations["get_activity_heatmap_api_v1_dashboard_activity_heatmap_get"];
         put?: never;
         post?: never;
@@ -528,7 +531,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Operator Activity Heatmap */
+        /**
+         * Get Operator Activity Heatmap
+         * @description Actions par jour × tranche horaire sur 4 semaines (ADMIN : sa structure uniquement).
+         */
         get: operations["get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get"];
         put?: never;
         post?: never;
@@ -1264,14 +1270,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ActivityHeatmapData */
+        /**
+         * ActivityHeatmapData
+         * @description Calendrier : lignes validées par jour (jours sans activité omis).
+         */
         ActivityHeatmapData: {
-            /** Data */
-            data: number[][];
-            /** Months */
-            months: string[];
-            /** Weeks */
-            weeks: number[];
+            /**
+             * Date Debut
+             * Format: date
+             */
+            date_debut: string;
+            /**
+             * Date Fin
+             * Format: date
+             */
+            date_fin: string;
+            /** Jours */
+            jours: components["schemas"]["JourActivite"][];
+            /** Maximum */
+            maximum: number;
+            /** Total */
+            total: number;
         };
         /**
          * AdminCreate
@@ -1439,6 +1458,21 @@ export interface components {
          * @enum {string}
          */
         CategorieRejet: "ILLISIBLE" | "HORS_SUJET" | "DOUBLON" | "AUTRE";
+        /** CelluleActivite */
+        CelluleActivite: {
+            /**
+             * Jour
+             * @description 0 = lundi … 6 = dimanche.
+             */
+            jour: number;
+            /** Nombre */
+            nombre: number;
+            /**
+             * Tranche
+             * @description Index dans `tranches` ; len(tranches) = hors heures.
+             */
+            tranche: number;
+        };
         /**
          * ChampCatalogue
          * @description Un champ à extraire par l'OCR pour un registre donné.
@@ -1527,6 +1561,8 @@ export interface components {
         DashboardStat: {
             /** Change */
             change: string;
+            /** Code */
+            code?: string | null;
             /** Icon */
             icon?: string | null;
             /** Positive */
@@ -1754,6 +1790,16 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** JourActivite */
+        JourActivite: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Nombre */
+            nombre: number;
+        };
         /**
          * LoginRequest
          * @description Identifiants soumis par le client (mobile ou web).
@@ -1789,14 +1835,44 @@ export interface components {
             /** Value */
             value: number;
         };
-        /** OperatorActivityHeatmapData */
+        /** OperateurActivite */
+        OperateurActivite: {
+            /**
+             * Id Keycloak
+             * Format: uuid
+             */
+            id_keycloak: string;
+            /** Nom */
+            nom?: string | null;
+        };
+        /**
+         * OperatorActivityHeatmapData
+         * @description Actions (lignes revues + pages envoyées) par jour × tranche de 2 h (cellules vides omises).
+         */
         OperatorActivityHeatmapData: {
-            /** Data */
-            data: number[][];
-            /** Days */
-            days: string[];
-            /** Hours */
-            hours: string[];
+            /** Cellules */
+            cellules: components["schemas"]["CelluleActivite"][];
+            /**
+             * Date Debut
+             * Format: date
+             */
+            date_debut: string;
+            /**
+             * Date Fin
+             * Format: date
+             */
+            date_fin: string;
+            /** Maximum */
+            maximum: number;
+            /** Operateurs */
+            operateurs: components["schemas"]["OperateurActivite"][];
+            /** Total */
+            total: number;
+            /**
+             * Tranches
+             * @description Heure de début de chaque tranche de 2 h (UTC).
+             */
+            tranches: number[];
         };
         /** OperatorEfficiencyData */
         OperatorEfficiencyData: {
@@ -3660,7 +3736,10 @@ export interface operations {
     };
     get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Limiter à un opérateur (id_keycloak). */
+                id_operateur?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: {

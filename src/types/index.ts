@@ -72,13 +72,6 @@ export interface OcrConfidenceData {
   value: number;
 }
 
-export interface ActivityHeatmapData {
-  // 6 weeks x 12 months array for instance, or any structure
-  weeks: number[];
-  months: string[];
-  data: number[][]; // [weekIndex][monthIndex]
-}
-
 export interface ProcessingVolumesData {
   date: string;
   records: number;
@@ -104,12 +97,6 @@ export interface OperatorPerformanceComparisonData {
 export interface ValidationStatusData {
   name: string;
   value: number;
-}
-
-export interface OperatorActivityHeatmapData {
-  hours: string[];
-  days: string[];
-  data: number[][]; // [hourIndex][dayIndex]
 }
 
 export interface StructureSanitaire {

@@ -2,8 +2,6 @@
 
 import React from 'react';
 import {
-  CheckCircle,
-  TrendingUp,
   Clock,
   ScanLine,
   FileCheck,
@@ -15,24 +13,22 @@ import { DashboardService } from '@/services/dashboard.service';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/utils/translations';
 
-// Icons map based on backend title (or you could map by ID)
-const iconMap: Record<string, any> = {
-  'Data Validation Rate': { icon: CheckCircle, bg: 'bg-emerald-50', color: 'text-emerald-500' },
-  'Operator Performance Score': { icon: TrendingUp, bg: 'bg-emerald-50', color: 'text-emerald-500' },
-  'Avg. Processing Time': { icon: Clock, bg: 'bg-emerald-50', color: 'text-emerald-500' },
-  'OCR Success Rate': { icon: ScanLine, bg: 'bg-emerald-50', color: 'text-emerald-500' },
-  'Daily Validations': { icon: FileCheck, bg: 'bg-emerald-50', color: 'text-emerald-500' },
-  'Pending Review': { icon: AlertCircle, bg: 'bg-orange-50', color: 'text-orange-500' },
+type IconConfig = { icon: React.ComponentType<{ className?: string }>; bg: string; color: string };
+
+// Icône par code de statistique (`DashboardStat.code`).
+const iconMap: Record<string, IconConfig> = {
+  TOTAL_SCANS: { icon: ScanLine, bg: 'bg-emerald-50', color: 'text-emerald-500' },
+  PROCESSED_ROWS: { icon: FileCheck, bg: 'bg-emerald-50', color: 'text-emerald-500' },
+  PENDING_REVIEWS: { icon: Clock, bg: 'bg-orange-50', color: 'text-orange-500' },
+  REJECTED_ROWS: { icon: AlertCircle, bg: 'bg-red-50', color: 'text-red-500' },
 };
 
-// Titres renvoyés par le backend (anglais, stables) → clés de traduction.
-const TITLE_KEYS: Record<string, TranslationKey> = {
-  'Data Validation Rate': 'data_validation_rate',
-  'Operator Performance Score': 'operator_performance_score',
-  'Avg. Processing Time': 'avg_processing_time',
-  'OCR Success Rate': 'ocr_success_rate',
-  'Daily Validations': 'daily_validations',
-  'Pending Review': 'pending_review',
+// Codes renvoyés par le backend (`DashboardStat.code`) → clés de traduction.
+const CODE_KEYS: Record<string, TranslationKey> = {
+  TOTAL_SCANS: 'stat_total_scans',
+  PROCESSED_ROWS: 'stat_processed_rows',
+  PENDING_REVIEWS: 'stat_pending_reviews',
+  REJECTED_ROWS: 'stat_rejected_rows',
 };
 
 export default function StatsCards() {
@@ -61,7 +57,7 @@ export default function StatsCards() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {stats.map((stat) => {
-        const iconConfig = iconMap[stat.title] || { icon: AlertCircle, bg: 'bg-gray-50', color: 'text-gray-500' };
+        const iconConfig = (stat.code && iconMap[stat.code]) || { icon: AlertCircle, bg: 'bg-gray-50', color: 'text-gray-500' };
         const IconComponent = iconConfig.icon;
 
         return (
@@ -73,7 +69,7 @@ export default function StatsCards() {
               <IconComponent className={`w-4 h-4 ${iconConfig.color}`} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-gray-500 truncate leading-tight">{TITLE_KEYS[stat.title] ? t(TITLE_KEYS[stat.title]) : stat.title}</p>
+              <p className="text-[11px] text-gray-500 truncate leading-tight">{stat.code && CODE_KEYS[stat.code] ? t(CODE_KEYS[stat.code]) : stat.title}</p>
               <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{stat.value}</p>
               <span
                 className={`text-[11px] font-medium ${stat.positive ? 'text-emerald-600' : 'text-orange-600'

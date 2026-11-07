@@ -1,16 +1,20 @@
 import { apiClient } from './apiClient';
 import {
-  DashboardStat,
   ProcessingEfficiencyData,
   OcrPerformanceData,
   OcrConfidenceData,
-  ActivityHeatmapData,
   ProcessingVolumesData,
   OperatorEfficiencyData,
   OperatorPerformanceComparisonData,
   ValidationStatusData,
-  OperatorActivityHeatmapData
 } from '@/types';
+import type { components } from '@/types/api.generated';
+
+// Types générés depuis l'OpenAPI du backend (`npm run gen:api`).
+type Schemas = components['schemas'];
+export type DashboardStat = Schemas['DashboardStat'];
+export type ActivityHeatmapData = Schemas['ActivityHeatmapData'];
+export type OperatorActivityHeatmapData = Schemas['OperatorActivityHeatmapData'];
 
 export const DashboardService = {
   getStats: () => {
@@ -49,7 +53,9 @@ export const DashboardService = {
     return apiClient<ValidationStatusData[]>('/v1/dashboard/validation-status', { method: 'GET' });
   },
 
-  getOperatorActivityHeatmap: () => {
-    return apiClient<OperatorActivityHeatmapData>('/v1/dashboard/operator-activity-heatmap', { method: 'GET' });
+  /** `idOperateur` (id_keycloak) : limiter à un opérateur ; absent = tous. */
+  getOperatorActivityHeatmap: (idOperateur?: string) => {
+    const params = idOperateur ? `?id_operateur=${encodeURIComponent(idOperateur)}` : '';
+    return apiClient<OperatorActivityHeatmapData>(`/v1/dashboard/operator-activity-heatmap${params}`, { method: 'GET' });
   }
 };

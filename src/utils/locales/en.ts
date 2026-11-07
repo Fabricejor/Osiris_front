@@ -680,4 +680,18 @@ export const en = {
   export_validated_from: "Validated from",
   export_validated_to: "Validated until (inclusive)",
   export_period_hint: "The period applies to the validation date of the data, not the consultation date.",
+
+  // Activity maps
+  validated_rows_12_months: "{count} rows validated over 12 months",
+  validated_rows_count: "{count} validated row(s)",
+  less: "Less",
+  more: "More",
+  off_hours: "Off hours",
+  all_operators: "All operators",
+  last_4_weeks_actions: "{count} actions over the last 4 weeks",
+  actions_count: "{count} action(s)",
+  stat_total_scans: "Scanned pages",
+  stat_processed_rows: "Extracted rows",
+  stat_pending_reviews: "Rows to review",
+  stat_rejected_rows: "Rejected rows",
 };

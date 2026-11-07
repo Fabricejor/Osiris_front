@@ -683,4 +683,18 @@ export const fr: Record<keyof typeof en, string> = {
   export_validated_from: "Validées à partir du",
   export_validated_to: "Validées jusqu'au (inclus)",
   export_period_hint: "La période porte sur la date de validation des données, pas sur la date de consultation.",
+
+  // Activity maps
+  validated_rows_12_months: "{count} lignes validées sur 12 mois",
+  validated_rows_count: "{count} ligne(s) validée(s)",
+  less: "Moins",
+  more: "Plus",
+  off_hours: "Hors heures",
+  all_operators: "Tous les opérateurs",
+  last_4_weeks_actions: "{count} actions sur les 4 dernières semaines",
+  actions_count: "{count} action(s)",
+  stat_total_scans: "Pages scannées",
+  stat_processed_rows: "Lignes extraites",
+  stat_pending_reviews: "Lignes à revoir",
+  stat_rejected_rows: "Lignes rejetées",
 };
