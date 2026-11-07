@@ -7,7 +7,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import DetailsTable from '@/components/features/data-validation/DetailsTable';
 import { useQuery } from '@tanstack/react-query';
-import { SessionsService, sessionFolderStatus, sessionLabel } from '@/services/sessions.service';
+import {
+  SessionsService,
+  formatDateHeure,
+  sessionFolderStatus,
+  sessionLabel,
+  sessionSousTitre,
+  sessionTexteRecherche,
+} from '@/services/sessions.service';
 import { Loader2 } from 'lucide-react';
 import {
   Search,
@@ -41,6 +48,12 @@ type FolderData = {
   lastModified: string;
   tags: string[];
   description: string;
+  subtitle: string;
+  operateur: string | null;
+  clinique: string | null;
+  district: string | null;
+  dernierUpload: string | null;
+  searchText: string;
 };
 
 // ── Mock Data Removed ──────────────────────────────────────────
@@ -88,13 +101,18 @@ export default function DataValidationPage() {
       lastModified: session.date_modification || session.date_creation || new Date().toISOString(),
       tags: [session.type_registre, `Year ${session.annee_version}`],
       description: `Type: ${session.type_registre}`,
+      subtitle: sessionSousTitre(session),
+      operateur: session.operateur ?? null,
+      clinique: session.clinique ?? null,
+      district: session.district ?? null,
+      dernierUpload: session.date_dernier_upload ?? null,
+      searchText: sessionTexteRecherche(session),
     }));
   }, [data]);
 
   const filteredFolders = useMemo(() => {
     return folders.filter((f) => {
-      const name = f.name;
-      const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = f.searchText.includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'all' || f.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -183,6 +201,7 @@ export default function DataValidationPage() {
                       <FolderUI
                         key={folder.id}
                         name={folder.name}
+                        subtitle={folder.subtitle}
                         filesCount={folder.filesCount}
                         size={folder.size}
                         status={folder.status}
@@ -297,9 +316,22 @@ export default function DataValidationPage() {
                             <Calendar className="w-3 h-3" /> Created
                           </span>
                           <span className="text-xs font-medium text-gray-800">
-                            {format(new Date(selectedFolder.createdAt), 'dd/MM/yyyy')}
+                            {formatDateHeure(selectedFolder.createdAt)}
                           </span>
                         </div>
+                        {([
+                          ['Operator', selectedFolder.operateur],
+                          ['Clinic', selectedFolder.clinique],
+                          ['District', selectedFolder.district],
+                          ['Last upload', selectedFolder.dernierUpload && formatDateHeure(selectedFolder.dernierUpload)],
+                        ] as const).map(([label, valeur]) => (
+                          <div key={label} className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-gray-500">{label}</span>
+                            <span className="text-xs font-medium text-gray-800 truncate max-w-[160px]" title={valeur || ''}>
+                              {valeur || 'N/A'}
+                            </span>
+                          </div>
+                        ))}
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500 flex items-center gap-1.5">
                             <Clock className="w-3 h-3" /> Last modified

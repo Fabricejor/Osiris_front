@@ -5,6 +5,8 @@ export type FolderStatus = 'pending' | 'validated' | 'rejected' | 'anomaly';
 
 interface FolderUIProps {
   name: string;
+  /** Ligne secondaire (agent · structure) pour distinguer des sessions proches. */
+  subtitle?: string;
   filesCount: number;
   size: string;
   status: FolderStatus;
@@ -79,7 +81,7 @@ const STATUS_CONFIG: Record<FolderStatus, {
   },
 };
 
-export default function FolderUI({ name, filesCount, size, status, isSelected, onClick }: Readonly<FolderUIProps>) {
+export default function FolderUI({ name, subtitle, filesCount, size, status, isSelected, onClick }: Readonly<FolderUIProps>) {
   const cfg = STATUS_CONFIG[status];
 
   return (
@@ -122,7 +124,10 @@ export default function FolderUI({ name, filesCount, size, status, isSelected, o
 
       {/* Folder info */}
       <div className="w-full mt-3 space-y-1.5">
-        <p className="text-sm font-semibold text-gray-800 truncate text-left">{name}</p>
+        <p className="text-sm font-semibold text-gray-800 truncate text-left" title={name}>{name}</p>
+        {subtitle && (
+          <p className="text-[11px] text-gray-500 truncate text-left" title={subtitle}>{subtitle}</p>
+        )}
 
         <div className="flex items-center gap-1 text-gray-400">
           <FileText className="w-3 h-3 shrink-0" />

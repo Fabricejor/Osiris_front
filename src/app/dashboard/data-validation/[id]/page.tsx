@@ -22,7 +22,7 @@ import ValidationPopup from '@/components/features/data-validation/ValidationPop
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
-import { SessionsService, pageCategory, toPageView, type PageView, type SessionScan } from '@/services/sessions.service';
+import { SessionsService, formatDateHeure, pageCategory, toPageView, type PageView, type SessionScan } from '@/services/sessions.service';
 
 
 
@@ -193,7 +193,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Upload Date</span>
               <span className="text-base font-bold text-gray-800">
-                {sessionLoading || !session.date_creation ? '...' : new Date(session.date_creation).toLocaleDateString()}
+                {sessionLoading || !session.date_creation ? '...' : formatDateHeure(session.date_creation)}
               </span>
             </div>
 

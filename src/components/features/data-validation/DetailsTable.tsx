@@ -15,7 +15,14 @@ import {
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
 import type { FolderStatus } from '@/components/ui/folderUI';
 import { useQuery } from '@tanstack/react-query';
-import { SessionsService, SessionScan, sessionFolderStatus, sessionLabel } from '@/services/sessions.service';
+import {
+  SessionsService,
+  SessionScan,
+  formatDateHeure,
+  sessionFolderStatus,
+  sessionLabel,
+  sessionTexteRecherche,
+} from '@/services/sessions.service';
 
 const columnHelper = createColumnHelper<SessionScan>();
 
@@ -75,12 +82,32 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
         id: 'libelle',
         header: 'Libellé',
       }),
+      columnHelper.accessor((s) => s.operateur ?? '', {
+        id: 'operateur',
+        header: 'Opérateur',
+        cell: (info) => info.getValue() || 'N/A',
+      }),
+      columnHelper.accessor((s) => s.clinique ?? '', {
+        id: 'clinique',
+        header: 'Structure',
+        cell: (info) => info.getValue() || 'N/A',
+      }),
+      columnHelper.accessor((s) => s.district ?? '', {
+        id: 'district',
+        header: 'District',
+        cell: (info) => info.getValue() || 'N/A',
+      }),
       columnHelper.accessor('nombre_pages', {
         header: 'Pages',
       }),
       columnHelper.accessor('date_creation', {
         header: 'Date Création',
-        cell: (info) => new Date(info.getValue() as string).toLocaleDateString(),
+        cell: (info) => formatDateHeure(info.getValue() as string),
+      }),
+      columnHelper.accessor((s) => s.date_dernier_upload ?? '', {
+        id: 'dernier_upload',
+        header: 'Dernier upload',
+        cell: (info) => formatDateHeure(info.getValue()) || 'N/A',
       }),
       columnHelper.accessor((s) => sessionFolderStatus(s), {
         id: 'statut',
@@ -95,9 +122,7 @@ export default function DetailsTable({ search, statusFilter }: Readonly<DetailsT
     const items = data?.items || [];
     return items.filter((s) => {
       const q = search.toLowerCase();
-      const matchesSearch =
-        s.id_session_scan.toLowerCase().includes(q) ||
-        sessionLabel(s).toLowerCase().includes(q);
+      const matchesSearch = sessionTexteRecherche(s).includes(q);
       const matchesStatus = statusFilter === 'all' || sessionFolderStatus(s) === statusFilter;
       return matchesSearch && matchesStatus;
     });

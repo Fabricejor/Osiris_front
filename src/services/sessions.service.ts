@@ -16,10 +16,32 @@ export function sessionFolderStatus(session: Pick<SessionScan, "statut_validatio
   return session?.statut_validation ?? "pending";
 }
 
-/** Libellé lisible (le backend ne stocke pas de libellé de session). */
+/** Date + heure courte : « 07/11/2026 14:32 ». */
+export function formatDateHeure(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+}
+
+/** Libellé lisible (le backend ne stocke pas de libellé de session) :
+ *  type, année et date/heure d'ouverture, pour distinguer deux sessions du même jour. */
 export function sessionLabel(session: SessionScan): string {
-  const date = new Date(session.date_debut || session.date_creation).toLocaleDateString("fr-FR");
-  return `${session.type_registre} ${session.annee_version} — ${date}`;
+  return `${session.type_registre} ${session.annee_version} — ${formatDateHeure(session.date_debut || session.date_creation)}`;
+}
+
+/** Qui / où : « Awa Diop · CS Fatick · Fatick » (parties absentes omises). */
+export function sessionSousTitre(session: SessionScan): string {
+  const structure = session.district && session.district !== session.clinique
+    ? [session.clinique, session.district]
+    : [session.clinique];
+  return [session.operateur, ...structure].filter(Boolean).join(" · ");
+}
+
+/** Texte de recherche d'une session (libellé, agent, structure, district, id). */
+export function sessionTexteRecherche(session: SessionScan): string {
+  return [session.id_session_scan, sessionLabel(session), session.operateur, session.clinique, session.district]
+    .filter(Boolean).join(" ").toLowerCase();
 }
 
 export type StatutTraitement = Schemas["StatutTraitement"];

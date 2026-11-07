@@ -2115,6 +2115,19 @@
             "title": "Date Debut",
             "type": "string"
           },
+          "date_dernier_upload": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date/heure du dernier upload de page de la session.",
+            "title": "Date Dernier Upload"
+          },
           "date_fin": {
             "anyOf": [
               {
@@ -2131,6 +2144,18 @@
             "format": "date-time",
             "title": "Date Modification",
             "type": "string"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "District sanitaire de la structure.",
+            "title": "District"
           },
           "id_agent_terrain": {
             "format": "uuid",
@@ -4409,7 +4434,7 @@
             "description": "Successful Response"
           },
           "403": {
-            "description": "Réservé aux admins"
+            "description": "Réservé aux SUPERADMIN (catalogue commun à toutes les structures)"
           },
           "404": {
             "description": "Catalogue ou champ introuvable"
@@ -4423,7 +4448,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Admin : modifier le libellé, les alias ou les modalités d'un champ",
+        "summary": "Superadmin : modifier le libellé, les alias ou les modalités d'un champ",
         "tags": [
           "Catalogues"
         ]
