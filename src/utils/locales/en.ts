@@ -66,9 +66,9 @@ export const en = {
   operator_activity_title: "Operator Activity Heatmap",
   efficiency_table_title: "Operator Efficiency & Metrics",
   efficiency_column_operator: "Operator",
-  efficiency_column_validated: "Validated Batches",
-  efficiency_column_time: "Avg Time/Page",
-  efficiency_column_accuracy: "Accuracy",
+  efficiency_column_validated: "Reviewed rows",
+  efficiency_column_time: "Avg. validation delay",
+  efficiency_column_accuracy: "Validation rate",
   efficiency_column_status: "Status",
   efficiency_status_active: "Active",
   efficiency_status_inactive: "Inactive",
@@ -694,4 +694,9 @@ export const en = {
   stat_processed_rows: "Extracted rows",
   stat_pending_reviews: "Rows to review",
   stat_rejected_rows: "Rejected rows",
+
+  // Dashboard real values
+  vs_previous_30_days: "vs the previous 30 days",
+  pages_validated_share: "Pages validated",
+  never: "Never",
 };

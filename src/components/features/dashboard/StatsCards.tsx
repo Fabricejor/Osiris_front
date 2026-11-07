@@ -32,7 +32,10 @@ const CODE_KEYS: Record<string, TranslationKey> = {
 };
 
 export default function StatsCards() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const fmtEvolution = new Intl.NumberFormat(language === 'fr' ? 'fr-FR' : 'en-GB', {
+    signDisplay: 'exceptZero', maximumFractionDigits: 1,
+  });
   const { data: stats = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: DashboardService.getStats,
@@ -71,12 +74,17 @@ export default function StatsCards() {
             <div className="min-w-0">
               <p className="text-[11px] text-gray-500 truncate leading-tight">{stat.code && CODE_KEYS[stat.code] ? t(CODE_KEYS[stat.code]) : stat.title}</p>
               <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{stat.value}</p>
-              <span
-                className={`text-[11px] font-medium ${stat.positive ? 'text-emerald-600' : 'text-orange-600'
+              {stat.evolution_pct != null && (
+                <span
+                  title={t('vs_previous_30_days')}
+                  className={`text-[11px] font-medium ${
+                    stat.evolution_pct === 0 ? 'text-gray-500'
+                    : (stat.evolution_pct > 0) === stat.hausse_favorable ? 'text-emerald-600' : 'text-orange-600'
                   }`}
-              >
-                ({stat.change})
-              </span>
+                >
+                  ({fmtEvolution.format(stat.evolution_pct)} %)
+                </span>
+              )}
             </div>
           </div>
         );

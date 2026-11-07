@@ -605,10 +605,6 @@
       },
       "DashboardStat": {
         "properties": {
-          "change": {
-            "title": "Change",
-            "type": "string"
-          },
           "code": {
             "anyOf": [
               {
@@ -620,6 +616,23 @@
             ],
             "title": "Code"
           },
+          "evolution_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Variation des 30 derniers jours vs les 30 précédents (%). None si non pertinent ou sans base de comparaison.",
+            "title": "Evolution Pct"
+          },
+          "hausse_favorable": {
+            "description": "Une hausse est-elle une bonne nouvelle (couleur côté front) ?",
+            "title": "Hausse Favorable",
+            "type": "boolean"
+          },
           "icon": {
             "anyOf": [
               {
@@ -630,10 +643,6 @@
               }
             ],
             "title": "Icon"
-          },
-          "positive": {
-            "title": "Positive",
-            "type": "boolean"
           },
           "title": {
             "title": "Title",
@@ -657,8 +666,7 @@
         "required": [
           "title",
           "value",
-          "change",
-          "positive"
+          "hausse_favorable"
         ],
         "title": "DashboardStat",
         "type": "object"
@@ -1432,13 +1440,30 @@
       },
       "OperatorEfficiencyData": {
         "properties": {
-          "accuracy": {
-            "title": "Accuracy",
-            "type": "number"
+          "delai_moyen_secondes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Délai moyen entre l'envoi de la page et la validation de la ligne.",
+            "title": "Delai Moyen Secondes"
           },
-          "avgTime": {
-            "title": "Avgtime",
-            "type": "string"
+          "derniere_activite": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dernière ligne revue.",
+            "title": "Derniere Activite"
           },
           "id": {
             "title": "Id",
@@ -1449,6 +1474,7 @@
             "type": "string"
           },
           "processed": {
+            "description": "Lignes revues (validées + rejetées).",
             "title": "Processed",
             "type": "integer"
           },
@@ -1456,9 +1482,17 @@
             "title": "Role",
             "type": "string"
           },
-          "status": {
-            "title": "Status",
-            "type": "string"
+          "taux_validation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lignes validées / lignes revues (%).",
+            "title": "Taux Validation"
           }
         },
         "required": [
@@ -1466,32 +1500,32 @@
           "operator",
           "role",
           "processed",
-          "accuracy",
-          "avgTime",
-          "status"
+          "taux_validation",
+          "delai_moyen_secondes",
+          "derniere_activite"
         ],
         "title": "OperatorEfficiencyData",
         "type": "object"
       },
       "OperatorPerformanceComparisonData": {
         "properties": {
-          "errors": {
-            "title": "Errors",
-            "type": "integer"
-          },
           "name": {
             "title": "Name",
             "type": "string"
           },
-          "processed": {
-            "title": "Processed",
+          "rejetees": {
+            "title": "Rejetees",
+            "type": "integer"
+          },
+          "validees": {
+            "title": "Validees",
             "type": "integer"
           }
         },
         "required": [
           "name",
-          "processed",
-          "errors"
+          "validees",
+          "rejetees"
         ],
         "title": "OperatorPerformanceComparisonData",
         "type": "object"
@@ -1831,6 +1865,7 @@
             "type": "string"
           },
           "rate": {
+            "description": "Part des pages envoyées ce jour-là déjà validées (%).",
             "title": "Rate",
             "type": "number"
           },
@@ -4586,7 +4621,7 @@
     },
     "/api/v1/dashboard/activity-heatmap": {
       "get": {
-        "description": "Lignes validées par jour sur 12 mois (ADMIN : sa structure uniquement).",
+        "description": "Lignes validées par jour sur 12 mois.",
         "operationId": "get_activity_heatmap_api_v1_dashboard_activity_heatmap_get",
         "parameters": [
           {
@@ -4757,7 +4792,7 @@
     },
     "/api/v1/dashboard/operator-activity-heatmap": {
       "get": {
-        "description": "Actions par jour × tranche horaire sur 4 semaines (ADMIN : sa structure uniquement).",
+        "description": "Actions par jour × tranche horaire sur 4 semaines.",
         "operationId": "get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get",
         "parameters": [
           {

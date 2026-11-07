@@ -479,7 +479,7 @@ export interface paths {
         };
         /**
          * Get Activity Heatmap
-         * @description Lignes validées par jour sur 12 mois (ADMIN : sa structure uniquement).
+         * @description Lignes validées par jour sur 12 mois.
          */
         get: operations["get_activity_heatmap_api_v1_dashboard_activity_heatmap_get"];
         put?: never;
@@ -533,7 +533,7 @@ export interface paths {
         };
         /**
          * Get Operator Activity Heatmap
-         * @description Actions par jour × tranche horaire sur 4 semaines (ADMIN : sa structure uniquement).
+         * @description Actions par jour × tranche horaire sur 4 semaines.
          */
         get: operations["get_operator_activity_heatmap_api_v1_dashboard_operator_activity_heatmap_get"];
         put?: never;
@@ -1559,14 +1559,20 @@ export interface components {
         };
         /** DashboardStat */
         DashboardStat: {
-            /** Change */
-            change: string;
             /** Code */
             code?: string | null;
+            /**
+             * Evolution Pct
+             * @description Variation des 30 derniers jours vs les 30 précédents (%). None si non pertinent ou sans base de comparaison.
+             */
+            evolution_pct?: number | null;
+            /**
+             * Hausse Favorable
+             * @description Une hausse est-elle une bonne nouvelle (couleur côté front) ?
+             */
+            hausse_favorable: boolean;
             /** Icon */
             icon?: string | null;
-            /** Positive */
-            positive: boolean;
             /** Title */
             title: string;
             /** Value */
@@ -1876,29 +1882,41 @@ export interface components {
         };
         /** OperatorEfficiencyData */
         OperatorEfficiencyData: {
-            /** Accuracy */
-            accuracy: number;
-            /** Avgtime */
-            avgTime: string;
+            /**
+             * Delai Moyen Secondes
+             * @description Délai moyen entre l'envoi de la page et la validation de la ligne.
+             */
+            delai_moyen_secondes: number | null;
+            /**
+             * Derniere Activite
+             * @description Dernière ligne revue.
+             */
+            derniere_activite: string | null;
             /** Id */
             id: string;
             /** Operator */
             operator: string;
-            /** Processed */
+            /**
+             * Processed
+             * @description Lignes revues (validées + rejetées).
+             */
             processed: number;
             /** Role */
             role: string;
-            /** Status */
-            status: string;
+            /**
+             * Taux Validation
+             * @description Lignes validées / lignes revues (%).
+             */
+            taux_validation: number | null;
         };
         /** OperatorPerformanceComparisonData */
         OperatorPerformanceComparisonData: {
-            /** Errors */
-            errors: number;
             /** Name */
             name: string;
-            /** Processed */
-            processed: number;
+            /** Rejetees */
+            rejetees: number;
+            /** Validees */
+            validees: number;
         };
         /**
          * PagesListResponse
@@ -2057,7 +2075,10 @@ export interface components {
         ProcessingVolumesData: {
             /** Date */
             date: string;
-            /** Rate */
+            /**
+             * Rate
+             * @description Part des pages envoyées ce jour-là déjà validées (%).
+             */
             rate: number;
             /** Records */
             records: number;

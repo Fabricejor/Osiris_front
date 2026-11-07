@@ -49,14 +49,6 @@ export interface AuditLog {
   user_name?: string;
 }
 
-export interface DashboardStat {
-  title: string;
-  value: string | number;
-  change: string;
-  positive: boolean;
-  icon?: any; // Just for frontend mapping if needed, usually we don't return icon from backend
-}
-
 export interface ProcessingEfficiencyData {
   name: string;
   value: number;
@@ -70,28 +62,6 @@ export interface OcrPerformanceData {
 export interface OcrConfidenceData {
   name: string;
   value: number;
-}
-
-export interface ProcessingVolumesData {
-  date: string;
-  records: number;
-  rate: number;
-}
-
-export interface OperatorEfficiencyData {
-  id: string;
-  operator: string;
-  role: string;
-  processed: number;
-  accuracy: number;
-  avgTime: string;
-  status: 'Online' | 'Offline' | 'Busy';
-}
-
-export interface OperatorPerformanceComparisonData {
-  name: string;
-  processed: number;
-  errors: number;
 }
 
 export interface ValidationStatusData {

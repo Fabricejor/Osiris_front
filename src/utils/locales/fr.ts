@@ -69,9 +69,9 @@ export const fr: Record<keyof typeof en, string> = {
   operator_activity_title: "Carte d'Activité des Opérateurs",
   efficiency_table_title: "Efficacité & Métriques des Opérateurs",
   efficiency_column_operator: "Opérateur",
-  efficiency_column_validated: "Lots Validés",
-  efficiency_column_time: "Temps Moyen/Page",
-  efficiency_column_accuracy: "Précision",
+  efficiency_column_validated: "Lignes revues",
+  efficiency_column_time: "Délai moyen de validation",
+  efficiency_column_accuracy: "Taux de validation",
   efficiency_column_status: "Statut",
   efficiency_status_active: "Actif",
   efficiency_status_inactive: "Inactif",
@@ -697,4 +697,9 @@ export const fr: Record<keyof typeof en, string> = {
   stat_processed_rows: "Lignes extraites",
   stat_pending_reviews: "Lignes à revoir",
   stat_rejected_rows: "Lignes rejetées",
+
+  // Dashboard real values
+  vs_previous_30_days: "par rapport aux 30 jours précédents",
+  pages_validated_share: "Pages validées",
+  never: "Jamais",
 };

@@ -3,9 +3,6 @@ import {
   ProcessingEfficiencyData,
   OcrPerformanceData,
   OcrConfidenceData,
-  ProcessingVolumesData,
-  OperatorEfficiencyData,
-  OperatorPerformanceComparisonData,
   ValidationStatusData,
 } from '@/types';
 import type { components } from '@/types/api.generated';
@@ -15,6 +12,9 @@ type Schemas = components['schemas'];
 export type DashboardStat = Schemas['DashboardStat'];
 export type ActivityHeatmapData = Schemas['ActivityHeatmapData'];
 export type OperatorActivityHeatmapData = Schemas['OperatorActivityHeatmapData'];
+export type ProcessingVolumesData = Schemas['ProcessingVolumesData'];
+export type OperatorEfficiencyData = Schemas['OperatorEfficiencyData'];
+export type OperatorPerformanceComparisonData = Schemas['OperatorPerformanceComparisonData'];
 
 export const DashboardService = {
   getStats: () => {
