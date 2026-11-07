@@ -675,4 +675,9 @@ export const en = {
   export_bloque_title: "No progress for over 2 hours: the task was probably lost. You can delete it and start again.",
   confirm_delete_export: "Delete this export?",
   export_deleted: "Export deleted.",
+
+  // Exports period
+  export_validated_from: "Validated from",
+  export_validated_to: "Validated until (inclusive)",
+  export_period_hint: "The period applies to the validation date of the data, not the consultation date.",
 };

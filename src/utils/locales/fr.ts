@@ -678,4 +678,9 @@ export const fr: Record<keyof typeof en, string> = {
   export_bloque_title: "Aucune progression depuis plus de 2 h : la tâche a sans doute été perdue. Vous pouvez la supprimer et relancer l'export.",
   confirm_delete_export: "Supprimer cet export ?",
   export_deleted: "Export supprimé.",
+
+  // Exports period
+  export_validated_from: "Validées à partir du",
+  export_validated_to: "Validées jusqu'au (inclus)",
+  export_period_hint: "La période porte sur la date de validation des données, pas sur la date de consultation.",
 };

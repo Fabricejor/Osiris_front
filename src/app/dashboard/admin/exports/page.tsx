@@ -166,7 +166,7 @@ export default function ExportsPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="export-debut" className="text-sm font-semibold text-gray-700">{t("start_date_label")}</label>
+            <label htmlFor="export-debut" className="text-sm font-semibold text-gray-700">{t("export_validated_from")}</label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -180,7 +180,7 @@ export default function ExportsPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="export-fin" className="text-sm font-semibold text-gray-700">{t("end_date_label")}</label>
+            <label htmlFor="export-fin" className="text-sm font-semibold text-gray-700">{t("export_validated_to")}</label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -194,6 +194,7 @@ export default function ExportsPage() {
           </div>
         </div>
 
+        <p className="-mt-3 text-xs text-gray-500">{t("export_period_hint")}</p>
         {periodeInvalide && <p className="text-sm text-red-600">{t("export_period_invalid")}</p>}
 
         <div className="pt-4 border-t border-gray-100 flex justify-end">
