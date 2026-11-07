@@ -70,6 +70,7 @@ const BARRE_CONFIANCE = {
 
 /** Badge « xx % » (score de confiance de l'OCR) affiché à côté de chaque champ lu. */
 function BadgeConfiance({ champ }: Readonly<{ champ: ChampAffiche }>) {
+  const { t } = useTranslation();
   const alertes = champ.alertes.filter((a) => a.bloquante);
   if (alertes.length > 0 && !champ.corrigeParHumain) {
     return (
@@ -77,36 +78,36 @@ function BadgeConfiance({ champ }: Readonly<{ champ: ChampAffiche }>) {
         title={alertes.map((a) => a.message).join('\n')}
         className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-100 text-red-700 border-red-200"
       >
-        ⚠ Incohérent
+        {t("badge_inconsistent")}
       </span>
     );
   }
   if (champ.corrigeParHumain) {
     return (
       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">
-        Corrigé
+        {t("badge_corrected")}
       </span>
     );
   }
   if (champ.deduit) {
     return (
       <span
-        title="Valeur déduite de la ligne du registre (non lue sur l'image)"
+        title={t("badge_deduced_title")}
         className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-slate-100 text-slate-600 border-slate-200"
       >
-        Déduit
+        {t("badge_deduced")}
       </span>
     );
   }
   const niveau = niveauConfiance(champ.confiance);
   let texte = `${champ.confiance}%`;
-  let titre = 'Score de confiance de la lecture de cette cellule';
+  let titre = t('confidence_cell_title');
   if (champ.confiance === null && champ.lu) {
-    texte = 'Score inconnu';
-    titre = 'Valeur lue sans score de confiance : à vérifier';
+    texte = t('score_unknown');
+    titre = t('score_unknown_title');
   } else if (champ.confiance === null) {
-    texte = champ.manquant ? 'Case vide' : 'Non lu';
-    titre = "Aucune valeur lue par l'OCR pour ce champ";
+    texte = champ.manquant ? t('empty_cell') : t('not_read');
+    titre = t('not_read_title');
   }
   return (
     <span
@@ -418,10 +419,10 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                         {/* Zoom controls */}
                         <div className="absolute top-4 left-4 z-10 flex items-center bg-black/40 backdrop-blur-md rounded-xl p-1 text-gray-300 gap-0.5">
                           {[
-                            { action: () => zoomIn(), icon: ZoomIn, label: 'Zoom In' },
-                            { action: () => zoomOut(), icon: ZoomOut, label: 'Zoom Out' },
-                            { action: () => centerView(), icon: Maximize, label: 'Fit' },
-                            { action: () => resetTransform(), icon: RotateCcw, label: 'Reset' },
+                            { action: () => zoomIn(), icon: ZoomIn, label: t('zoom_in') },
+                            { action: () => zoomOut(), icon: ZoomOut, label: t('zoom_out') },
+                            { action: () => centerView(), icon: Maximize, label: t('zoom_fit') },
+                            { action: () => resetTransform(), icon: RotateCcw, label: t('zoom_reset') },
                           ].map(({ action, icon: Icon, label }) => (
                             <button
                               key={label}
@@ -537,7 +538,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                 {/* Header */}
                 <div className={`${vueRegistre ? 'px-6 py-3' : 'p-6'} border-b border-gray-100 flex items-start justify-between shrink-0`}>
                   <div>
-                    <h2 className={`${vueRegistre ? 'text-lg' : 'text-2xl'} font-bold text-gray-900 mb-1`}>Record Validation</h2>
+                    <h2 className={`${vueRegistre ? 'text-lg' : 'text-2xl'} font-bold text-gray-900 mb-1`}>{t("record_validation")}</h2>
                     <p className="text-sm text-gray-500">{currentPage.name} • {currentPage.id_session_scan}</p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -568,7 +569,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                       </button>
                     )}
                     {canValidate && (
-                      <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-bold" role="group" aria-label="Disposition">
+                      <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-bold" role="group" aria-label={t("layout")}>
                         {([
                           ['verifier', `${language === 'fr' ? 'À vérifier' : 'To check'}${nbAVerifier ? ` (${nbAVerifier})` : ''}`],
                           ['fiche', language === 'fr' ? 'Fiche patiente' : 'Patient sheet'],
@@ -715,7 +716,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                           <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>
                         )}
                         {!isLoadingPii && piiData.length === 0 && (
-                          <div className="text-gray-500 text-center py-8">Aucune donnée PII pour cette page.</div>
+                          <div className="text-gray-500 text-center py-8">{t("no_pii_for_page")}</div>
                         )}
                         {!isLoadingPii && [...piiData]
                           .sort((a, b) => a.patient_index - b.patient_index || a.rang - b.rang)
@@ -726,7 +727,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                   {pii.nom_champ ? libelleChamp(catalogue, pii.nom_champ) : pii.cell_id} · {language === 'fr' ? 'ligne' : 'row'} {pii.patient_index + 1}
                                 </label>
                                 {pii.saisie ? (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">Saisie</span>
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">{t("entered")}</span>
                                 ) : (
                                   <BadgeConfiance
                                     champ={{
@@ -790,7 +791,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                           </div>
                         )}
                         {!isLoadingClinical && !isLoadingCatalogue && !catalogueEnErreur && lignes.length === 0 && (
-                          <div className="text-gray-500 text-center py-8">Aucune donnée clinique pour cette page.</div>
+                          <div className="text-gray-500 text-center py-8">{t("no_clinical_for_page")}</div>
                         )}
                         {!isLoadingClinical && !isLoadingCatalogue && lignes.map(({ donnee, champs }) => {
                           const confiance = confianceLigne(champs);
@@ -804,15 +805,15 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                   {grille.rangsParPatient > 1 && ` · ${language === 'fr' ? 'visite' : 'visit'} ${donnee.rang ?? 1}`}
                                   {donnee.valide && (
                                     <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">
-                                      {donnee.categorie_rejet ? 'Rejetée' : 'Validée'}
+                                      {donnee.categorie_rejet ? t('row_rejected') : t('row_validated')}
                                     </span>
                                   )}
                                 </h4>
                                 <span
-                                  title="Moyenne des scores de confiance des champs lus"
+                                  title={t("avg_confidence_title")}
                                   className={`text-xs font-bold px-2 py-0.5 rounded-full border ${BADGE_CONFIANCE[niveau]}`}
                                 >
-                                  {confiance === null ? 'Confiance —' : `Confiance ${confiance}%`}
+                                  {confiance === null ? t('confidence_none') : t('confidence_value', { value: confiance })}
                                 </span>
                               </div>
 
@@ -829,7 +830,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                           {champ.libelle}{champ.unite ? ` (${champ.unite})` : ''}
                                         </label>
                                         {modifie ? (
-                                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">Modifié</span>
+                                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200">{t("edited")}</span>
                                         ) : (
                                           <BadgeConfiance champ={champ} />
                                         )}

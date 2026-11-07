@@ -23,7 +23,7 @@ export default function Login() {
     e.preventDefault();
 
     if (isLockedOut()) {
-      toast.error("Trop de tentatives échouées. Veuillez patienter 15 minutes.");
+      toast.error(t('too_many_attempts'));
       return;
     }
     
@@ -37,13 +37,13 @@ export default function Login() {
     });
 
     toast.promise(loginPromise, {
-      loading: language === 'fr' ? "Connexion en cours..." : "Logging in...",
+      loading: t('logging_in'),
       success: () => {
         router.push("/dashboard");
-        return language === 'fr' ? "Connexion réussie !" : "Login successful!";
+        return t('login_success');
       },
       error: (err) => {
-        return err.message || t("login_error") || "Erreur de connexion";
+        return err.message || t("login_error");
       },
     });
   };
@@ -195,7 +195,7 @@ export default function Login() {
               </a>
             </div>
             <div className="text-[10px] text-gray-400 tracking-wider flex flex-col items-center gap-0.5">
-              <span>All rights reserved Osiris Healthcare © 2025</span>
+              <span>{t("all_rights_reserved")}</span>
               <span className="font-semibold uppercase tracking-widest text-[9px] text-gray-400/80">
                 {t("produced_by")}{" "}
                 <a

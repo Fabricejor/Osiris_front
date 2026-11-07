@@ -26,7 +26,7 @@ export default function SettingsPage() {
     <div className="h-full flex flex-col p-6 bg-[#f8f9fa] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
       
       {/* Dynamic Dashboard PageHeader connects the page to the TopBar slot */}
-      <PageHeader title="Settings" />
+      <PageHeader title={t("settings")} />
 
       {/* Main Container */}
       <div className="max-w-5xl w-full mx-auto space-y-8 mt-2">

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/services/dashboard.service';
+import { useTranslation } from '@/hooks/useTranslation';
+import type { TranslationKey } from '@/utils/translations';
 
 // Icons map based on backend title (or you could map by ID)
 const iconMap: Record<string, any> = {
@@ -23,7 +25,18 @@ const iconMap: Record<string, any> = {
   'Pending Review': { icon: AlertCircle, bg: 'bg-orange-50', color: 'text-orange-500' },
 };
 
+// Titres renvoyés par le backend (anglais, stables) → clés de traduction.
+const TITLE_KEYS: Record<string, TranslationKey> = {
+  'Data Validation Rate': 'data_validation_rate',
+  'Operator Performance Score': 'operator_performance_score',
+  'Avg. Processing Time': 'avg_processing_time',
+  'OCR Success Rate': 'ocr_success_rate',
+  'Daily Validations': 'daily_validations',
+  'Pending Review': 'pending_review',
+};
+
 export default function StatsCards() {
+  const { t } = useTranslation();
   const { data: stats = [], isLoading, isError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: DashboardService.getStats,
@@ -40,7 +53,7 @@ export default function StatsCards() {
   if (isError || stats.length === 0) {
     return (
       <div className="flex justify-center items-center h-24 bg-white rounded-xl border border-gray-100">
-        <p className="text-gray-500 text-sm">No stats available</p>
+        <p className="text-gray-500 text-sm">{t("no_stats_available")}</p>
       </div>
     );
   }
@@ -60,7 +73,7 @@ export default function StatsCards() {
               <IconComponent className={`w-4 h-4 ${iconConfig.color}`} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-gray-500 truncate leading-tight">{stat.title}</p>
+              <p className="text-[11px] text-gray-500 truncate leading-tight">{TITLE_KEYS[stat.title] ? t(TITLE_KEYS[stat.title]) : stat.title}</p>
               <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{stat.value}</p>
               <span
                 className={`text-[11px] font-medium ${stat.positive ? 'text-emerald-600' : 'text-orange-600'

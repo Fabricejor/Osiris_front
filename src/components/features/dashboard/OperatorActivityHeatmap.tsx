@@ -38,7 +38,7 @@ export default function OperatorActivityHeatmap() {
   if (isError || !data || !data.data) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 p-4 h-full flex flex-col items-center justify-center">
-        <p className="text-gray-500 text-sm">No data available</p>
+        <p className="text-gray-500 text-sm">{t("no_data_available")}</p>
       </div>
     );
   }

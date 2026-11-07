@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SessionsService, toPageView, type PageView } from '@/services/sessions.service';
+import { SessionsService, formatDateHeure, toPageView, type PageView } from '@/services/sessions.service';
 import { toast } from 'sonner';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
 import PageHeader from '@/components/ui/PageHeader';
@@ -35,14 +35,14 @@ export default function OCRProcessingPage() {
 
   const onActionError = (err: any) => {
     // 409 : la page a changé de statut entre-temps (ex. déjà validée par un collègue).
-    toast.error(err?.message || (language === 'fr' ? "L'action a échoué" : 'Action failed'));
+    toast.error(err?.message || t('action_failed'));
     queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
   };
 
   const validateMutation = useMutation({
     mutationFn: (id: string) => SessionsService.validatePage(id),
     onSuccess: () => {
-      toast.success(language === 'fr' ? 'Page validée' : 'Page validated');
+      toast.success(t('page_validated'));
       queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
     },
     onError: onActionError,
@@ -51,7 +51,7 @@ export default function OCRProcessingPage() {
   const rejectMutation = useMutation({
     mutationFn: (id: string) => SessionsService.rejectPage(id),
     onSuccess: () => {
-      toast.success(language === 'fr' ? 'Page rejetée' : 'Page rejected');
+      toast.success(t('page_rejected'));
       queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
     },
     onError: onActionError,
@@ -98,7 +98,7 @@ export default function OCRProcessingPage() {
     <div className="h-full flex flex-col p-6 bg-gray-50/50 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
 
       {/* Header */}
-      <PageHeader title="OCR Processing" />
+      <PageHeader title={t("ocr_processing")} />
       <div className="mb-6">
         <p className="text-gray-500 text-sm">{t("ocr_hub_subtitle")}</p>
 
@@ -109,7 +109,7 @@ export default function OCRProcessingPage() {
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Pending Review</p>
+              <p className="text-sm font-bold text-gray-500 uppercase">{t("pending_review")}</p>
               <p className="text-2xl font-black text-gray-900">{queuePages.filter((p) => p.status === 'A_VALIDER').length}</p>
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function OCRProcessingPage() {
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Anomalies Detected</p>
+              <p className="text-sm font-bold text-gray-500 uppercase">{t("anomalies_detected")}</p>
               <p className="text-2xl font-black text-gray-900">{queuePages.filter((p) => p.isAnomaly).length}</p>
             </div>
           </div>
@@ -142,7 +142,7 @@ export default function OCRProcessingPage() {
           <div className="flex items-center gap-2">
             <button onClick={() => setFilterType('All')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'All' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t("all_filter")}</button>
             <button onClick={() => setFilterType('Anomalies')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'Anomalies' ? 'bg-rose-500 text-white' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}>{t("anomalies_filter")}</button>
-            <button onClick={() => setFilterType('Low Confidence')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'Low Confidence' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>Conf &lt; 50%</button>
+            <button onClick={() => setFilterType('Low Confidence')} className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${filterType === 'Low Confidence' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>{t("conf_below_50")}</button>
           </div>
         </div>
 
@@ -167,22 +167,22 @@ export default function OCRProcessingPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#65b741]" />
-            <span>Loading pages...</span>
+            <span>{t("loading_pages")}</span>
           </div>
         ) : filteredPages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
             <CheckCircle2 className="w-12 h-12 opacity-50 text-emerald-500" />
-            <p className="text-lg font-medium text-gray-600">The queue is empty!</p>
-            <p className="text-sm">All pages have been processed.</p>
+            <p className="text-lg font-medium text-gray-600">{t("queue_empty")}</p>
+            <p className="text-sm">{t("queue_empty_desc")}</p>
           </div>
         ) : (
           <div className={`grid gap-6 ${pageViewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`} ref={dropdownRef}>
             {filteredPages.map((page, index) => {
               const pageName = page.name;
-              const pageStatusText = page.statusText;
+              const pageStatusText = t(page.statusKey);
               const pageConfidence = page.confidence;
               const pageBatch = page.id_session_scan.slice(0, 8);
-              const pageUploadDate = page.date_creation ? new Date(page.date_creation).toLocaleDateString() : 'N/A';
+              const pageUploadDate = page.date_creation ? formatDateHeure(page.date_creation) : t('na');
               const pageImage = page.image;
 
               return (
@@ -210,7 +210,7 @@ export default function OCRProcessingPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-bold text-gray-900 leading-tight">{pageName}</h3>
-                        <p className="text-xs font-medium text-gray-500 mt-0.5">Batch: {pageBatch}</p>
+                        <p className="text-xs font-medium text-gray-500 mt-0.5">{t('batch_label', { id: pageBatch })}</p>
                       </div>
 
                       {/* Actions Dropdown Trigger */}
@@ -242,13 +242,13 @@ export default function OCRProcessingPage() {
 
                     <div className={`flex items-center justify-between mt-auto ${pageViewMode === 'grid' ? 'pt-4 border-t border-gray-50' : ''}`}>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Confidence</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t("confidence_label")}</span>
                         <span className={`text-sm font-black ${pageConfidence < 50 ? 'text-rose-500' : 'text-amber-500'}`}>
                           {pageConfidence}%
                         </span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Uploaded</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t("uploaded")}</span>
                         <span className="text-xs font-bold text-gray-600">{pageUploadDate}</span>
                       </div>
                     </div>

@@ -260,6 +260,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const role = useAuthStore((state) => state.user?.role);
+  const { t } = useTranslation();
 
   // Masque les entrées que le rôle ne peut pas utiliser (elles renverraient 403).
   // Le backend reste la seule vraie barrière d'accès.
@@ -290,7 +291,7 @@ export default function Sidebar() {
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-[72px] z-50 w-6 h-6 rounded-full bg-[#08704F] border border-white/20 flex items-center justify-center shadow-lg transition-all duration-200 hover:bg-[#065c41] hover:scale-110"
-        aria-label={isCollapsed ? 'Ouvrir la sidebar' : 'Fermer la sidebar'}
+        aria-label={isCollapsed ? t('open_sidebar') : t('close_sidebar')}
       >
         {isCollapsed
           ? <ChevronRight className="w-3 h-3 text-white" />

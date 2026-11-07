@@ -463,7 +463,7 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Admin : modifier le libellé, les alias ou les modalités d'un champ
+         * Superadmin : modifier le libellé, les alias ou les modalités d'un champ
          * @description Effet immédiat sur cette instance de l'API ; les workers OCR voient la
          *     modification au plus tard après la durée de vie du cache (60 s).
          */
@@ -2141,6 +2141,11 @@ export interface components {
              * Format: date-time
              */
             date_debut: string;
+            /**
+             * Date Dernier Upload
+             * @description Date/heure du dernier upload de page de la session.
+             */
+            date_dernier_upload?: string | null;
             /** Date Fin */
             date_fin: string | null;
             /**
@@ -2148,6 +2153,11 @@ export interface components {
              * Format: date-time
              */
             date_modification: string;
+            /**
+             * District
+             * @description District sanitaire de la structure.
+             */
+            district?: string | null;
             /**
              * Id Agent Terrain
              * Format: uuid
@@ -3523,7 +3533,7 @@ export interface operations {
                     "application/json": components["schemas"]["CatalogueRegistre"];
                 };
             };
-            /** @description Réservé aux admins */
+            /** @description Réservé aux SUPERADMIN (catalogue commun à toutes les structures) */
             403: {
                 headers: {
                     [name: string]: unknown;

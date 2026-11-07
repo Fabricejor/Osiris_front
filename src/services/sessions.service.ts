@@ -2,6 +2,7 @@ import { apiClient } from "./apiClient";
 
 import type { FolderStatus } from "@/components/ui/folderUI";
 import type { components } from "@/types/api.generated";
+import type { TranslationKey } from "@/utils/translations";
 
 // Types générés depuis l'OpenAPI du backend (`npm run gen:api`) : un champ
 // renommé côté backend casse la compilation au lieu de donner `undefined`.
@@ -16,10 +17,32 @@ export function sessionFolderStatus(session: Pick<SessionScan, "statut_validatio
   return session?.statut_validation ?? "pending";
 }
 
-/** Libellé lisible (le backend ne stocke pas de libellé de session). */
+/** Date + heure courte : « 07/11/2026 14:32 ». */
+export function formatDateHeure(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+}
+
+/** Libellé lisible (le backend ne stocke pas de libellé de session) :
+ *  type, année et date/heure d'ouverture, pour distinguer deux sessions du même jour. */
 export function sessionLabel(session: SessionScan): string {
-  const date = new Date(session.date_debut || session.date_creation).toLocaleDateString("fr-FR");
-  return `${session.type_registre} ${session.annee_version} — ${date}`;
+  return `${session.type_registre} ${session.annee_version} — ${formatDateHeure(session.date_debut || session.date_creation)}`;
+}
+
+/** Qui / où : « Awa Diop · CS Fatick · Fatick » (parties absentes omises). */
+export function sessionSousTitre(session: SessionScan): string {
+  const structure = session.district && session.district !== session.clinique
+    ? [session.clinique, session.district]
+    : [session.clinique];
+  return [session.operateur, ...structure].filter(Boolean).join(" · ");
+}
+
+/** Texte de recherche d'une session (libellé, agent, structure, district, id). */
+export function sessionTexteRecherche(session: SessionScan): string {
+  return [session.id_session_scan, sessionLabel(session), session.operateur, session.clinique, session.district]
+    .filter(Boolean).join(" ").toLowerCase();
 }
 
 export type StatutTraitement = Schemas["StatutTraitement"];
@@ -57,7 +80,8 @@ export interface PageView {
   annee_version: number;
   name: string;
   status: StatutTraitement;
-  statusText: string;
+  /** Clé de traduction du statut (afficher avec `t(page.statusKey)`). */
+  statusKey: TranslationKey;
   isAnomaly: boolean;
   confidence: number;
   /** URL d'image affichable (pré-signée, expire) — vide si indisponible. */
@@ -74,15 +98,15 @@ export interface PageView {
 /** Au-delà, une page encore en OCR est considérée bloquée (job perdu, worker arrêté). */
 const DELAI_OCR_BLOQUE_MS = 30 * 60 * 1000;
 
-const STATUT_LABEL: Record<StatutTraitement, string> = {
-  RECU: "En traitement",
-  EN_TRAITEMENT: "En traitement",
-  A_VALIDER: "À valider",
-  VALIDE: "Validée",
-  FUSION_INCOMPLETE: "Anomalie",
-  ECHEC_RECALAGE: "Échec recalage",
-  ECHEC_OCR: "Échec OCR",
-  REJETEE: "Rejetée",
+const STATUT_LABEL: Record<StatutTraitement, TranslationKey> = {
+  RECU: "statut_en_traitement",
+  EN_TRAITEMENT: "statut_en_traitement",
+  A_VALIDER: "statut_a_valider",
+  VALIDE: "statut_valide",
+  FUSION_INCOMPLETE: "statut_anomalie",
+  ECHEC_RECALAGE: "statut_echec_recalage",
+  ECHEC_OCR: "statut_echec_ocr",
+  REJETEE: "statut_rejetee",
 };
 
 export function toPageView(page: RegistreScanne): PageView {
@@ -94,7 +118,7 @@ export function toPageView(page: RegistreScanne): PageView {
     annee_version: page.annee_version,
     name: `${page.type_registre} ${page.annee_version}${ligne} · ${page.id_registre_scanne.slice(0, 8)}`,
     status: page.statut_traitement,
-    statusText: STATUT_LABEL[page.statut_traitement] ?? page.statut_traitement,
+    statusKey: STATUT_LABEL[page.statut_traitement] ?? "statut_en_traitement",
     isAnomaly:
       page.statut_traitement === "FUSION_INCOMPLETE" ||
       page.statut_traitement === "ECHEC_RECALAGE" ||

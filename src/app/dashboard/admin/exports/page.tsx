@@ -5,11 +5,14 @@ import PageHeader from "@/components/ui/PageHeader";
 import { Download, Filter, FileText, Calendar, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ExportsService } from '@/services/exports.service';
+import { formatDateHeure } from '@/services/sessions.service';
 import { StructuresService } from '@/services/structures.service';
 import { CataloguesService } from '@/services/catalogues.service';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ExportsPage() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     structure_id: '',
     catalogue_id: '',
@@ -37,11 +40,11 @@ export default function ExportsPage() {
     mutationFn: (data: any) => ExportsService.generateExport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recentExports'] });
-      alert("Export initié avec succès !");
+      alert(t('export_started'));
     },
     onError: (error) => {
       console.error("Error generating export", error);
-      alert("Erreur lors de la génération de l'export");
+      alert(t('export_error'));
     }
   });
 
@@ -51,12 +54,12 @@ export default function ExportsPage() {
       if (data && data.url) {
         window.open(data.url, '_blank');
       } else {
-        alert("URL de téléchargement non disponible");
+        alert(t('download_url_unavailable'));
       }
     },
     onError: (error) => {
       console.error("Error downloading export", error);
-      alert("Erreur lors du téléchargement de l'export");
+      alert(t('download_error'));
     }
   });
 
@@ -83,24 +86,24 @@ export default function ExportsPage() {
 
   return (
     <div className="h-full flex flex-col gap-4 p-5 overflow-y-auto bg-gray-50/50" style={{ scrollbarWidth: 'thin' }}>
-      <PageHeader title="Data Export">
+      <PageHeader title={t("data_export")}>
       </PageHeader>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col gap-6 max-w-3xl">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-1">Export Generation</h2>
-          <p className="text-sm text-gray-500">Select parameters to extract data from validated sessions.</p>
+          <h2 className="text-lg font-bold text-gray-900 mb-1">{t("export_generation")}</h2>
+          <p className="text-sm text-gray-500">{t("export_generation_desc")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Structure Sanitaire</label>
+            <label className="text-sm font-semibold text-gray-700">{t("health_facility")}</label>
             <select 
               value={formData.structure_id}
               onChange={e => setFormData({...formData, structure_id: e.target.value})}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
             >
-              <option value="">Toutes les structures</option>
+              <option value="">{t("all_structures")}</option>
               {structures.map(structure => (
                 <option key={structure.id} value={structure.id}>{structure.nom}</option>
               ))}
@@ -108,13 +111,13 @@ export default function ExportsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Catalogue / Registre</label>
+            <label className="text-sm font-semibold text-gray-700">{t("catalogue_register")}</label>
             <select 
               value={formData.catalogue_id}
               onChange={e => setFormData({...formData, catalogue_id: e.target.value})}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65b741]/20 focus:border-[#65b741]"
             >
-              <option value="">Tous les registres</option>
+              <option value="">{t("all_registers")}</option>
               {catalogues.map(catalogue => (
                 <option key={catalogue.id} value={catalogue.id}>{catalogue.nom_registre}</option>
               ))}
@@ -122,7 +125,7 @@ export default function ExportsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Date de début</label>
+            <label className="text-sm font-semibold text-gray-700">{t("start_date_label")}</label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input 
@@ -135,7 +138,7 @@ export default function ExportsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Date de fin</label>
+            <label className="text-sm font-semibold text-gray-700">{t("end_date_label")}</label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input 
@@ -149,7 +152,7 @@ export default function ExportsPage() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">Format d'export</label>
+          <label className="text-sm font-semibold text-gray-700">{t("export_format")}</label>
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
               <input 
@@ -183,20 +186,20 @@ export default function ExportsPage() {
             className="flex items-center gap-2 px-6 py-2.5 bg-[#65b741] text-white rounded-lg text-sm font-bold hover:bg-[#5aa43a] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Generate Export
+            {t("generate_export")}
           </button>
         </div>
       </div>
 
       <div className="mt-8">
-        <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase mb-4">Recent Exports</h3>
+        <h3 className="text-sm font-bold text-gray-800 tracking-wide uppercase mb-4">{t("recent_exports")}</h3>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden max-w-3xl">
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               <tr>
-                <th className="p-4 border-b border-gray-100">File Name</th>
-                <th className="p-4 border-b border-gray-100">Date</th>
-                <th className="p-4 border-b border-gray-100 text-right">Actions</th>
+                <th className="p-4 border-b border-gray-100">{t("file_name")}</th>
+                <th className="p-4 border-b border-gray-100">{t("date")}</th>
+                <th className="p-4 border-b border-gray-100 text-right">{t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -205,14 +208,14 @@ export default function ExportsPage() {
                   <td colSpan={3} className="p-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-[#65b741]" />
-                      <span>Loading exports...</span>
+                      <span>{t("loading_exports")}</span>
                     </div>
                   </td>
                 </tr>
               ) : recentExports.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="p-8 text-center text-gray-500">
-                    No recent exports found.
+                    {t("no_recent_exports")}
                   </td>
                 </tr>
               ) : (
@@ -225,7 +228,7 @@ export default function ExportsPage() {
                       </div>
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {exportRecord.date ? new Date(exportRecord.date).toLocaleString() : 'N/A'}
+                      {exportRecord.date ? formatDateHeure(exportRecord.date) : t('na')}
                     </td>
                     <td className="p-4 text-right">
                       <button 
@@ -233,7 +236,7 @@ export default function ExportsPage() {
                         disabled={downloadMutation.isPending && downloadMutation.variables === exportRecord.id}
                         className="text-sm font-semibold text-[#65b741] hover:text-[#5aa43a] disabled:opacity-50"
                       >
-                        {downloadMutation.isPending && downloadMutation.variables === exportRecord.id ? 'Downloading...' : 'Download'}
+                        {downloadMutation.isPending && downloadMutation.variables === exportRecord.id ? t('downloading') : t('download')}
                       </button>
                     </td>
                   </tr>

@@ -12,10 +12,10 @@ export function useTranslation() {
     setMounted(true);
   }, []);
 
-  const language = mounted ? storeLanguage : 'en';
+  const language = mounted ? storeLanguage : 'fr';
 
   const t = (key: keyof typeof translations['en'], variables?: Record<string, string | number>) => {
-    const langToUse = mounted ? storeLanguage : 'en';
+    const langToUse = mounted ? storeLanguage : 'fr';
     const translation = translations[langToUse]?.[key] || translations['en']?.[key] || String(key);
     
     if (!variables) return translation;

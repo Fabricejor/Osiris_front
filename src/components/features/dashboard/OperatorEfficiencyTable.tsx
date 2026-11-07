@@ -33,6 +33,12 @@ const statusStyles: Record<string, string> = {
   Inactive: 'bg-gray-100 text-gray-600',
 };
 
+const STATUS_LABEL_KEYS = {
+  'Active': 'efficiency_status_active',
+  'On Track': 'efficiency_status_on_track',
+  'Inactive': 'efficiency_status_inactive',
+} as const;
+
 export default function OperatorEfficiencyTable() {
   const { t } = useTranslation();
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -76,7 +82,7 @@ export default function OperatorEfficiencyTable() {
           return (
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${statusStyles[status]}`}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              {status}
+              {t(STATUS_LABEL_KEYS[status])}
             </span>
           );
         },
@@ -126,13 +132,13 @@ export default function OperatorEfficiencyTable() {
               <tr>
                 <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-gray-500">
                   <Loader2 className="w-6 h-6 animate-spin text-[#65b741] mx-auto mb-2" />
-                  Loading efficiency data...
+                  {t("loading_efficiency")}
                 </td>
               </tr>
             ) : isError || operatorData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-gray-500">
-                  No data available
+                  {t("no_data_available")}
                 </td>
               </tr>
             ) : (
@@ -152,7 +158,7 @@ export default function OperatorEfficiencyTable() {
       {/* Pagination */}
       <div className="flex items-center justify-end gap-1 pt-2 border-t border-gray-50 mt-auto">
         <span className="text-[11px] text-gray-500 mr-2">
-          Page {table.getState().pagination.pageIndex + 1}
+          {t('page_n', { page: table.getState().pagination.pageIndex + 1 })}
         </span>
         <button
           onClick={() => table.firstPage()}
