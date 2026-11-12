@@ -20,7 +20,7 @@ import {
   type Grille,
   type SaisiesValideur,
 } from '@/services/validation-mapping';
-import CelluleEditable, { ListesModalites } from './CelluleEditable';
+import CelluleEditable, { libelleRaison, ListesModalites } from './CelluleEditable';
 
 interface RevueAVerifierProps {
   grille: Grille;
@@ -41,6 +41,10 @@ function raisons(element: ElementAVerifier, fr: boolean): string[] {
   if (etat.scoreInconnu) liste.push(fr ? "Valeur lue sans score de confiance" : 'Value read without a confidence score');
   else if (etat.confiance !== null && etat.niveau !== 'haute') {
     liste.push(`${fr ? 'Confiance de lecture' : 'Reading confidence'} : ${etat.confiance} %`);
+  }
+  for (const r of etat.raisons) {
+    const libelle = libelleRaison(r, fr);
+    if (libelle) liste.push(libelle);
   }
   return liste;
 }

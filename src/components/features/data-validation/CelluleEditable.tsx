@@ -53,7 +53,35 @@ const PASTILLE_SCORE = {
 function fondCellule(etat: NonNullable<ReturnType<typeof etatCellule>>): string {
   if (etat.alertes.length > 0) return 'bg-red-50';
   if (etat.scoreInconnu) return 'bg-slate-100';
+  // Case vide ou contrôle aléatoire signalés par le serveur : pas de score coloré.
+  if (etat.aVerifier && !FOND[etat.niveau]) return 'bg-amber-50';
   return FOND[etat.niveau];
+}
+
+/** Texte de la pastille d'une case à vérifier (hors alerte de cohérence). */
+function textePastille(etat: NonNullable<ReturnType<typeof etatCellule>>, fr: boolean): string {
+  if (etat.raisons.includes('VALEUR_MANQUANTE')) return fr ? 'vide ?' : 'empty?';
+  if (etat.scoreInconnu) return 'score ?';
+  if (etat.raisons.includes('CONTROLE_ALEATOIRE')) return fr ? 'contrôle' : 'spot check';
+  return `${etat.confiance} %`;
+}
+
+/** Explication d'une raison serveur (infobulle, mode « À vérifier »). */
+export function libelleRaison(raison: string, fr: boolean): string | null {
+  switch (raison) {
+    case 'VALEUR_MANQUANTE':
+      return fr
+        ? "Case vide à la lecture, mais souvent remplie sur ce type de registre : vérifiez la photo"
+        : 'Read as empty, but often filled on this register: check the photo';
+    case 'CONTROLE_ALEATOIRE':
+      return fr
+        ? 'Contrôle aléatoire : case sûre tirée au hasard pour mesurer la fiabilité de la lecture'
+        : 'Spot check: a confident cell picked at random to measure reading accuracy';
+    case 'COLONNE_NON_RATTACHEE':
+      return fr ? 'Colonne inconnue du catalogue' : 'Column unknown to the catalogue';
+    default:
+      return null; // confiance / score / alerte : expliqués par ailleurs
+  }
 }
 
 /** Identifiant de la <datalist> des modalités d'une colonne (voir ListesModalites). */
@@ -77,7 +105,11 @@ export function ListesModalites({ colonnes }: Readonly<{ colonnes: ColonneGrille
 }
 
 function infobulle(etat: NonNullable<ReturnType<typeof etatCellule>>, fr: boolean): string {
-  const lignes = [...etat.alertes.map((a) => `⚠ ${a}`), ...etat.infos.map((a) => `ℹ ${a}`)];
+  const lignes = [
+    ...etat.alertes.map((a) => `⚠ ${a}`),
+    ...etat.raisons.map((r) => libelleRaison(r, fr)).filter((l): l is string => !!l),
+    ...etat.infos.map((a) => `ℹ ${a}`),
+  ];
   const base = infobulleBase(etat, fr);
   return lignes.length ? [...lignes, base].join('\n') : base;
 }
@@ -207,7 +239,7 @@ export default function CelluleEditable({
             </span>
           ) : (
             <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-bold ${PASTILLE_SCORE[etat.niveau]}`}>
-              {etat.scoreInconnu ? 'score ?' : `${etat.confiance} %`}
+              {textePastille(etat, fr)}
             </span>
           )}
         </div>

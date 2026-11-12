@@ -755,6 +755,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                       deduit: false,
                                       manquant: !pii.valeur_lue,
                                       alertes: [],
+                                      raisons: null,
                                     }}
                                   />
                                 )}

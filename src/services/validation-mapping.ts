@@ -59,7 +59,16 @@ export interface ChampAffiche {
    * sinon INFO (affichée au survol seulement).
    */
   alertes: AlerteChamp[];
+  /**
+   * Revue par exception : raisons pour lesquelles le serveur demande de
+   * regarder cette case (seuils de confiance mesurés par champ). [] = case
+   * sûre, validable sans la revoir. null = information absente (ligne déjà
+   * validée, ou backend antérieur) → règle locale (seuil fixe de 80 %).
+   */
+  raisons: RaisonVerification[] | null;
 }
+
+export type RaisonVerification = components['schemas']['RaisonVerification'];
 
 export interface AlerteChamp {
   code: string;
@@ -223,6 +232,8 @@ export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | un
   const lus = champsDeLigne(donnee);
   const manquants = new Set((donnee.missings_reels ?? []).map(String));
   const alertes = alertesParChamp(donnee);
+  // Cases à vérifier décidées par le serveur (lignes encore à valider uniquement).
+  const aVerifierServeur = !donnee.valide && donnee.a_verifier ? donnee.a_verifier : null;
 
   const depuis = (nom: string, def?: ChampCatalogue): ChampAffiche => {
     const lu = lus[nom];
@@ -239,6 +250,7 @@ export function champsAffiches(donnee: DonneeExtraite, catalogue: Catalogue | un
       deduit: lu?.origine === 'filtre_math',
       manquant: !lu && manquants.has(nom),
       alertes: alertes.get(nom) ?? [],
+      raisons: aVerifierServeur ? (aVerifierServeur[nom] ?? []) : null,
     };
   };
 
@@ -530,6 +542,8 @@ export interface EtatCellule {
   /** Alertes informatives (ex. modalité corrigée automatiquement). */
   infos: string[];
   niveau: 'basse' | 'moyenne' | 'haute' | 'inconnue';
+  /** Raisons serveur encore actives (vide si la case est traitée ou sûre). */
+  raisons: RaisonVerification[];
 }
 
 export function etatCellule(cellule: CelluleGrille | undefined, saisies: SaisiesValideur): EtatCellule | null {
@@ -545,8 +559,10 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
   let traitee: boolean;
   let alertes: string[] = [];
   let infos: string[] = [];
+  let raisonsServeur: RaisonVerification[] | null = null;
 
   if (cellule.kind === 'clinique') {
+    raisonsServeur = cellule.champ.raisons;
     const { champ, idDonnee } = cellule;
     valeurOrigine = champ.valeur;
     valeur = saisies.cliniques[idDonnee]?.[champ.nom] ?? champ.valeur;
@@ -572,18 +588,32 @@ export function etatCellule(cellule: CelluleGrille | undefined, saisies: Saisies
   const modifie = valeur.trim() !== valeurOrigine.trim();
   const revue = !modifie && !!saisies.revues?.has(cleCellule(cellule) ?? '');
   const neutre = corrigee || modifie || deduit || traitee || revue;
-  const niveau = neutre ? 'inconnue' : niveauConfiance(confiance);
+  let niveau = neutre ? 'inconnue' : niveauConfiance(confiance);
   const scoreInconnu = !neutre && lu && confiance === null;
   // Une alerte de cohérence reste visible même si la lecture est sûre (620 kg lu à 95 %),
   // jusqu'à ce que le valideur corrige ou confirme la valeur.
   const alertesTraitees = modifie || traitee || corrigee || revue;
   const alertesActives = alertesTraitees ? [] : alertes;
   if (revue) infos = [...alertes, ...infos];
-  const aVerifier =
-    alertesActives.length > 0 || (!neutre && lu && (niveau === 'basse' || niveau === 'moyenne' || scoreInconnu));
+
+  let aVerifier: boolean;
+  let raisons: RaisonVerification[] = [];
+  if (raisonsServeur !== null) {
+    // Revue par exception : le serveur décide, avec des seuils mesurés par champ.
+    // La couleur suit sa décision (une case signalée n'est jamais « sûre »).
+    raisons = neutre ? [] : raisonsServeur.filter((r) => r !== 'ALERTE');
+    aVerifier = alertesActives.length > 0 || raisons.length > 0;
+    if (!neutre && confiance !== null) {
+      if (!raisons.includes('CONFIANCE_FAIBLE')) niveau = 'haute';
+      else if (niveau === 'haute') niveau = 'moyenne';
+    }
+  } else {
+    aVerifier =
+      alertesActives.length > 0 || (!neutre && lu && (niveau === 'basse' || niveau === 'moyenne' || scoreInconnu));
+  }
   return {
     valeur, valeurOrigine, modifie, confiance, lu, verrouillee, corrigee, deduit, scoreInconnu, revue, aVerifier, niveau,
-    alertes: alertesActives, infos,
+    alertes: alertesActives, infos, raisons,
   };
 }
 

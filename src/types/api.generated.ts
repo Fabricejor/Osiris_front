@@ -657,6 +657,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/donnees-extraites/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Seuils de confiance par champ (revue par exception)
+         * @description Pour chaque (type de registre, champ) : seuil de confiance en dessous
+         *     duquel une case est « à vérifier », et d'où il vient (`MESURE` sur les
+         *     validations passées, `DEFAUT` faute de données, `NON_DISCRIMINANT` si même
+         *     les scores hauts sont souvent corrigés). Sert aussi de mesure de la
+         *     précision réelle de l'OCR, champ par champ.
+         */
+        get: operations["get_calibration_api_v1_donnees_extraites_calibration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/donnees-extraites/valider-lot": {
         parameters: {
             query?: never;
@@ -1405,6 +1429,65 @@ export interface components {
             total: number;
         };
         /**
+         * CalibrationChampRead
+         * @description Seuil de confiance d'un champ, mesuré sur les validations passées.
+         */
+        CalibrationChampRead: {
+            /**
+             * N Lectures
+             * @description Cases lues par l'OCR puis validées.
+             */
+            n_lectures: number;
+            /** N Manquantes */
+            n_manquantes: number;
+            /** Nom Champ */
+            nom_champ: string;
+            /**
+             * Seuil
+             * @description Score Gemini sous lequel la case est à vérifier.
+             */
+            seuil: number;
+            source: components["schemas"]["SourceSeuil"];
+            /**
+             * Taux Correction
+             * @description Part de ces cases corrigées par les valideurs (tous scores).
+             */
+            taux_correction?: number | null;
+            /**
+             * Taux Correction Au Dessus
+             * @description Part corrigée au-dessus du seuil retenu (si MESURE).
+             */
+            taux_correction_au_dessus?: number | null;
+            /**
+             * Taux Remplissage Manquantes
+             * @description Part des cases vides que les valideurs ont complétées.
+             */
+            taux_remplissage_manquantes?: number | null;
+            /** Type Registre */
+            type_registre: string;
+            /**
+             * Verifier Manquantes
+             * @description Les cases laissées vides par l'OCR sont-elles à vérifier ?
+             */
+            verifier_manquantes: boolean;
+        };
+        /**
+         * CalibrationResponse
+         * @description `GET /donnees-extraites/calibration` — seuils actuels de la revue par exception.
+         */
+        CalibrationResponse: {
+            /** Champs */
+            champs: components["schemas"]["CalibrationChampRead"][];
+            /** Min Echantillon */
+            min_echantillon: number;
+            /** Seuil Defaut */
+            seuil_defaut: number;
+            /** Taux Controle Aleatoire */
+            taux_controle_aleatoire: number;
+            /** Taux Erreur Cible */
+            taux_erreur_cible: number;
+        };
+        /**
          * CatalogueRegistre
          * @description Catalogue complet d'un (type_registre, année de version).
          */
@@ -1641,6 +1724,13 @@ export interface components {
          *     LigneExtraite pour éviter le coût runtime sur les listings).
          */
         DonneeExtraiteRead: {
+            /**
+             * A Verifier
+             * @description Revue par exception — cases à regarder, {nom_champ: [raisons]}. Les autres cases peuvent être validées sans être revues. Vide pour une ligne déjà validée ou rejetée. Une clé peut être une colonne non rattachée au catalogue (raison COLONNE_NON_RATTACHEE).
+             */
+            a_verifier?: {
+                [key: string]: components["schemas"]["RaisonVerification"][];
+            };
             /** Alertes Coherence */
             alertes_coherence: unknown[] | null;
             /** @description Si non-null, la ligne a été rejetée (non-exportée en CSV). */
@@ -2114,6 +2204,12 @@ export interface components {
             records: number;
         };
         /**
+         * RaisonVerification
+         * @description Pourquoi une case doit être regardée par le valideur (revue par exception).
+         * @enum {string}
+         */
+        RaisonVerification: "ALERTE" | "SCORE_INCONNU" | "CONFIANCE_FAIBLE" | "VALEUR_MANQUANTE" | "COLONNE_NON_RATTACHEE" | "CONTROLE_ALEATOIRE";
+        /**
          * RefreshRequest
          * @description Body du refresh Bearer (mobile) — refresh_token explicite.
          */
@@ -2354,6 +2450,12 @@ export interface components {
              */
             total: number;
         };
+        /**
+         * SourceSeuil
+         * @description Origine du seuil de confiance d'un champ (revue par exception).
+         * @enum {string}
+         */
+        SourceSeuil: "MESURE" | "DEFAUT" | "NON_DISCRIMINANT";
         /**
          * StatusUtilisateur
          * @description Statut du compte utilisateur.
@@ -4083,6 +4185,51 @@ export interface operations {
                 content?: never;
             };
             /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_calibration_api_v1_donnees_extraites_calibration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationResponse"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rôle insuffisant */
             403: {
                 headers: {
                     [name: string]: unknown;

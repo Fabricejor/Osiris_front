@@ -253,6 +253,129 @@
         "title": "AuditLogsListResponse",
         "type": "object"
       },
+      "CalibrationChampRead": {
+        "additionalProperties": false,
+        "description": "Seuil de confiance d'un champ, mesuré sur les validations passées.",
+        "properties": {
+          "n_lectures": {
+            "description": "Cases lues par l'OCR puis validées.",
+            "minimum": 0.0,
+            "title": "N Lectures",
+            "type": "integer"
+          },
+          "n_manquantes": {
+            "minimum": 0.0,
+            "title": "N Manquantes",
+            "type": "integer"
+          },
+          "nom_champ": {
+            "title": "Nom Champ",
+            "type": "string"
+          },
+          "seuil": {
+            "description": "Score Gemini sous lequel la case est à vérifier.",
+            "title": "Seuil",
+            "type": "number"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceSeuil"
+          },
+          "taux_correction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part de ces cases corrigées par les valideurs (tous scores).",
+            "title": "Taux Correction"
+          },
+          "taux_correction_au_dessus": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part corrigée au-dessus du seuil retenu (si MESURE).",
+            "title": "Taux Correction Au Dessus"
+          },
+          "taux_remplissage_manquantes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part des cases vides que les valideurs ont complétées.",
+            "title": "Taux Remplissage Manquantes"
+          },
+          "type_registre": {
+            "title": "Type Registre",
+            "type": "string"
+          },
+          "verifier_manquantes": {
+            "description": "Les cases laissées vides par l'OCR sont-elles à vérifier ?",
+            "title": "Verifier Manquantes",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type_registre",
+          "nom_champ",
+          "seuil",
+          "source",
+          "n_lectures",
+          "verifier_manquantes",
+          "n_manquantes"
+        ],
+        "title": "CalibrationChampRead",
+        "type": "object"
+      },
+      "CalibrationResponse": {
+        "additionalProperties": false,
+        "description": "`GET /donnees-extraites/calibration` — seuils actuels de la revue par exception.",
+        "properties": {
+          "champs": {
+            "items": {
+              "$ref": "#/components/schemas/CalibrationChampRead"
+            },
+            "title": "Champs",
+            "type": "array"
+          },
+          "min_echantillon": {
+            "title": "Min Echantillon",
+            "type": "integer"
+          },
+          "seuil_defaut": {
+            "title": "Seuil Defaut",
+            "type": "number"
+          },
+          "taux_controle_aleatoire": {
+            "title": "Taux Controle Aleatoire",
+            "type": "number"
+          },
+          "taux_erreur_cible": {
+            "title": "Taux Erreur Cible",
+            "type": "number"
+          }
+        },
+        "required": [
+          "seuil_defaut",
+          "taux_erreur_cible",
+          "min_echantillon",
+          "taux_controle_aleatoire",
+          "champs"
+        ],
+        "title": "CalibrationResponse",
+        "type": "object"
+      },
       "CatalogueRegistre": {
         "description": "Catalogue complet d'un (type_registre, année de version).",
         "properties": {
@@ -754,6 +877,17 @@
         "additionalProperties": false,
         "description": "Vue d'une `donnee_extraite` renvoyée aux valideurs médicaux.\n\nReprend les JSONB de la table tels quels (pas de re-typage via\nLigneExtraite pour éviter le coût runtime sur les listings).",
         "properties": {
+          "a_verifier": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/RaisonVerification"
+              },
+              "type": "array"
+            },
+            "description": "Revue par exception — cases à regarder, {nom_champ: [raisons]}. Les autres cases peuvent être validées sans être revues. Vide pour une ligne déjà validée ou rejetée. Une clé peut être une colonne non rattachée au catalogue (raison COLONNE_NON_RATTACHEE).",
+            "title": "A Verifier",
+            "type": "object"
+          },
           "alertes_coherence": {
             "anyOf": [
               {
@@ -1908,6 +2042,19 @@
         "title": "ProcessingVolumesData",
         "type": "object"
       },
+      "RaisonVerification": {
+        "description": "Pourquoi une case doit être regardée par le valideur (revue par exception).",
+        "enum": [
+          "ALERTE",
+          "SCORE_INCONNU",
+          "CONFIANCE_FAIBLE",
+          "VALEUR_MANQUANTE",
+          "COLONNE_NON_RATTACHEE",
+          "CONTROLE_ALEATOIRE"
+        ],
+        "title": "RaisonVerification",
+        "type": "string"
+      },
       "RefreshRequest": {
         "additionalProperties": false,
         "description": "Body du refresh Bearer (mobile) — refresh_token explicite.",
@@ -2459,6 +2606,16 @@
         ],
         "title": "SessionsListResponse",
         "type": "object"
+      },
+      "SourceSeuil": {
+        "description": "Origine du seuil de confiance d'un champ (revue par exception).",
+        "enum": [
+          "MESURE",
+          "DEFAUT",
+          "NON_DISCRIMINANT"
+        ],
+        "title": "SourceSeuil",
+        "type": "string"
       },
       "StatusUtilisateur": {
         "description": "Statut du compte utilisateur.",
@@ -5444,6 +5601,67 @@
           }
         ],
         "summary": "Valideur : lister les données à valider",
+        "tags": [
+          "Validation clinique"
+        ]
+      }
+    },
+    "/api/v1/donnees-extraites/calibration": {
+      "get": {
+        "description": "Pour chaque (type de registre, champ) : seuil de confiance en dessous\nduquel une case est « à vérifier », et d'où il vient (`MESURE` sur les\nvalidations passées, `DEFAUT` faute de données, `NON_DISCRIMINANT` si même\nles scores hauts sont souvent corrigés). Sert aussi de mesure de la\nprécision réelle de l'OCR, champ par champ.",
+        "operationId": "get_calibration_api_v1_donnees_extraites_calibration_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Rôle insuffisant"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Seuils de confiance par champ (revue par exception)",
         "tags": [
           "Validation clinique"
         ]
