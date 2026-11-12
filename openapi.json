@@ -2279,6 +2279,42 @@
             ],
             "title": "Numero Ordre Ligne"
           },
+          "reserve_jusqu_a": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Jusqu A"
+          },
+          "reserve_par": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "id_keycloak de l'utilisateur qui a la page ouverte.",
+            "title": "Reserve Par"
+          },
+          "reserve_par_nom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Par Nom"
+          },
           "score_confiance": {
             "anyOf": [
               {
@@ -2396,6 +2432,45 @@
           "categorie"
         ],
         "title": "RejetRequest",
+        "type": "object"
+      },
+      "ReservationRead": {
+        "additionalProperties": false,
+        "description": "Réponse de `POST /pages/{id}/reservation`.",
+        "properties": {
+          "obtenue": {
+            "description": "True : la page est à vous (réservée ou renouvelée). False : un autre la tient.",
+            "title": "Obtenue",
+            "type": "boolean"
+          },
+          "reserve_jusqu_a": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Jusqu A"
+          },
+          "reserve_par_nom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Par Nom"
+          }
+        },
+        "required": [
+          "obtenue"
+        ],
+        "title": "ReservationRead",
         "type": "object"
       },
       "SaisieRequest": {
@@ -5738,7 +5813,7 @@
     },
     "/api/v1/donnees-extraites/valider-lot": {
       "post": {
-        "description": "Valide en une transaction les lignes nommées (avec leurs corrections) et,\nsi `inclure_restantes`, toutes les autres lignes en attente de la page.\n\nTout ou rien : une ligne nommée déjà traitée par un autre valideur → 409\n`LIGNES_DEJA_TRAITEES`, rien n'est écrit (recharger la page puis renvoyer).\nComme `/valider`, la page passe à `VALIDE` quand plus rien n'est à traiter.",
+        "description": "Valide en une transaction les lignes nommées (avec leurs corrections) et,\nsi `inclure_restantes`, toutes les autres lignes en attente de la page.\n\nTout ou rien : une ligne nommée déjà traitée par un autre valideur → 409\n`LIGNES_DEJA_TRAITEES`, rien n'est écrit (recharger la page puis renvoyer).\nComme `/valider`, la page passe à `VALIDE` quand plus rien n'est à traiter.\n409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.",
         "operationId": "post_valider_lot_api_v1_donnees_extraites_valider_lot_post",
         "parameters": [
           {
@@ -5979,7 +6054,7 @@
     },
     "/api/v1/donnees-extraites/{id_donnee_extraite}/rejeter": {
       "post": {
-        "description": "Marque la ligne comme rejetée (non-exportée en CSV mais conservée en DB\npour traçabilité). `categorie` obligatoire (enum), `motif` texte libre\noptionnel (≤ 500 chars).\n\nComme pour `/valider` : si toutes les lignes du registre sont désormais\ntraitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.",
+        "description": "Marque la ligne comme rejetée (non-exportée en CSV mais conservée en DB\npour traçabilité). `categorie` obligatoire (enum), `motif` texte libre\noptionnel (≤ 500 chars).\n\nComme pour `/valider` : si toutes les lignes du registre sont désormais\ntraitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.\n409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.",
         "operationId": "post_rejeter_api_v1_donnees_extraites__id_donnee_extraite__rejeter_post",
         "parameters": [
           {
@@ -6068,7 +6143,7 @@
     },
     "/api/v1/donnees-extraites/{id_donnee_extraite}/valider": {
       "post": {
-        "description": "Écrit `donnees_validees` (merge brutes + corrections), met `id_valideur`\n+ `date_validation`, et si toutes les lignes du registre sont validées,\npasse le `RegistreScanne.statut_traitement` à `VALIDE`.",
+        "description": "Écrit `donnees_validees` (merge brutes + corrections), met `id_valideur`\n+ `date_validation`, et si toutes les lignes du registre sont validées,\npasse le `RegistreScanne.statut_traitement` à `VALIDE`. 409 `PAGE_RESERVEE`\nsi un autre utilisateur a la page ouverte.",
         "operationId": "post_valider_api_v1_donnees_extraites__id_donnee_extraite__valider_post",
         "parameters": [
           {
@@ -6580,9 +6655,67 @@
         ]
       }
     },
+    "/api/v1/pages/suivante": {
+      "post": {
+        "description": "Plus ancienne page « à valider » que personne d'autre n'a ouverte, réservée\npour vous (votre page déjà réservée d'abord, pour reprendre après un\nrechargement). 204 si aucune. Deux appels simultanés reçoivent deux pages\ndifférentes.",
+        "operationId": "get_page_suivante_api_v1_pages_suivante_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistreScanneRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "204": {
+            "description": "Aucune page à valider libre"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Page Suivante",
+        "tags": [
+          "Pages"
+        ]
+      }
+    },
     "/api/v1/pages/{page_id}/reject": {
       "post": {
-        "description": "`A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE` (audit log).",
+        "description": "`A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE`\n(audit log). 409 si un autre l'a ouverte.",
         "operationId": "reject_page_api_v1_pages__page_id__reject_post",
         "parameters": [
           {
@@ -6668,9 +6801,136 @@
         ]
       }
     },
+    "/api/v1/pages/{page_id}/reservation": {
+      "delete": {
+        "description": "Libère la page (fermeture). Sans effet si un autre la tient ou si elle est libre.",
+        "operationId": "liberer_api_v1_pages__page_id__reservation_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Page Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Liberer",
+        "tags": [
+          "Pages"
+        ]
+      },
+      "post": {
+        "description": "Réserve (ou renouvelle) la page ouverte. `obtenue=false` si un autre\nutilisateur l'a déjà ouverte : son nom et l'échéance sont renvoyés, la\npage doit être affichée en lecture seule.",
+        "operationId": "reserver_api_v1_pages__page_id__reservation_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Page Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Page introuvable (ou hors de votre structure)"
+          },
+          "409": {
+            "description": "Le statut actuel de la page n'autorise pas cette action"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reserver",
+        "tags": [
+          "Pages"
+        ]
+      }
+    },
     "/api/v1/pages/{page_id}/validate": {
       "post": {
-        "description": "`A_VALIDER` → `VALIDE` (tracé dans l'audit log).",
+        "description": "`A_VALIDER` → `VALIDE` (tracé dans l'audit log). 409 si un autre l'a ouverte.",
         "operationId": "validate_page_api_v1_pages__page_id__validate_post",
         "parameters": [
           {

@@ -577,6 +577,7 @@ export const en = {
   error_page_not_found: "The page was not found.",
   error_lignes_hors_page: "Some rows do not belong to this page.",
   error_lignes_deja_traitees: "Some rows were already validated or rejected by someone else. The page has been reloaded: check it, then validate again.",
+  error_page_reservee: "This page is being validated by another user. It becomes available again when they close it.",
   error_bad_request: "The request is invalid.",
   error_unauthorized: "Authentication required.",
   error_forbidden: "You do not have permission to perform this action.",

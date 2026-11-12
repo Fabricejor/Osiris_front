@@ -698,6 +698,7 @@ export interface paths {
          *     Tout ou rien : une ligne nommée déjà traitée par un autre valideur → 409
          *     `LIGNES_DEJA_TRAITEES`, rien n'est écrit (recharger la page puis renvoyer).
          *     Comme `/valider`, la page passe à `VALIDE` quand plus rien n'est à traiter.
+         *     409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.
          */
         post: operations["post_valider_lot_api_v1_donnees_extraites_valider_lot_post"];
         delete?: never;
@@ -762,6 +763,7 @@ export interface paths {
          *
          *     Comme pour `/valider` : si toutes les lignes du registre sont désormais
          *     traitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.
+         *     409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.
          */
         post: operations["post_rejeter_api_v1_donnees_extraites__id_donnee_extraite__rejeter_post"];
         delete?: never;
@@ -783,7 +785,8 @@ export interface paths {
          * Valideur : valider une ligne (avec ou sans corrections)
          * @description Écrit `donnees_validees` (merge brutes + corrections), met `id_valideur`
          *     + `date_validation`, et si toutes les lignes du registre sont validées,
-         *     passe le `RegistreScanne.statut_traitement` à `VALIDE`.
+         *     passe le `RegistreScanne.statut_traitement` à `VALIDE`. 409 `PAGE_RESERVEE`
+         *     si un autre utilisateur a la page ouverte.
          */
         post: operations["post_valider_api_v1_donnees_extraites__id_donnee_extraite__valider_post"];
         delete?: never;
@@ -918,6 +921,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pages/suivante": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Page Suivante
+         * @description Plus ancienne page « à valider » que personne d'autre n'a ouverte, réservée
+         *     pour vous (votre page déjà réservée d'abord, pour reprendre après un
+         *     rechargement). 204 si aucune. Deux appels simultanés reçoivent deux pages
+         *     différentes.
+         */
+        post: operations["get_page_suivante_api_v1_pages_suivante_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pages/{page_id}/reject": {
         parameters: {
             query?: never;
@@ -929,10 +955,37 @@ export interface paths {
         put?: never;
         /**
          * Reject Page
-         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE` (audit log).
+         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE`
+         *     (audit log). 409 si un autre l'a ouverte.
          */
         post: operations["reject_page_api_v1_pages__page_id__reject_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pages/{page_id}/reservation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reserver
+         * @description Réserve (ou renouvelle) la page ouverte. `obtenue=false` si un autre
+         *     utilisateur l'a déjà ouverte : son nom et l'échéance sont renvoyés, la
+         *     page doit être affichée en lecture seule.
+         */
+        post: operations["reserver_api_v1_pages__page_id__reservation_post"];
+        /**
+         * Liberer
+         * @description Libère la page (fermeture). Sans effet si un autre la tient ou si elle est libre.
+         */
+        delete: operations["liberer_api_v1_pages__page_id__reservation_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -949,7 +1002,7 @@ export interface paths {
         put?: never;
         /**
          * Validate Page
-         * @description `A_VALIDER` → `VALIDE` (tracé dans l'audit log).
+         * @description `A_VALIDER` → `VALIDE` (tracé dans l'audit log). 409 si un autre l'a ouverte.
          */
         post: operations["validate_page_api_v1_pages__page_id__validate_post"];
         delete?: never;
@@ -2320,6 +2373,15 @@ export interface components {
             image_url_page_gauche?: string | null;
             /** Numero Ordre Ligne */
             numero_ordre_ligne: number | null;
+            /** Reserve Jusqu A */
+            reserve_jusqu_a?: string | null;
+            /**
+             * Reserve Par
+             * @description id_keycloak de l'utilisateur qui a la page ouverte.
+             */
+            reserve_par?: string | null;
+            /** Reserve Par Nom */
+            reserve_par_nom?: string | null;
             /** Score Confiance */
             score_confiance: string | null;
             statut_traitement: components["schemas"]["StatutTraitement"];
@@ -2350,6 +2412,21 @@ export interface components {
              * @description Motif textuel libre — optionnel mais recommandé pour AUTRE.
              */
             motif?: string | null;
+        };
+        /**
+         * ReservationRead
+         * @description Réponse de `POST /pages/{id}/reservation`.
+         */
+        ReservationRead: {
+            /**
+             * Obtenue
+             * @description True : la page est à vous (réservée ou renouvelée). False : un autre la tient.
+             */
+            obtenue: boolean;
+            /** Reserve Jusqu A */
+            reserve_jusqu_a?: string | null;
+            /** Reserve Par Nom */
+            reserve_par_nom?: string | null;
         };
         /**
          * SaisieRequest
@@ -4897,6 +4974,44 @@ export interface operations {
             };
         };
     };
+    get_page_suivante_api_v1_pages_suivante_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistreScanneRead"];
+                };
+            };
+            /** @description Aucune page à valider libre */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reject_page_api_v1_pages__page_id__reject_post: {
         parameters: {
             query?: never;
@@ -4932,6 +5047,84 @@ export interface operations {
             };
             /** @description Le statut actuel de la page n'autorise pas cette action */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reserver_api_v1_pages__page_id__reservation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                page_id: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReservationRead"];
+                };
+            };
+            /** @description Page introuvable (ou hors de votre structure) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le statut actuel de la page n'autorise pas cette action */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    liberer_api_v1_pages__page_id__reservation_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                page_id: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

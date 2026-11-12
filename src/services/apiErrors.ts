@@ -26,6 +26,7 @@ const CODES_METIER: Record<string, TranslationKey> = {
   PAGE_NOT_FOUND: "error_page_not_found",
   LIGNES_HORS_PAGE: "error_lignes_hors_page",
   LIGNES_DEJA_TRAITEES: "error_lignes_deja_traitees",
+  PAGE_RESERVEE: "error_page_reservee",
 };
 
 const CODES_GENERIQUES: Record<string, TranslationKey> = {

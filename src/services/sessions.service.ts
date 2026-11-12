@@ -1,5 +1,6 @@
 import { apiClient } from "./apiClient";
 
+import { useAuthStore } from "@/store/authStore";
 import type { FolderStatus } from "@/components/ui/folderUI";
 import type { components } from "@/types/api.generated";
 import type { TranslationKey } from "@/utils/translations";
@@ -9,6 +10,8 @@ import type { TranslationKey } from "@/utils/translations";
 type Schemas = components["schemas"];
 
 export type StatutSession = Schemas["StatutSession"];
+/** Réponse de `POST /pages/{id}/reservation`. */
+export type ReservationPage = Schemas["ReservationRead"];
 /** `SessionScanRead` + champs calculés (statut_validation, score moyen, opérateur, clinique). */
 export type SessionScan = Schemas["SessionScanRead"];
 
@@ -108,7 +111,22 @@ export interface PageView {
   erreurOcr: string | null;
   /** Encore « en traitement » 30 min après sa dernière mise à jour : job OCR perdu. */
   ocrBloque: boolean;
+  /** Ouverte en ce moment par un AUTRE utilisateur (nom + échéance), null sinon. */
+  reserveeParAutre: { nom: string; jusqua: string } | null;
   date_creation: string;
+}
+
+/** Réservation d'un autre utilisateur encore active, null sinon. */
+function reservationAutre(page: RegistreScanne): PageView["reserveeParAutre"] {
+  const moi = useAuthStore.getState().user?.id;
+  if (!page.reserve_par || !page.reserve_jusqu_a || page.reserve_par === moi) return null;
+  if (new Date(page.reserve_jusqu_a).getTime() <= Date.now()) return null;
+  return { nom: page.reserve_par_nom ?? "?", jusqua: page.reserve_jusqu_a };
+}
+
+/** « 14:32 » (heure locale). */
+export function heureCourte(iso: string): string {
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
 /** Au-delà, une page encore en OCR est considérée bloquée (job perdu, worker arrêté). */
@@ -146,6 +164,7 @@ export function toPageView(page: RegistreScanne): PageView {
     ocrBloque:
       (page.statut_traitement === "RECU" || page.statut_traitement === "EN_TRAITEMENT") &&
       Date.now() - new Date(page.date_modification).getTime() > DELAI_OCR_BLOQUE_MS,
+    reserveeParAutre: reservationAutre(page),
     date_creation: page.date_creation,
   };
 }
@@ -233,6 +252,27 @@ export const SessionsService = {
     return apiClient<ListResponse<RegistreScanne>>(`/v1/pages/queue?limit=${limit}&offset=${offset}`, {
       method: "GET",
     });
+  },
+
+  /**
+   * Réserve (ou renouvelle) la page ouverte. `obtenue=false` : un autre
+   * utilisateur l'a ouverte (nom + échéance) → afficher en lecture seule.
+   */
+  reserverPage: async (pageId: string): Promise<ReservationPage> => {
+    return apiClient<ReservationPage>(`/v1/pages/${pageId}/reservation`, { method: "POST" });
+  },
+
+  /** Libère la page à la fermeture (sans effet si un autre la tient). */
+  libererPage: async (pageId: string): Promise<void> => {
+    await apiClient<void>(`/v1/pages/${pageId}/reservation`, { method: "DELETE" });
+  },
+
+  /**
+   * Plus ancienne page à valider libre, réservée pour moi ; null s'il n'y en a plus.
+   */
+  pageSuivante: async (): Promise<RegistreScanne | null> => {
+    const page = await apiClient<RegistreScanne | null>(`/v1/pages/suivante`, { method: "POST" });
+    return page && typeof page === "object" && "id_registre_scanne" in page ? page : null;
   },
 
   /**

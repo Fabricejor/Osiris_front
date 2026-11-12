@@ -580,6 +580,7 @@ export const fr: Record<keyof typeof en, string> = {
   error_page_not_found: "La page est introuvable.",
   error_lignes_hors_page: "Certaines lignes n'appartiennent pas à cette page.",
   error_lignes_deja_traitees: "Certaines lignes ont déjà été validées ou rejetées par quelqu'un d'autre. La page a été rechargée : vérifiez-la puis validez à nouveau.",
+  error_page_reservee: "Cette page est en cours de validation par un autre utilisateur. Elle se libère quand il la ferme.",
   error_bad_request: "La requête est invalide.",
   error_unauthorized: "Authentification requise.",
   error_forbidden: "Vous n'avez pas les droits pour effectuer cette action.",
