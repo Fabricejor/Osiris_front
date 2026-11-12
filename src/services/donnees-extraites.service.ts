@@ -4,6 +4,7 @@ import type { components } from '@/types/api.generated';
 /** `DonneeExtraiteRead` (backend : src/schemas/donnee_extraite.py) — généré depuis l'OpenAPI. */
 export type DonneeExtraite = components['schemas']['DonneeExtraiteRead'];
 export type CategorieRejet = components['schemas']['CategorieRejet'];
+export type ValidationLotResponse = components['schemas']['ValidationLotResponse'];
 
 interface ListResponse<T> {
   items: T[];
@@ -58,6 +59,28 @@ export const DonneesExtraitesService = {
     return apiClient<DonneeExtraite>(`/v1/donnees-extraites/${id}/valider`, {
       method: 'POST',
       body: JSON.stringify({ corrections }),
+    });
+  },
+
+  /**
+   * Valide plusieurs lignes d'UNE page en un seul appel (tout ou rien).
+   * `lignes` : lignes à valider avec leurs corrections (`{}` = OCR accepté).
+   * `inclureRestantes` : valide aussi, telles quelles, les autres lignes en
+   * attente de la page. 409 `LIGNES_DEJA_TRAITEES` si une ligne nommée a été
+   * traitée entre-temps : rien n'est écrit, recharger puis renvoyer.
+   */
+  async validerLot(
+    idRegistre: string,
+    lignes: { id_donnee_extraite: string; corrections: Record<string, unknown> }[],
+    inclureRestantes: boolean = false,
+  ): Promise<ValidationLotResponse> {
+    return apiClient<ValidationLotResponse>(`/v1/donnees-extraites/valider-lot`, {
+      method: 'POST',
+      body: JSON.stringify({
+        id_registre_scanne: idRegistre,
+        lignes,
+        inclure_restantes: inclureRestantes,
+      }),
     });
   },
 

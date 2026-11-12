@@ -3134,6 +3134,125 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "ValidationLotLigne": {
+        "additionalProperties": false,
+        "description": "Une ligne nommée dans un lot, avec ses corrections éventuelles.",
+        "properties": {
+          "corrections": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Overrides {nom_champ: nouvelle_valeur}. Vide → OCR accepté tel quel.",
+            "title": "Corrections"
+          },
+          "id_donnee_extraite": {
+            "format": "uuid",
+            "title": "Id Donnee Extraite",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_donnee_extraite"
+        ],
+        "title": "ValidationLotLigne",
+        "type": "object"
+      },
+      "ValidationLotRequest": {
+        "additionalProperties": false,
+        "description": "Body de `POST /donnees-extraites/valider-lot` : valide plusieurs lignes\nd'une même page en un seul appel (tout ou rien).\n\n- `lignes` : lignes à valider, chacune avec ses corrections éventuelles ;\n- `inclure_restantes=true` : toutes les AUTRES lignes encore à valider de la\n  page sont acceptées telles que lues par l'OCR (« valider la page »).",
+        "examples": [
+          {
+            "id_registre_scanne": "44444444-4444-4444-8444-444444444444",
+            "inclure_restantes": true,
+            "lignes": [
+              {
+                "corrections": {
+                  "age": 32
+                },
+                "id_donnee_extraite": "33333333-3333-4333-8333-333333333333"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "id_registre_scanne": {
+            "description": "Page dont on valide les lignes.",
+            "format": "uuid",
+            "title": "Id Registre Scanne",
+            "type": "string"
+          },
+          "inclure_restantes": {
+            "default": false,
+            "description": "Valide aussi, sans correction, les autres lignes en attente de la page.",
+            "title": "Inclure Restantes",
+            "type": "boolean"
+          },
+          "lignes": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationLotLigne"
+            },
+            "maxItems": 500,
+            "title": "Lignes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id_registre_scanne"
+        ],
+        "title": "ValidationLotRequest",
+        "type": "object"
+      },
+      "ValidationLotResponse": {
+        "additionalProperties": false,
+        "description": "Résultat d'un lot : lignes validées + état de la page après coup.",
+        "properties": {
+          "id_registre_scanne": {
+            "format": "uuid",
+            "title": "Id Registre Scanne",
+            "type": "string"
+          },
+          "ids_valides": {
+            "description": "Lignes validées par cet appel.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Ids Valides",
+            "type": "array"
+          },
+          "lignes_restantes": {
+            "description": "Lignes encore à valider ou rejeter.",
+            "minimum": 0.0,
+            "title": "Lignes Restantes",
+            "type": "integer"
+          },
+          "pii_restantes": {
+            "description": "Données personnelles encore à saisir.",
+            "minimum": 0.0,
+            "title": "Pii Restantes",
+            "type": "integer"
+          },
+          "statut_page": {
+            "$ref": "#/components/schemas/StatutTraitement",
+            "description": "Statut de la page après le lot (`VALIDE` si plus rien à traiter)."
+          }
+        },
+        "required": [
+          "id_registre_scanne",
+          "ids_valides",
+          "statut_page",
+          "lignes_restantes",
+          "pii_restantes"
+        ],
+        "title": "ValidationLotResponse",
+        "type": "object"
+      },
       "ValidationRequest": {
         "additionalProperties": false,
         "description": "Body de `POST /donnees-extraites/{id}/valider`.\n\n`corrections` : dict `{nom_champ: nouvelle_valeur}`. Vide ou None →\nacceptation intégrale de l'OCR (donnees_validees = donnees_brutes_ocr).\nLes champs corrigés voient leur `origine` passer à `humain` dans\n`donnees_validees` ; `valeur_brute` reste = valeur OCR d'origine.",
@@ -5325,6 +5444,83 @@
           }
         ],
         "summary": "Valideur : lister les données à valider",
+        "tags": [
+          "Validation clinique"
+        ]
+      }
+    },
+    "/api/v1/donnees-extraites/valider-lot": {
+      "post": {
+        "description": "Valide en une transaction les lignes nommées (avec leurs corrections) et,\nsi `inclure_restantes`, toutes les autres lignes en attente de la page.\n\nTout ou rien : une ligne nommée déjà traitée par un autre valideur → 409\n`LIGNES_DEJA_TRAITEES`, rien n'est écrit (recharger la page puis renvoyer).\nComme `/valider`, la page passe à `VALIDE` quand plus rien n'est à traiter.",
+        "operationId": "post_valider_lot_api_v1_donnees_extraites_valider_lot_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationLotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationLotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Page introuvable, ou ligne hors de cette page"
+          },
+          "409": {
+            "description": "Ligne déjà traitée OU donnees_brutes_ocr manquantes"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : valider plusieurs lignes d'une page en un appel",
         "tags": [
           "Validation clinique"
         ]

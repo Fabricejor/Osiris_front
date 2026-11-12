@@ -657,6 +657,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/donnees-extraites/valider-lot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valideur : valider plusieurs lignes d'une page en un appel
+         * @description Valide en une transaction les lignes nommées (avec leurs corrections) et,
+         *     si `inclure_restantes`, toutes les autres lignes en attente de la page.
+         *
+         *     Tout ou rien : une ligne nommée déjà traitée par un autre valideur → 409
+         *     `LIGNES_DEJA_TRAITEES`, rien n'est écrit (recharger la page puis renvoyer).
+         *     Comme `/valider`, la page passe à `VALIDE` quand plus rien n'est à traiter.
+         */
+        post: operations["post_valider_lot_api_v1_donnees_extraites_valider_lot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/donnees-extraites/{id_donnee_extraite}": {
         parameters: {
             query?: never;
@@ -2640,6 +2665,77 @@ export interface components {
             type: string;
         };
         /**
+         * ValidationLotLigne
+         * @description Une ligne nommée dans un lot, avec ses corrections éventuelles.
+         */
+        ValidationLotLigne: {
+            /**
+             * Corrections
+             * @description Overrides {nom_champ: nouvelle_valeur}. Vide → OCR accepté tel quel.
+             */
+            corrections?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Id Donnee Extraite
+             * Format: uuid
+             */
+            id_donnee_extraite: string;
+        };
+        /**
+         * ValidationLotRequest
+         * @description Body de `POST /donnees-extraites/valider-lot` : valide plusieurs lignes
+         *     d'une même page en un seul appel (tout ou rien).
+         *
+         *     - `lignes` : lignes à valider, chacune avec ses corrections éventuelles ;
+         *     - `inclure_restantes=true` : toutes les AUTRES lignes encore à valider de la
+         *       page sont acceptées telles que lues par l'OCR (« valider la page »).
+         */
+        ValidationLotRequest: {
+            /**
+             * Id Registre Scanne
+             * Format: uuid
+             * @description Page dont on valide les lignes.
+             */
+            id_registre_scanne: string;
+            /**
+             * Inclure Restantes
+             * @description Valide aussi, sans correction, les autres lignes en attente de la page.
+             * @default false
+             */
+            inclure_restantes: boolean;
+            /** Lignes */
+            lignes?: components["schemas"]["ValidationLotLigne"][];
+        };
+        /**
+         * ValidationLotResponse
+         * @description Résultat d'un lot : lignes validées + état de la page après coup.
+         */
+        ValidationLotResponse: {
+            /**
+             * Id Registre Scanne
+             * Format: uuid
+             */
+            id_registre_scanne: string;
+            /**
+             * Ids Valides
+             * @description Lignes validées par cet appel.
+             */
+            ids_valides: string[];
+            /**
+             * Lignes Restantes
+             * @description Lignes encore à valider ou rejeter.
+             */
+            lignes_restantes: number;
+            /**
+             * Pii Restantes
+             * @description Données personnelles encore à saisir.
+             */
+            pii_restantes: number;
+            /** @description Statut de la page après le lot (`VALIDE` si plus rien à traiter). */
+            statut_page: components["schemas"]["StatutTraitement"];
+        };
+        /**
          * ValidationRequest
          * @description Body de `POST /donnees-extraites/{id}/valider`.
          *
@@ -3988,6 +4084,69 @@ export interface operations {
             };
             /** @description Profil valideur médical manquant */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_valider_lot_api_v1_donnees_extraites_valider_lot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationLotRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationLotResponse"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Page introuvable, ou ligne hors de cette page */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ligne déjà traitée OU donnees_brutes_ocr manquantes */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

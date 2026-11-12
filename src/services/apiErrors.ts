@@ -23,6 +23,9 @@ const CODES_METIER: Record<string, TranslationKey> = {
   SESSION_CONFLICT: "error_session_conflict",
   CATALOGUE_NOT_FOUND: "error_catalogue_not_found",
   STORAGE_OBJECT_MISSING: "error_storage_object_missing",
+  PAGE_NOT_FOUND: "error_page_not_found",
+  LIGNES_HORS_PAGE: "error_lignes_hors_page",
+  LIGNES_DEJA_TRAITEES: "error_lignes_deja_traitees",
 };
 
 const CODES_GENERIQUES: Record<string, TranslationKey> = {

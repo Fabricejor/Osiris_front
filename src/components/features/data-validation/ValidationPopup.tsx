@@ -298,14 +298,26 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
               : `${piiVides.length} empty personal field(s) to fill in before validating (${qui}).`,
           );
         }
+        // Lignes à valider : UN seul appel pour toute la page (tout ou rien), au
+        // lieu d'un POST par ligne. Seules les lignes corrigées sont nommées ;
+        // `inclure_restantes` accepte les autres telles que lues par l'OCR.
+        const aValiderCorrigees: { id_donnee_extraite: string; corrections: Record<string, unknown> }[] = [];
+        let resteAValider = false;
         for (const { donnee, champs } of lignes) {
           const corrections = construireCorrections(champs, saisiesCliniques[donnee.id_donnee_extraite]);
           if (!donnee.valide) {
-            await DonneesExtraitesService.validerDonnee(donnee.id_donnee_extraite, corrections);
+            if (Object.keys(corrections).length > 0) {
+              aValiderCorrigees.push({ id_donnee_extraite: donnee.id_donnee_extraite, corrections });
+            } else {
+              resteAValider = true;
+            }
           } else if (!donnee.categorie_rejet && Object.keys(corrections).length > 0) {
             // Mode « Corriger » : ligne déjà validée, seuls les champs modifiés.
             await DonneesExtraitesService.corrigerDonnee(donnee.id_donnee_extraite, corrections);
           }
+        }
+        if (aValiderCorrigees.length > 0 || resteAValider) {
+          await DonneesExtraitesService.validerLot(currentPage.id, aValiderCorrigees, resteAValider);
         }
         for (const pii of piiData) {
           const valeur = (saisiesPii[pii.id_pii_cellule] ?? pii.valeur_saisie ?? pii.valeur_lue ?? '').trim();
