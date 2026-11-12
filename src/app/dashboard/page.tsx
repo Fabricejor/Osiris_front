@@ -13,6 +13,7 @@ import OperatorEfficiencyTable from "@/components/features/dashboard/OperatorEff
 import OperatorPerformanceComparison from "@/components/features/dashboard/OperatorPerformanceComparison";
 import ValidationStatusDistribution from "@/components/features/dashboard/ValidationStatusDistribution";
 import OperatorActivityHeatmap from "@/components/features/dashboard/OperatorActivityHeatmap";
+import OcrPrecisionPanel from "@/components/features/dashboard/OcrPrecisionPanel";
 import PageHeader from "@/components/ui/PageHeader";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -57,6 +58,11 @@ export default function DashboardPage() {
           <div className="h-[300px]">
             {wrapChart('ocr-confidence', <OcrConfidenceChart />)}
           </div>
+        </div>
+
+        {/* Précision RÉELLE de l'OCR (lecture Gemini vs validation humaine). */}
+        <div className="shrink-0">
+          <OcrPrecisionPanel />
         </div>
 
         {/* Row 3: Data Processing Volumes + Activity Heatmap */}

@@ -561,6 +561,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard/precision-ocr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Precision Ocr
+         * @description Précision RÉELLE de l'OCR : ce que Gemini a lu comparé à ce que les
+         *     valideurs ont retenu, case par case (lignes revues par un humain
+         *     uniquement). Ventilée par registre, champ, structure, agent terrain, mois
+         *     et tranche de score Gemini. Un ADMIN ne voit que sa structure.
+         */
+        get: operations["get_precision_ocr_api_v1_dashboard_precision_ocr_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dashboard/processing-efficiency": {
         parameters: {
             query?: never;
@@ -1087,6 +1110,30 @@ export interface paths {
          *     la trace du 1er valideur (auditabilité).
          */
         post: operations["post_saisir_api_v1_pii_cellules__id_pii_cellule__saisir_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pii-cellules/{id_pii_cellule}/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Valideur : aide à la saisie (adresses fréquentes, orthographe des noms)
+         * @description Propositions tirées des valeurs DÉJÀ SAISIES dans la même structure
+         *     sanitaire, pour le même champ. Adresse : autocomplétion (préfixe, contenu,
+         *     faute de frappe), les plus fréquentes d'abord. Nom : jamais de liste par
+         *     préfixe — seulement la correction orthographique vers des prénoms / noms
+         *     courants et un nom déjà saisi quasi identique (≥ 4 caractères).
+         */
+        get: operations["get_suggestions_api_v1_pii_cellules__id_pii_cellule__suggestions_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1994,6 +2041,52 @@ export interface components {
          * @enum {string}
          */
         FormatExport: "CSV" | "XLSX";
+        /** GroupeOcrRead */
+        GroupeOcrRead: {
+            /**
+             * Cases Corrigees
+             * @description Cases lues que le valideur a corrigées (erreurs de lecture).
+             */
+            cases_corrigees: number;
+            /**
+             * Cases Lues
+             * @description Cases remplies par l'OCR, sur des lignes revues par un humain.
+             */
+            cases_lues: number;
+            /**
+             * Cases Oubliees
+             * @description Cases laissées vides par l'OCR que le valideur a remplies.
+             */
+            cases_oubliees: number;
+            /** Cle */
+            cle: string;
+            /** Libelle */
+            libelle: string;
+            /** Lignes Rejetees */
+            lignes_rejetees: number;
+            /** Lignes Revues */
+            lignes_revues: number;
+            /**
+             * Precision
+             * @description 1 − corrigées / lues.
+             */
+            precision?: number | null;
+            /**
+             * Score Gemini Moyen
+             * @description Score de confiance moyen annoncé par Gemini sur ces cases.
+             */
+            score_gemini_moyen?: number | null;
+            /**
+             * Taux Erreur
+             * @description (Corrigées + oubliées) / (lues + oubliées).
+             */
+            taux_erreur?: number | null;
+            /**
+             * Taux Oubli
+             * @description Oubliées / (lues + oubliées).
+             */
+            taux_oubli?: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2029,6 +2122,51 @@ export interface components {
         LogoutRequest: {
             /** Refresh Token */
             refresh_token?: string | null;
+        };
+        /**
+         * MesureOcrRead
+         * @description Précision mesurée sur les validations humaines (≠ score annoncé par Gemini).
+         */
+        MesureOcrRead: {
+            /**
+             * Cases Corrigees
+             * @description Cases lues que le valideur a corrigées (erreurs de lecture).
+             */
+            cases_corrigees: number;
+            /**
+             * Cases Lues
+             * @description Cases remplies par l'OCR, sur des lignes revues par un humain.
+             */
+            cases_lues: number;
+            /**
+             * Cases Oubliees
+             * @description Cases laissées vides par l'OCR que le valideur a remplies.
+             */
+            cases_oubliees: number;
+            /** Lignes Rejetees */
+            lignes_rejetees: number;
+            /** Lignes Revues */
+            lignes_revues: number;
+            /**
+             * Precision
+             * @description 1 − corrigées / lues.
+             */
+            precision?: number | null;
+            /**
+             * Score Gemini Moyen
+             * @description Score de confiance moyen annoncé par Gemini sur ces cases.
+             */
+            score_gemini_moyen?: number | null;
+            /**
+             * Taux Erreur
+             * @description (Corrigées + oubliées) / (lues + oubliées).
+             */
+            taux_erreur?: number | null;
+            /**
+             * Taux Oubli
+             * @description Oubliées / (lues + oubliées).
+             */
+            taux_oubli?: number | null;
         };
         /**
          * OcrConfidenceData
@@ -2228,6 +2366,44 @@ export interface components {
             items: components["schemas"]["PiiCelluleRead"][];
             /** Total */
             total: number;
+        };
+        /**
+         * PrecisionOcrResponse
+         * @description `GET /dashboard/precision-ocr`.
+         */
+        PrecisionOcrResponse: {
+            global: components["schemas"]["MesureOcrRead"];
+            /** Min Cases */
+            min_cases: number;
+            /**
+             * Par Agent
+             * @description Agents terrain avec au moins `min_cases` cases (qualité des photos), du plus fautif au moins fautif.
+             */
+            par_agent: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Par Champ
+             * @description Champs avec au moins `min_cases` cases, du plus au moins fautif.
+             */
+            par_champ: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Par Mois
+             * @description Ordre chronologique (clé AAAA-MM).
+             */
+            par_mois: components["schemas"]["GroupeOcrRead"][];
+            /** Par Registre */
+            par_registre: components["schemas"]["GroupeOcrRead"][];
+            /** Par Structure */
+            par_structure: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Par Tranche Score
+             * @description Par tranche de score Gemini (clé « 90-95 ») : précision réelle vs score annoncé.
+             */
+            par_tranche_score: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Tronque
+             * @description True si seules les validations les plus récentes ont été lues.
+             */
+            tronque: boolean;
         };
         /**
          * PresignUploadRequest
@@ -2669,6 +2845,29 @@ export interface components {
             items: components["schemas"]["StructureSanitaireRead"][];
             /** Total */
             total: number;
+        };
+        /**
+         * SuggestionPiiRead
+         * @description Une proposition d'aide à la saisie (voir `src/services/suggestions_pii.py`).
+         */
+        SuggestionPiiRead: {
+            /**
+             * Occurrences
+             * @description Nombre de saisies identiques dans la structure.
+             */
+            occurrences: number;
+            /**
+             * Source
+             * @description FREQUENT (adresse déjà saisie dans la structure), ORTHOGRAPHE (mots rapprochés de prénoms / noms courants), DEJA_SAISI (nom quasi identique déjà saisi).
+             */
+            source: string;
+            /** Valeur */
+            valeur: string;
+        };
+        /** SuggestionsPiiResponse */
+        SuggestionsPiiResponse: {
+            /** Suggestions */
+            suggestions: components["schemas"]["SuggestionPiiRead"][];
         };
         /**
          * TokenResponse
@@ -4139,6 +4338,43 @@ export interface operations {
             };
         };
     };
+    get_precision_ocr_api_v1_dashboard_precision_ocr_get: {
+        parameters: {
+            query?: {
+                /** @description Validations à partir de ce jour (inclus). */
+                date_debut?: string | null;
+                /** @description Validations jusqu'à ce jour (inclus). */
+                date_fin?: string | null;
+                type_registre?: components["schemas"]["TypeRegistre"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrecisionOcrResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_processing_efficiency_api_v1_dashboard_processing_efficiency_get: {
         parameters: {
             query?: never;
@@ -5414,6 +5650,64 @@ export interface operations {
             };
             /** @description Déjà saisie (une seule saisie autorisée en V1) */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_suggestions_api_v1_pii_cellules__id_pii_cellule__suggestions_get: {
+        parameters: {
+            query?: {
+                /** @description Saisie en cours. Absent : la lecture OCR de la cellule sert de point de départ. */
+                q?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description UUID de la cellule PII */
+                id_pii_cellule: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionsPiiResponse"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cellule PII introuvable */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

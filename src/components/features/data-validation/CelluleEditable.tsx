@@ -8,7 +8,8 @@
  * - oui/non affichés ✓ / ✗, dates jj/mm/aaaa, suggestions pour les choix ;
  * - largeur adaptée au type (nombre étroit, texte large).
  */
-import React from 'react';
+import React, { useState } from 'react';
+import SuggestionsPii from './SuggestionsPii';
 import {
   etatCellule,
   type CelluleGrille,
@@ -161,6 +162,8 @@ export default function CelluleEditable({
   const fr = language === 'fr';
   const Tag = as;
   const etat = etatCellule(cellule, saisies);
+  // Case active (focus) : affiche l'aide à la saisie des données personnelles.
+  const [active, setActive] = useState(false);
   const largeur = as === 'td' ? largeurColonne(colonne) : '';
 
   if (!etat || !cellule || cellule.kind === 'vide') {
@@ -214,6 +217,9 @@ export default function CelluleEditable({
         list={colonne.modalites?.length ? idListeModalites(colonne) : undefined}
         placeholder={colonne.type_champ === 'DATE' ? 'jj/mm/aaaa' : undefined}
         className={classesSaisie}
+        onFocus={() => setActive(true)}
+        onBlur={() => setActive(false)}
+        autoComplete={cellule.kind === 'pii' ? 'off' : undefined}
       />
     );
   }
@@ -228,6 +234,15 @@ export default function CelluleEditable({
       onFocus={onFocus}
     >
       {saisie}
+      {cellule.kind === 'pii' && (
+        <SuggestionsPii
+          idPii={cellule.pii.id_pii_cellule}
+          texte={etat.valeur}
+          visible={active && !etat.verrouillee}
+          onChoisir={onChange}
+          language={language}
+        />
+      )}
       {/* Case à vérifier : pastille lisible SOUS la valeur (le score d'une case
           sûre reste au survol). Une alerte de cohérence prime sur le score.
           Inutile en mode « À vérifier » (raisons détaillées au-dessus). */}

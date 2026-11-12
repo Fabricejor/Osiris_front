@@ -1461,6 +1461,100 @@
         "title": "FormatExport",
         "type": "string"
       },
+      "GroupeOcrRead": {
+        "properties": {
+          "cases_corrigees": {
+            "description": "Cases lues que le valideur a corrigées (erreurs de lecture).",
+            "title": "Cases Corrigees",
+            "type": "integer"
+          },
+          "cases_lues": {
+            "description": "Cases remplies par l'OCR, sur des lignes revues par un humain.",
+            "title": "Cases Lues",
+            "type": "integer"
+          },
+          "cases_oubliees": {
+            "description": "Cases laissées vides par l'OCR que le valideur a remplies.",
+            "title": "Cases Oubliees",
+            "type": "integer"
+          },
+          "cle": {
+            "title": "Cle",
+            "type": "string"
+          },
+          "libelle": {
+            "title": "Libelle",
+            "type": "string"
+          },
+          "lignes_rejetees": {
+            "title": "Lignes Rejetees",
+            "type": "integer"
+          },
+          "lignes_revues": {
+            "title": "Lignes Revues",
+            "type": "integer"
+          },
+          "precision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 − corrigées / lues.",
+            "title": "Precision"
+          },
+          "score_gemini_moyen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Score de confiance moyen annoncé par Gemini sur ces cases.",
+            "title": "Score Gemini Moyen"
+          },
+          "taux_erreur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "(Corrigées + oubliées) / (lues + oubliées).",
+            "title": "Taux Erreur"
+          },
+          "taux_oubli": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Oubliées / (lues + oubliées).",
+            "title": "Taux Oubli"
+          }
+        },
+        "required": [
+          "cases_lues",
+          "cases_corrigees",
+          "cases_oubliees",
+          "lignes_revues",
+          "lignes_rejetees",
+          "cle",
+          "libelle"
+        ],
+        "title": "GroupeOcrRead",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1540,6 +1634,91 @@
           }
         },
         "title": "LogoutRequest",
+        "type": "object"
+      },
+      "MesureOcrRead": {
+        "description": "Précision mesurée sur les validations humaines (≠ score annoncé par Gemini).",
+        "properties": {
+          "cases_corrigees": {
+            "description": "Cases lues que le valideur a corrigées (erreurs de lecture).",
+            "title": "Cases Corrigees",
+            "type": "integer"
+          },
+          "cases_lues": {
+            "description": "Cases remplies par l'OCR, sur des lignes revues par un humain.",
+            "title": "Cases Lues",
+            "type": "integer"
+          },
+          "cases_oubliees": {
+            "description": "Cases laissées vides par l'OCR que le valideur a remplies.",
+            "title": "Cases Oubliees",
+            "type": "integer"
+          },
+          "lignes_rejetees": {
+            "title": "Lignes Rejetees",
+            "type": "integer"
+          },
+          "lignes_revues": {
+            "title": "Lignes Revues",
+            "type": "integer"
+          },
+          "precision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 − corrigées / lues.",
+            "title": "Precision"
+          },
+          "score_gemini_moyen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Score de confiance moyen annoncé par Gemini sur ces cases.",
+            "title": "Score Gemini Moyen"
+          },
+          "taux_erreur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "(Corrigées + oubliées) / (lues + oubliées).",
+            "title": "Taux Erreur"
+          },
+          "taux_oubli": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Oubliées / (lues + oubliées).",
+            "title": "Taux Oubli"
+          }
+        },
+        "required": [
+          "cases_lues",
+          "cases_corrigees",
+          "cases_oubliees",
+          "lignes_revues",
+          "lignes_rejetees"
+        ],
+        "title": "MesureOcrRead",
         "type": "object"
       },
       "OcrConfidenceData": {
@@ -1956,6 +2135,82 @@
           "total"
         ],
         "title": "PiiCellulesListResponse",
+        "type": "object"
+      },
+      "PrecisionOcrResponse": {
+        "description": "`GET /dashboard/precision-ocr`.",
+        "properties": {
+          "global": {
+            "$ref": "#/components/schemas/MesureOcrRead"
+          },
+          "min_cases": {
+            "title": "Min Cases",
+            "type": "integer"
+          },
+          "par_agent": {
+            "description": "Agents terrain avec au moins `min_cases` cases (qualité des photos), du plus fautif au moins fautif.",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Agent",
+            "type": "array"
+          },
+          "par_champ": {
+            "description": "Champs avec au moins `min_cases` cases, du plus au moins fautif.",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Champ",
+            "type": "array"
+          },
+          "par_mois": {
+            "description": "Ordre chronologique (clé AAAA-MM).",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Mois",
+            "type": "array"
+          },
+          "par_registre": {
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Registre",
+            "type": "array"
+          },
+          "par_structure": {
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Structure",
+            "type": "array"
+          },
+          "par_tranche_score": {
+            "description": "Par tranche de score Gemini (clé « 90-95 ») : précision réelle vs score annoncé.",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Tranche Score",
+            "type": "array"
+          },
+          "tronque": {
+            "description": "True si seules les validations les plus récentes ont été lues.",
+            "title": "Tronque",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "global",
+          "par_registre",
+          "par_champ",
+          "par_structure",
+          "par_agent",
+          "par_mois",
+          "par_tranche_score",
+          "min_cases",
+          "tronque"
+        ],
+        "title": "PrecisionOcrResponse",
         "type": "object"
       },
       "PresignUploadRequest": {
@@ -2994,6 +3249,51 @@
           "total"
         ],
         "title": "StructuresListResponse",
+        "type": "object"
+      },
+      "SuggestionPiiRead": {
+        "additionalProperties": false,
+        "description": "Une proposition d'aide à la saisie (voir `src/services/suggestions_pii.py`).",
+        "properties": {
+          "occurrences": {
+            "description": "Nombre de saisies identiques dans la structure.",
+            "minimum": 0.0,
+            "title": "Occurrences",
+            "type": "integer"
+          },
+          "source": {
+            "description": "FREQUENT (adresse déjà saisie dans la structure), ORTHOGRAPHE (mots rapprochés de prénoms / noms courants), DEJA_SAISI (nom quasi identique déjà saisi).",
+            "title": "Source",
+            "type": "string"
+          },
+          "valeur": {
+            "title": "Valeur",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valeur",
+          "source",
+          "occurrences"
+        ],
+        "title": "SuggestionPiiRead",
+        "type": "object"
+      },
+      "SuggestionsPiiResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestionPiiRead"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "suggestions"
+        ],
+        "title": "SuggestionsPiiResponse",
         "type": "object"
       },
       "TokenResponse": {
@@ -5368,6 +5668,115 @@
         ]
       }
     },
+    "/api/v1/dashboard/precision-ocr": {
+      "get": {
+        "description": "Précision RÉELLE de l'OCR : ce que Gemini a lu comparé à ce que les\nvalideurs ont retenu, case par case (lignes revues par un humain\nuniquement). Ventilée par registre, champ, structure, agent terrain, mois\net tranche de score Gemini. Un ADMIN ne voit que sa structure.",
+        "operationId": "get_precision_ocr_api_v1_dashboard_precision_ocr_get",
+        "parameters": [
+          {
+            "description": "Validations à partir de ce jour (inclus).",
+            "in": "query",
+            "name": "date_debut",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Validations à partir de ce jour (inclus).",
+              "title": "Date Debut"
+            }
+          },
+          {
+            "description": "Validations jusqu'à ce jour (inclus).",
+            "in": "query",
+            "name": "date_fin",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Validations jusqu'à ce jour (inclus).",
+              "title": "Date Fin"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type_registre",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TypeRegistre"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type Registre"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrecisionOcrResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Precision Ocr",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
     "/api/v1/dashboard/processing-efficiency": {
       "get": {
         "operationId": "get_processing_efficiency_api_v1_dashboard_processing_efficiency_get",
@@ -7397,6 +7806,101 @@
           }
         ],
         "summary": "Valideur : saisir la valeur PII lue depuis le crop",
+        "tags": [
+          "Validation PII"
+        ]
+      }
+    },
+    "/api/v1/pii-cellules/{id_pii_cellule}/suggestions": {
+      "get": {
+        "description": "Propositions tirées des valeurs DÉJÀ SAISIES dans la même structure\nsanitaire, pour le même champ. Adresse : autocomplétion (préfixe, contenu,\nfaute de frappe), les plus fréquentes d'abord. Nom : jamais de liste par\npréfixe — seulement la correction orthographique vers des prénoms / noms\ncourants et un nom déjà saisi quasi identique (≥ 4 caractères).",
+        "operationId": "get_suggestions_api_v1_pii_cellules__id_pii_cellule__suggestions_get",
+        "parameters": [
+          {
+            "description": "UUID de la cellule PII",
+            "in": "path",
+            "name": "id_pii_cellule",
+            "required": true,
+            "schema": {
+              "description": "UUID de la cellule PII",
+              "format": "uuid",
+              "title": "Id Pii Cellule",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Saisie en cours. Absent : la lecture OCR de la cellule sert de point de départ.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Saisie en cours. Absent : la lecture OCR de la cellule sert de point de départ.",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionsPiiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Cellule PII introuvable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : aide à la saisie (adresses fréquentes, orthographe des noms)",
         "tags": [
           "Validation PII"
         ]
