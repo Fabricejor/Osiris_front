@@ -12,14 +12,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Check, CheckCircle2, SkipForward } from 'lucide-react';
 import {
   elementsAVerifier,
+  estZoneCase,
   etatCellule,
   libellesSections,
-  zoneRangee,
+  zoneCellule,
   type DemandeZone,
   type ElementAVerifier,
   type Grille,
   type SaisiesValideur,
 } from '@/services/validation-mapping';
+import ApercuCase, { type ImagePage } from './ApercuCase';
 import CelluleEditable, { libelleRaison, ListesModalites } from './CelluleEditable';
 
 interface RevueAVerifierProps {
@@ -31,6 +33,8 @@ interface RevueAVerifierProps {
   onConfirmer: (cle: string) => void;
   language: string;
   onZone?: (demande: DemandeZone | null) => void;
+  /** Photo de la page (chargée), pour le gros plan de la case. */
+  image?: ImagePage | null;
 }
 
 function raisons(element: ElementAVerifier, fr: boolean): string[] {
@@ -61,9 +65,10 @@ export default function RevueAVerifier(props: Readonly<RevueAVerifierProps>) {
   const i = Math.min(index, Math.max(0, elements.length - 1));
   const element = elements[i];
 
-  const zone = element ? zoneRangee(element.rangee, grille) : null;
+  // Zone de la case (ligne × colonne) ; à défaut, la ligne entière.
+  const zone = element ? zoneCellule(element.rangee, element.colonne, grille) : null;
   const cleZone = zone?.join(',') ?? '';
-  // Nouvelle case : la photo est cadrée sur sa ligne, la saisie prend le focus.
+  // Nouvelle case : la photo est cadrée dessus, la saisie prend le focus.
   useEffect(() => {
     if (cleZone) onZone?.({ zone: cleZone.split(',').map(Number) as DemandeZone['zone'], zoom: true });
   }, [cleZone, onZone]);
@@ -161,6 +166,14 @@ export default function RevueAVerifier(props: Readonly<RevueAVerifierProps>) {
         </ul>
 
         <div ref={zoneSaisie} className="mt-4">
+          {/* Gros plan de la case sur la photo, juste au-dessus de la saisie. */}
+          <ApercuCase
+            image={props.image ?? null}
+            zone={zone}
+            estCase={estZoneCase(colonne, grille)}
+            libelle={colonne.libelle}
+            language={language}
+          />
           <CelluleEditable
             as="div"
             grande

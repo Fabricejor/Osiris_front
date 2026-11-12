@@ -19,6 +19,7 @@ import {
   messagesAlertes,
   patientesDeGrille,
   regrouperParSection,
+  zoneCellule,
   zonePatiente,
   zoneRangee,
   type ColonneGrille,
@@ -289,9 +290,9 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
                             onChangeClinique={props.onChangeClinique}
                             onChangePii={props.onChangePii}
                             language={language}
-                            onMouseEnter={() => onZone?.({ zone: zoneRangee(v, grille), zoom: false })}
+                            onMouseEnter={() => onZone?.({ zone: zoneCellule(v, c, grille), zoom: false })}
                             onMouseLeave={() => onZone?.(null)}
-                            onFocus={() => onZone?.({ zone: zoneRangee(v, grille), zoom: true })}
+                            onFocus={() => onZone?.({ zone: zoneCellule(v, c, grille), zoom: true })}
                           />
                         ))}
                       </tr>

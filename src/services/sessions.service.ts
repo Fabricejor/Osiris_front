@@ -55,6 +55,25 @@ export interface ControleEntetes {
   champs_absents: string[];
   ordre_different: boolean;
   cles_non_mappees: string[];
+  /**
+   * Étendue horizontale de chaque colonne sur la photo, {nom_champ: [xmin, xmax]}
+   * (0..1000). Vide pour les pages lues avant son introduction.
+   */
+  colonnes: Record<string, [number, number]>;
+}
+
+function lireColonnes(brut: unknown): Record<string, [number, number]> {
+  if (!brut || typeof brut !== "object") return {};
+  const colonnes: Record<string, [number, number]> = {};
+  for (const [nom, x] of Object.entries(brut as Record<string, unknown>)) {
+    if (
+      Array.isArray(x) && x.length === 2 &&
+      x.every((v) => typeof v === "number" && Number.isFinite(v)) && x[0] < x[1]
+    ) {
+      colonnes[nom] = [x[0], x[1]];
+    }
+  }
+  return colonnes;
 }
 
 function lireControleEntetes(brut: unknown): ControleEntetes | null {
@@ -65,6 +84,7 @@ function lireControleEntetes(brut: unknown): ControleEntetes | null {
     champs_absents: Array.isArray(c.champs_absents) ? c.champs_absents : [],
     ordre_different: c.ordre_different === true,
     cles_non_mappees: Array.isArray(c.cles_non_mappees) ? c.cles_non_mappees : [],
+    colonnes: lireColonnes(c.colonnes),
   };
 }
 

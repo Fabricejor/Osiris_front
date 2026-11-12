@@ -367,7 +367,12 @@ export interface Grille {
   rangees: RangeeGrille[];
   /** > 1 pour les registres multi-visites : affiche la colonne « Visite ». */
   rangsParPatient: number;
+  /** Position des colonnes sur la photo (gros plan d'une case), voir `zoneCellule`. */
+  colonnesImage: ColonnesImage;
 }
+
+/** Étendue horizontale des colonnes sur la photo : {nom_champ: [xmin, xmax]}, 0..1000. */
+export type ColonnesImage = Record<string, [number, number]>;
 
 function libelleCourt(champ: ChampCatalogue): string {
   if (champ.libelle.length <= LONGUEUR_LIBELLE_COURT) return champ.libelle;
@@ -410,8 +415,9 @@ export function construireGrille(
   catalogue: Catalogue | undefined,
   donnees: DonneeExtraite[],
   pii: PiiCellule[],
+  colonnesImage: ColonnesImage = {},
 ): Grille {
-  if (!catalogue) return { groupes: [], colonnes: [], rangees: [], rangsParPatient: 1 };
+  if (!catalogue) return { groupes: [], colonnes: [], rangees: [], rangsParPatient: 1, colonnesImage };
   const rangsParPatient = Math.max(1, catalogue.rangs_par_patient ?? 1);
   const multiVisites = rangsParPatient > 1;
 
@@ -499,7 +505,7 @@ export function construireGrille(
     i = j;
   }
 
-  return { groupes, colonnes, rangees: triees, rangsParPatient };
+  return { groupes, colonnes, rangees: triees, rangsParPatient, colonnesImage };
 }
 
 // ─── État d'affichage d'une case (commun grille / fiche) ────────────────────
@@ -731,6 +737,26 @@ export function zoneRangee(rangee: RangeeGrille, grille: Grille): ZoneImage | nu
     positionLigne(rangee.donnee) ??
     unionZones(grille.rangees.filter((r) => r.numeroOrdre === rangee.numeroOrdre).map((r) => positionLigne(r.donnee)))
   );
+}
+
+/**
+ * Zone d'une case sur la photo : bande de sa ligne (la visite, ou tout le bloc
+ * de la patiente pour une colonne d'identité fusionnée) × étendue de sa colonne.
+ * Sans position de colonne (page lue avant cette fonctionnalité, ou en-tête non
+ * trouvé), retombe sur la ligne entière.
+ */
+export function zoneCellule(rangee: RangeeGrille, colonne: ColonneGrille, grille: Grille): ZoneImage | null {
+  const ligne = colonne.niveau_patiente
+    ? unionZones(grille.rangees.filter((r) => r.numeroOrdre === rangee.numeroOrdre).map((r) => positionLigne(r.donnee)))
+    : zoneRangee(rangee, grille);
+  const x = grille.colonnesImage[colonne.nom];
+  if (!ligne || !x) return ligne;
+  return [ligne[0], x[0], ligne[2], x[1]];
+}
+
+/** true si la zone est celle d'une case (et non d'une ligne entière). */
+export function estZoneCase(colonne: ColonneGrille, grille: Grille): boolean {
+  return !!grille.colonnesImage[colonne.nom];
 }
 
 /** Demande d'affichage d'une zone : `zoom` pour cadrer l'image dessus (sinon simple surlignage). */

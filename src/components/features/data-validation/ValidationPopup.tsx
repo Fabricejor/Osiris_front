@@ -197,7 +197,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     staleTime: 10 * 60 * 1000,
   });
 
-  const grille = construireGrille(catalogue, clinicalData, piiData);
+  const grille = construireGrille(catalogue, clinicalData, piiData, currentPage?.controleEntetes?.colonnes);
   const modifierClinique = (idDonnee: string, nomChamp: string, valeur: string) =>
     setSaisiesCliniques((prev) => ({ ...prev, [idDonnee]: { ...prev[idDonnee], [nomChamp]: valeur } }));
   const modifierPii = (idPii: string, valeur: string) =>
@@ -672,6 +672,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                               onConfirmer={confirmerCase}
                               language={language}
                               onZone={onZone}
+                              image={imageNaturelle?.src === currentPage.image ? imageNaturelle : null}
                             />
                           )}
                           {vueEffective === 'fiche' && (
