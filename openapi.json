@@ -1568,6 +1568,99 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "IndicateurRead": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "definition": {
+            "description": "Ce qui est compté, en clair (à faire valider par l'équipe médicale).",
+            "title": "Definition",
+            "type": "string"
+          },
+          "libelle": {
+            "title": "Libelle",
+            "type": "string"
+          },
+          "niveau": {
+            "description": "visite (une ligne) | patiente (un n° d'ordre et ses visites)",
+            "title": "Niveau",
+            "type": "string"
+          },
+          "par_mois": {
+            "items": {
+              "$ref": "#/components/schemas/MoisIndicateurRead"
+            },
+            "title": "Par Mois",
+            "type": "array"
+          },
+          "registre": {
+            "title": "Registre",
+            "type": "string"
+          },
+          "sans_date": {
+            "$ref": "#/components/schemas/ValeurIndicateurRead",
+            "description": "Événements sans date lisible : hors total et hors mois, à corriger dans la validation."
+          },
+          "total": {
+            "$ref": "#/components/schemas/ValeurIndicateurRead",
+            "description": "Événements datés de la période."
+          },
+          "unite": {
+            "description": "nombre | pourcentage",
+            "title": "Unite",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "registre",
+          "libelle",
+          "definition",
+          "unite",
+          "niveau",
+          "total",
+          "sans_date",
+          "par_mois"
+        ],
+        "title": "IndicateurRead",
+        "type": "object"
+      },
+      "IndicateursResponse": {
+        "description": "`GET /dashboard/indicateurs`.",
+        "properties": {
+          "annee": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annee"
+          },
+          "indicateurs": {
+            "items": {
+              "$ref": "#/components/schemas/IndicateurRead"
+            },
+            "title": "Indicateurs",
+            "type": "array"
+          },
+          "statut_definitions": {
+            "description": "PROVISOIRE tant que l'équipe médicale n'a pas validé les définitions.",
+            "title": "Statut Definitions",
+            "type": "string"
+          }
+        },
+        "required": [
+          "statut_definitions",
+          "indicateurs"
+        ],
+        "title": "IndicateursResponse",
+        "type": "object"
+      },
       "JourActivite": {
         "properties": {
           "date": {
@@ -1719,6 +1812,42 @@
           "lignes_rejetees"
         ],
         "title": "MesureOcrRead",
+        "type": "object"
+      },
+      "MoisIndicateurRead": {
+        "properties": {
+          "denominateur": {
+            "title": "Denominateur",
+            "type": "integer"
+          },
+          "mois": {
+            "description": "AAAA-MM (mois de la date écrite sur le registre).",
+            "title": "Mois",
+            "type": "string"
+          },
+          "numerateur": {
+            "title": "Numerateur",
+            "type": "integer"
+          },
+          "valeur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.",
+            "title": "Valeur"
+          }
+        },
+        "required": [
+          "numerateur",
+          "denominateur",
+          "mois"
+        ],
+        "title": "MoisIndicateurRead",
         "type": "object"
       },
       "OcrConfidenceData": {
@@ -3713,6 +3842,36 @@
         "title": "UtilisateursListResponse",
         "type": "object"
       },
+      "ValeurIndicateurRead": {
+        "properties": {
+          "denominateur": {
+            "title": "Denominateur",
+            "type": "integer"
+          },
+          "numerateur": {
+            "title": "Numerateur",
+            "type": "integer"
+          },
+          "valeur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.",
+            "title": "Valeur"
+          }
+        },
+        "required": [
+          "numerateur",
+          "denominateur"
+        ],
+        "title": "ValeurIndicateurRead",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -5433,6 +5592,100 @@
           }
         ],
         "summary": "Get Activity Heatmap",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/indicateurs": {
+      "get": {
+        "description": "Indicateurs de santé (CPN, accouchements, CPON, SAA) calculés sur les\nlignes validées, par mois de la date écrite sur le registre. Définitions\nPROVISOIRES, décrites en clair dans chaque indicateur.",
+        "operationId": "get_indicateurs_api_v1_dashboard_indicateurs_get",
+        "parameters": [
+          {
+            "description": "Année des événements (date du registre).",
+            "in": "query",
+            "name": "annee",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2000,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Année des événements (date du registre).",
+              "title": "Annee"
+            }
+          },
+          {
+            "description": "Limiter à une structure (ignoré pour un ADMIN : toujours la sienne).",
+            "in": "query",
+            "name": "id_structure_sanitaire",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limiter à une structure (ignoré pour un ADMIN : toujours la sienne).",
+              "title": "Id Structure Sanitaire"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateursResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Indicateurs",
         "tags": [
           "Dashboard"
         ]

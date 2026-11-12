@@ -14,6 +14,8 @@ export type OperatorEfficiencyData = Schemas['OperatorEfficiencyData'];
 export type OperatorPerformanceComparisonData = Schemas['OperatorPerformanceComparisonData'];
 export type PrecisionOcrData = Schemas['PrecisionOcrResponse'];
 export type GroupeOcr = Schemas['GroupeOcrRead'];
+export type IndicateursData = Schemas['IndicateursResponse'];
+export type Indicateur = Schemas['IndicateurRead'];
 
 export const DashboardService = {
   getStats: () => {
@@ -60,5 +62,10 @@ export const DashboardService = {
    */
   getPrecisionOcr: () => {
     return apiClient<PrecisionOcrData>('/v1/dashboard/precision-ocr', { method: 'GET' });
+  },
+
+  /** Indicateurs de santé (CPN, accouchements, CPON, SAA) d'une année, par mois du registre. */
+  getIndicateurs: (annee: number) => {
+    return apiClient<IndicateursData>(`/v1/dashboard/indicateurs?annee=${annee}`, { method: 'GET' });
   },
 };

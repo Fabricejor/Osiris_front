@@ -14,6 +14,7 @@ import OperatorPerformanceComparison from "@/components/features/dashboard/Opera
 import ValidationStatusDistribution from "@/components/features/dashboard/ValidationStatusDistribution";
 import OperatorActivityHeatmap from "@/components/features/dashboard/OperatorActivityHeatmap";
 import OcrPrecisionPanel from "@/components/features/dashboard/OcrPrecisionPanel";
+import IndicateursSante from "@/components/features/dashboard/IndicateursSante";
 import PageHeader from "@/components/ui/PageHeader";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -63,6 +64,11 @@ export default function DashboardPage() {
         {/* Précision RÉELLE de l'OCR (lecture Gemini vs validation humaine). */}
         <div className="shrink-0">
           <OcrPrecisionPanel />
+        </div>
+
+        {/* Indicateurs de santé calculés sur les données validées. */}
+        <div className="shrink-0">
+          <IndicateursSante />
         </div>
 
         {/* Row 3: Data Processing Volumes + Activity Heatmap */}

@@ -490,6 +490,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard/indicateurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Indicateurs
+         * @description Indicateurs de santé (CPN, accouchements, CPON, SAA) calculés sur les
+         *     lignes validées, par mois de la date écrite sur le registre. Définitions
+         *     PROVISOIRES, décrites en clair dans chaque indicateur.
+         */
+        get: operations["get_indicateurs_api_v1_dashboard_indicateurs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dashboard/ocr-confidence": {
         parameters: {
             query?: never;
@@ -2092,6 +2114,51 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** IndicateurRead */
+        IndicateurRead: {
+            /** Code */
+            code: string;
+            /**
+             * Definition
+             * @description Ce qui est compté, en clair (à faire valider par l'équipe médicale).
+             */
+            definition: string;
+            /** Libelle */
+            libelle: string;
+            /**
+             * Niveau
+             * @description visite (une ligne) | patiente (un n° d'ordre et ses visites)
+             */
+            niveau: string;
+            /** Par Mois */
+            par_mois: components["schemas"]["MoisIndicateurRead"][];
+            /** Registre */
+            registre: string;
+            /** @description Événements sans date lisible : hors total et hors mois, à corriger dans la validation. */
+            sans_date: components["schemas"]["ValeurIndicateurRead"];
+            /** @description Événements datés de la période. */
+            total: components["schemas"]["ValeurIndicateurRead"];
+            /**
+             * Unite
+             * @description nombre | pourcentage
+             */
+            unite: string;
+        };
+        /**
+         * IndicateursResponse
+         * @description `GET /dashboard/indicateurs`.
+         */
+        IndicateursResponse: {
+            /** Annee */
+            annee?: number | null;
+            /** Indicateurs */
+            indicateurs: components["schemas"]["IndicateurRead"][];
+            /**
+             * Statut Definitions
+             * @description PROVISOIRE tant que l'équipe médicale n'a pas validé les définitions.
+             */
+            statut_definitions: string;
+        };
         /** JourActivite */
         JourActivite: {
             /**
@@ -2167,6 +2234,23 @@ export interface components {
              * @description Oubliées / (lues + oubliées).
              */
             taux_oubli?: number | null;
+        };
+        /** MoisIndicateurRead */
+        MoisIndicateurRead: {
+            /** Denominateur */
+            denominateur: number;
+            /**
+             * Mois
+             * @description AAAA-MM (mois de la date écrite sur le registre).
+             */
+            mois: string;
+            /** Numerateur */
+            numerateur: number;
+            /**
+             * Valeur
+             * @description Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.
+             */
+            valeur?: number | null;
         };
         /**
          * OcrConfidenceData
@@ -3077,6 +3161,18 @@ export interface components {
              * @description Nombre total d'utilisateurs matchant les filtres.
              */
             total: number;
+        };
+        /** ValeurIndicateurRead */
+        ValeurIndicateurRead: {
+            /** Denominateur */
+            denominateur: number;
+            /** Numerateur */
+            numerateur: number;
+            /**
+             * Valeur
+             * @description Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.
+             */
+            valeur?: number | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -4208,6 +4304,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActivityHeatmapData"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_indicateurs_api_v1_dashboard_indicateurs_get: {
+        parameters: {
+            query?: {
+                /** @description Année des événements (date du registre). */
+                annee?: number | null;
+                /** @description Limiter à une structure (ignoré pour un ADMIN : toujours la sienne). */
+                id_structure_sanitaire?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicateursResponse"];
                 };
             };
             /** @description Validation Error */
