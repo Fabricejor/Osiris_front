@@ -946,6 +946,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/liens-patientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liens à examiner (ou déjà décidés)
+         * @description Les plus probables d'abord (score décroissant).
+         */
+        get: operations["get_liens_api_v1_liens_patientes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/liens-patientes/calculer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rechercher de nouveaux liens (rapprochement des registres)
+         * @description (Re)calcule les suggestions sur les données validées. Les liens déjà
+         *     confirmés ou rejetés ne sont jamais modifiés ni reproposés.
+         */
+        post: operations["post_calculer_api_v1_liens_patientes_calculer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/liens-patientes/{id_lien_patiente}/confirmer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Confirmer
+         * @description Même femme : les deux dossiers partagent désormais l'ID patiente des exports.
+         */
+        post: operations["post_confirmer_api_v1_liens_patientes__id_lien_patiente__confirmer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/liens-patientes/{id_lien_patiente}/rejeter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Rejeter
+         * @description Femmes différentes : ce lien ne sera plus jamais proposé.
+         */
+        post: operations["post_rejeter_api_v1_liens_patientes__id_lien_patiente__rejeter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pages/queue": {
         parameters: {
             query?: never;
@@ -1582,6 +1663,18 @@ export interface components {
              */
             taux_erreur_echantillon?: number | null;
         };
+        /** BilanRapprochementRead */
+        BilanRapprochementRead: {
+            /**
+             * Dossiers
+             * @description Dossiers CPN / accouchement / CPON examinés.
+             */
+            dossiers: number;
+            /** Nouvelles Suggestions */
+            nouvelles_suggestions: number;
+            /** Suggestions Mises A Jour */
+            suggestions_mises_a_jour: number;
+        };
         /**
          * CalibrationChampRead
          * @description Seuil de confiance d'un champ, mesuré sur les validations passées.
@@ -1823,6 +1916,15 @@ export interface components {
             title: string;
             /** Value */
             value: string | number;
+        };
+        /** DecisionLienRead */
+        DecisionLienRead: {
+            lien: components["schemas"]["LienPatienteRead"];
+            /**
+             * Suggestions Retirees
+             * @description Suggestions concurrentes supprimées (le même dossier ne peut être relié qu'une fois).
+             */
+            suggestions_retirees: number;
         };
         /**
          * DeepHealthChecks
@@ -2168,6 +2270,41 @@ export interface components {
             date: string;
             /** Nombre */
             nombre: number;
+        };
+        /** LienPatienteRead */
+        LienPatienteRead: {
+            /**
+             * Criteres
+             * @description Détail du rapprochement (similarite_nom, ecart_jours, ecart_age, ecart_parite, similarite_adresse) et résumé des deux dossiers (`avant`, `apres` : registre, n° d'ordre, nom, adresse, âge, parité, date).
+             */
+            criteres: {
+                [key: string]: unknown;
+            };
+            /**
+             * Date Creation
+             * Format: date-time
+             */
+            date_creation: string;
+            /** Date Decision */
+            date_decision?: string | null;
+            /**
+             * Id Lien Patiente
+             * Format: uuid
+             */
+            id_lien_patiente: string;
+            /**
+             * Score
+             * @description 0..1 : nom (½), dates, âge, parité, adresse.
+             */
+            score: number;
+            statut: components["schemas"]["StatutLienPatiente"];
+        };
+        /** LiensPatientesResponse */
+        LiensPatientesResponse: {
+            /** Items */
+            items: components["schemas"]["LienPatienteRead"][];
+            /** Total */
+            total: number;
         };
         /**
          * LoginRequest
@@ -2855,6 +2992,12 @@ export interface components {
          */
         StatutExport: "EN_ATTENTE" | "EN_COURS" | "PRET" | "ECHEC";
         /**
+         * StatutLienPatiente
+         * @description Lien entre deux dossiers d'une même femme dans deux registres différents.
+         * @enum {string}
+         */
+        StatutLienPatiente: "SUGGERE" | "CONFIRME" | "REJETE";
+        /**
          * StatutSaisiePii
          * @description État de traitement humain d'une pii_cellule — query param uniquement.
          *
@@ -2997,7 +3140,7 @@ export interface components {
          *     (contrainte enum PostgreSQL native).
          * @enum {string}
          */
-        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CORRECTION_CLINIQUE" | "CORRECTION_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT" | "UPDATE_CATALOGUE";
+        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CORRECTION_CLINIQUE" | "CORRECTION_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT" | "UPDATE_CATALOGUE" | "LIEN_PATIENTE_CONFIRME" | "LIEN_PATIENTE_REJETE";
         /**
          * TypeChamp
          * @description Types de champs OCR extraits d'un registre (voir ADR-004 §2).
@@ -3021,7 +3164,7 @@ export interface components {
          * @description Type de ressource ciblée par une action audit.
          * @enum {string}
          */
-        TypeRessourceAudit: "DONNEE_EXTRAITE" | "PII_CELLULE" | "UTILISATEUR" | "SESSION_SCAN" | "REGISTRE_SCANNE" | "STRUCTURE_SANITAIRE" | "EXPORT" | "CATALOGUE_CHAMP";
+        TypeRessourceAudit: "DONNEE_EXTRAITE" | "PII_CELLULE" | "UTILISATEUR" | "SESSION_SCAN" | "REGISTRE_SCANNE" | "STRUCTURE_SANITAIRE" | "EXPORT" | "CATALOGUE_CHAMP" | "LIEN_PATIENTE";
         /**
          * TypeUtilisateur
          * @description Rôle métier stocké en base (table utilisateur).
@@ -5315,6 +5458,142 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_liens_api_v1_liens_patientes_get: {
+        parameters: {
+            query?: {
+                statut?: components["schemas"]["StatutLienPatiente"];
+                id_structure_sanitaire?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiensPatientesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_calculer_api_v1_liens_patientes_calculer_post: {
+        parameters: {
+            query?: {
+                /** @description Limiter à une structure. */
+                id_structure_sanitaire?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BilanRapprochementRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_confirmer_api_v1_liens_patientes__id_lien_patiente__confirmer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_lien_patiente: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionLienRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_rejeter_api_v1_liens_patientes__id_lien_patiente__rejeter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_lien_patiente: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionLienRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

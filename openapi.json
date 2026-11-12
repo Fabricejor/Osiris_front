@@ -312,6 +312,31 @@
         "title": "AutoValidationRead",
         "type": "object"
       },
+      "BilanRapprochementRead": {
+        "additionalProperties": false,
+        "properties": {
+          "dossiers": {
+            "description": "Dossiers CPN / accouchement / CPON examinés.",
+            "title": "Dossiers",
+            "type": "integer"
+          },
+          "nouvelles_suggestions": {
+            "title": "Nouvelles Suggestions",
+            "type": "integer"
+          },
+          "suggestions_mises_a_jour": {
+            "title": "Suggestions Mises A Jour",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dossiers",
+          "nouvelles_suggestions",
+          "suggestions_mises_a_jour"
+        ],
+        "title": "BilanRapprochementRead",
+        "type": "object"
+      },
       "CalibrationChampRead": {
         "additionalProperties": false,
         "description": "Seuil de confiance d'un champ, mesuré sur les validations passées.",
@@ -855,6 +880,25 @@
           "hausse_favorable"
         ],
         "title": "DashboardStat",
+        "type": "object"
+      },
+      "DecisionLienRead": {
+        "additionalProperties": false,
+        "properties": {
+          "lien": {
+            "$ref": "#/components/schemas/LienPatienteRead"
+          },
+          "suggestions_retirees": {
+            "description": "Suggestions concurrentes supprimées (le même dossier ne peut être relié qu'une fois).",
+            "title": "Suggestions Retirees",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "lien",
+          "suggestions_retirees"
+        ],
+        "title": "DecisionLienRead",
         "type": "object"
       },
       "DeepHealthChecks": {
@@ -1678,6 +1722,79 @@
           "nombre"
         ],
         "title": "JourActivite",
+        "type": "object"
+      },
+      "LienPatienteRead": {
+        "additionalProperties": false,
+        "properties": {
+          "criteres": {
+            "additionalProperties": true,
+            "description": "Détail du rapprochement (similarite_nom, ecart_jours, ecart_age, ecart_parite, similarite_adresse) et résumé des deux dossiers (`avant`, `apres` : registre, n° d'ordre, nom, adresse, âge, parité, date).",
+            "title": "Criteres",
+            "type": "object"
+          },
+          "date_creation": {
+            "format": "date-time",
+            "title": "Date Creation",
+            "type": "string"
+          },
+          "date_decision": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Decision"
+          },
+          "id_lien_patiente": {
+            "format": "uuid",
+            "title": "Id Lien Patiente",
+            "type": "string"
+          },
+          "score": {
+            "description": "0..1 : nom (½), dates, âge, parité, adresse.",
+            "title": "Score",
+            "type": "number"
+          },
+          "statut": {
+            "$ref": "#/components/schemas/StatutLienPatiente"
+          }
+        },
+        "required": [
+          "id_lien_patiente",
+          "statut",
+          "score",
+          "criteres",
+          "date_creation"
+        ],
+        "title": "LienPatienteRead",
+        "type": "object"
+      },
+      "LiensPatientesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LienPatienteRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "LiensPatientesResponse",
         "type": "object"
       },
       "LoginRequest": {
@@ -3184,6 +3301,16 @@
         "title": "StatutExport",
         "type": "string"
       },
+      "StatutLienPatiente": {
+        "description": "Lien entre deux dossiers d'une même femme dans deux registres différents.",
+        "enum": [
+          "SUGGERE",
+          "CONFIRME",
+          "REJETE"
+        ],
+        "title": "StatutLienPatiente",
+        "type": "string"
+      },
       "StatutSaisiePii": {
         "description": "État de traitement humain d'une pii_cellule — query param uniquement.\n\nDérivé de la colonne `valeur_saisie` (pas un champ DB). Utilisé par\n`GET /pii-cellules?statut=<>` pour filtrer.",
         "enum": [
@@ -3505,7 +3632,9 @@
           "UPDATE_STRUCTURE",
           "CREATE_EXPORT",
           "DELETE_EXPORT",
-          "UPDATE_CATALOGUE"
+          "UPDATE_CATALOGUE",
+          "LIEN_PATIENTE_CONFIRME",
+          "LIEN_PATIENTE_REJETE"
         ],
         "title": "TypeActionAudit",
         "type": "string"
@@ -3556,7 +3685,8 @@
           "REGISTRE_SCANNE",
           "STRUCTURE_SANITAIRE",
           "EXPORT",
-          "CATALOGUE_CHAMP"
+          "CATALOGUE_CHAMP",
+          "LIEN_PATIENTE"
         ],
         "title": "TypeRessourceAudit",
         "type": "string"
@@ -7254,6 +7384,314 @@
         "summary": "Vérification approfondie des dépendances",
         "tags": [
           "Infrastructure"
+        ]
+      }
+    },
+    "/api/v1/liens-patientes": {
+      "get": {
+        "description": "Les plus probables d'abord (score décroissant).",
+        "operationId": "get_liens_api_v1_liens_patientes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "statut",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/StatutLienPatiente",
+              "default": "SUGGERE"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id_structure_sanitaire",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Id Structure Sanitaire"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiensPatientesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Liens à examiner (ou déjà décidés)",
+        "tags": [
+          "Liaison des patientes"
+        ]
+      }
+    },
+    "/api/v1/liens-patientes/calculer": {
+      "post": {
+        "description": "(Re)calcule les suggestions sur les données validées. Les liens déjà\nconfirmés ou rejetés ne sont jamais modifiés ni reproposés.",
+        "operationId": "post_calculer_api_v1_liens_patientes_calculer_post",
+        "parameters": [
+          {
+            "description": "Limiter à une structure.",
+            "in": "query",
+            "name": "id_structure_sanitaire",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limiter à une structure.",
+              "title": "Id Structure Sanitaire"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BilanRapprochementRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rechercher de nouveaux liens (rapprochement des registres)",
+        "tags": [
+          "Liaison des patientes"
+        ]
+      }
+    },
+    "/api/v1/liens-patientes/{id_lien_patiente}/confirmer": {
+      "post": {
+        "description": "Même femme : les deux dossiers partagent désormais l'ID patiente des exports.",
+        "operationId": "post_confirmer_api_v1_liens_patientes__id_lien_patiente__confirmer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_lien_patiente",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Id Lien Patiente",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionLienRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Confirmer",
+        "tags": [
+          "Liaison des patientes"
+        ]
+      }
+    },
+    "/api/v1/liens-patientes/{id_lien_patiente}/rejeter": {
+      "post": {
+        "description": "Femmes différentes : ce lien ne sera plus jamais proposé.",
+        "operationId": "post_rejeter_api_v1_liens_patientes__id_lien_patiente__rejeter_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_lien_patiente",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Id Lien Patiente",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionLienRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Rejeter",
+        "tags": [
+          "Liaison des patientes"
         ]
       }
     },
