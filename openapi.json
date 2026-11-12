@@ -2399,6 +2399,12 @@
         "additionalProperties": false,
         "description": "Confirmation d'une page uploadée (POST /sessions/{id}/pages).",
         "properties": {
+          "forcer_qualite": {
+            "default": false,
+            "description": "Enregistrer malgré une photo jugée inutilisable (422 PHOTO_INUTILISABLE) : l'agent confirme que la photo est lisible. Les mesures restent conservées.",
+            "title": "Forcer Qualite",
+            "type": "boolean"
+          },
           "id_registre_scanne": {
             "format": "uuid",
             "title": "Id Registre Scanne",
@@ -2533,6 +2539,18 @@
               }
             ],
             "title": "Numero Ordre Ligne"
+          },
+          "qualite_photo": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualite Photo"
           },
           "reserve_jusqu_a": {
             "anyOf": [

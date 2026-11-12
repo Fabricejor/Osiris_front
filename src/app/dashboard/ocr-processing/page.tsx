@@ -20,6 +20,7 @@ import { SessionsService, formatDateHeure, heureCourte, toPageView, type PageVie
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
+import AlertePhoto from '@/components/features/data-validation/AlertePhoto';
 import PageHeader from '@/components/ui/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -282,6 +283,7 @@ export default function OCRProcessingPage() {
                       <div>
                         <h3 className="font-bold text-gray-900 leading-tight">{pageName}</h3>
                         <p className="text-xs font-medium text-gray-500 mt-0.5">{t('batch_label', { id: pageBatch })}</p>
+                        <AlertePhoto problemes={page.problemesPhoto} className="mt-1" />
                       </div>
 
                       {/* Actions Dropdown Trigger */}

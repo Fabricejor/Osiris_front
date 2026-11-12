@@ -113,7 +113,22 @@ export interface PageView {
   ocrBloque: boolean;
   /** Ouverte en ce moment par un AUTRE utilisateur (nom + échéance), null sinon. */
   reserveeParAutre: { nom: string; jusqua: string } | null;
+  /** Problèmes de photo mesurés à l'envoi (FLOUE, BOUGEE, TROP_SOMBRE…), tous côtés confondus. */
+  problemesPhoto: string[];
   date_creation: string;
+}
+
+/** Codes des problèmes de photo (bloquants forcés + avertissements), sans doublon. */
+function problemesPhoto(page: RegistreScanne): string[] {
+  const codes = new Set<string>();
+  for (const cote of Object.values(page.qualite_photo ?? {})) {
+    if (!cote || typeof cote !== "object") continue;
+    const { bloquants, avertissements } = cote as { bloquants?: unknown; avertissements?: unknown };
+    for (const liste of [bloquants, avertissements]) {
+      if (Array.isArray(liste)) liste.forEach((c) => typeof c === "string" && codes.add(c));
+    }
+  }
+  return [...codes];
 }
 
 /** Réservation d'un autre utilisateur encore active, null sinon. */
@@ -165,6 +180,7 @@ export function toPageView(page: RegistreScanne): PageView {
       (page.statut_traitement === "RECU" || page.statut_traitement === "EN_TRAITEMENT") &&
       Date.now() - new Date(page.date_modification).getTime() > DELAI_OCR_BLOQUE_MS,
     reserveeParAutre: reservationAutre(page),
+    problemesPhoto: problemesPhoto(page),
     date_creation: page.date_creation,
   };
 }

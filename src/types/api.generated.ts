@@ -2491,6 +2491,12 @@ export interface components {
          */
         RegistreScanneCreate: {
             /**
+             * Forcer Qualite
+             * @description Enregistrer malgré une photo jugée inutilisable (422 PHOTO_INUTILISABLE) : l'agent confirme que la photo est lisible. Les mesures restent conservées.
+             * @default false
+             */
+            forcer_qualite: boolean;
+            /**
              * Id Registre Scanne
              * Format: uuid
              */
@@ -2549,6 +2555,10 @@ export interface components {
             image_url_page_gauche?: string | null;
             /** Numero Ordre Ligne */
             numero_ordre_ligne: number | null;
+            /** Qualite Photo */
+            qualite_photo?: {
+                [key: string]: unknown;
+            } | null;
             /** Reserve Jusqu A */
             reserve_jusqu_a?: string | null;
             /**
