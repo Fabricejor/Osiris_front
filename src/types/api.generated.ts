@@ -1429,6 +1429,38 @@ export interface components {
             total: number;
         };
         /**
+         * AutoValidationRead
+         * @description Validation automatique : activation et mesure de sa qualité.
+         */
+        AutoValidationRead: {
+            /** Active */
+            active: boolean;
+            /** N Echantillon Corrigees */
+            n_echantillon_corrigees: number;
+            /** N Echantillon Rejetees */
+            n_echantillon_rejetees: number;
+            /**
+             * N Echantillon Traitees
+             * @description Lignes de l'échantillon de contrôle déjà traitées par un humain.
+             */
+            n_echantillon_traitees: number;
+            /**
+             * N Validees Auto
+             * @description Lignes validées sans humain.
+             */
+            n_validees_auto: number;
+            /**
+             * Taux Echantillon
+             * @description Part des lignes auto-validables laissées à un humain (contrôle).
+             */
+            taux_echantillon: number;
+            /**
+             * Taux Erreur Echantillon
+             * @description Part de l'échantillon corrigée ou rejetée par l'humain : estimation du taux d'erreur des lignes validées automatiquement. None tant qu'aucune n'est traitée.
+             */
+            taux_erreur_echantillon?: number | null;
+        };
+        /**
          * CalibrationChampRead
          * @description Seuil de confiance d'un champ, mesuré sur les validations passées.
          */
@@ -1476,6 +1508,7 @@ export interface components {
          * @description `GET /donnees-extraites/calibration` — seuils actuels de la revue par exception.
          */
         CalibrationResponse: {
+            auto_validation: components["schemas"]["AutoValidationRead"];
             /** Champs */
             champs: components["schemas"]["CalibrationChampRead"][];
             /** Min Echantillon */
@@ -1780,6 +1813,12 @@ export interface components {
              * @description Statut du recalage OCR au moment de l'extraction — brut, ex: 'accepted', 'low_confidence(ecc=0.47)'. Permet au valideur de prioriser la revue des extractions issues d'un alignement dégradé.
              */
             registration_status?: string | null;
+            /**
+             * Validation Automatique
+             * @description Validée automatiquement (toutes les cases sûres d'après des seuils mesurés) et jamais revue par un humain depuis. Corrigeable via /corriger.
+             * @default false
+             */
+            validation_automatique: boolean;
             /**
              * Valide
              * @description True si `date_validation` est renseignée (validée OU rejetée). Pour distinguer rejet vs validation, voir `categorie_rejet`.

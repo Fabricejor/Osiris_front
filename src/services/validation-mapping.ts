@@ -105,6 +105,19 @@ export function messagesAlertes(donnee: DonneeExtraite, bloquantesSeulement = tr
   return [...vus];
 }
 
+/** État d'une ligne traitée (« validée », « validée automatiquement », « rejetée »), null sinon. */
+export function etatLigne(donnee: DonneeExtraite | null | undefined, fr: boolean): string | null {
+  if (!donnee?.valide) return null;
+  if (donnee.categorie_rejet) return fr ? 'rejetée' : 'rejected';
+  if (donnee.validation_automatique) return fr ? 'validée automatiquement (non revue)' : 'auto-validated (not reviewed)';
+  return fr ? 'validée' : 'validated';
+}
+
+/** Couleur de la coche d'une ligne traitée : orange si validée sans humain. */
+export function couleurCoche(donnee: DonneeExtraite | null | undefined): string {
+  return donnee?.validation_automatique ? 'text-amber-600' : 'text-blue-600';
+}
+
 /** Seuils d'affichage de la confiance Gemini. */
 export const SEUIL_CONFIANCE_BASSE = 50;
 export const SEUIL_CONFIANCE_MOYENNE = 80;

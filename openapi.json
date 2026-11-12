@@ -253,6 +253,65 @@
         "title": "AuditLogsListResponse",
         "type": "object"
       },
+      "AutoValidationRead": {
+        "additionalProperties": false,
+        "description": "Validation automatique : activation et mesure de sa qualité.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "n_echantillon_corrigees": {
+            "minimum": 0.0,
+            "title": "N Echantillon Corrigees",
+            "type": "integer"
+          },
+          "n_echantillon_rejetees": {
+            "minimum": 0.0,
+            "title": "N Echantillon Rejetees",
+            "type": "integer"
+          },
+          "n_echantillon_traitees": {
+            "description": "Lignes de l'échantillon de contrôle déjà traitées par un humain.",
+            "minimum": 0.0,
+            "title": "N Echantillon Traitees",
+            "type": "integer"
+          },
+          "n_validees_auto": {
+            "description": "Lignes validées sans humain.",
+            "minimum": 0.0,
+            "title": "N Validees Auto",
+            "type": "integer"
+          },
+          "taux_echantillon": {
+            "description": "Part des lignes auto-validables laissées à un humain (contrôle).",
+            "title": "Taux Echantillon",
+            "type": "number"
+          },
+          "taux_erreur_echantillon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part de l'échantillon corrigée ou rejetée par l'humain : estimation du taux d'erreur des lignes validées automatiquement. None tant qu'aucune n'est traitée.",
+            "title": "Taux Erreur Echantillon"
+          }
+        },
+        "required": [
+          "active",
+          "taux_echantillon",
+          "n_validees_auto",
+          "n_echantillon_traitees",
+          "n_echantillon_corrigees",
+          "n_echantillon_rejetees"
+        ],
+        "title": "AutoValidationRead",
+        "type": "object"
+      },
       "CalibrationChampRead": {
         "additionalProperties": false,
         "description": "Seuil de confiance d'un champ, mesuré sur les validations passées.",
@@ -342,6 +401,9 @@
         "additionalProperties": false,
         "description": "`GET /donnees-extraites/calibration` — seuils actuels de la revue par exception.",
         "properties": {
+          "auto_validation": {
+            "$ref": "#/components/schemas/AutoValidationRead"
+          },
           "champs": {
             "items": {
               "$ref": "#/components/schemas/CalibrationChampRead"
@@ -371,7 +433,8 @@
           "taux_erreur_cible",
           "min_echantillon",
           "taux_controle_aleatoire",
-          "champs"
+          "champs",
+          "auto_validation"
         ],
         "title": "CalibrationResponse",
         "type": "object"
@@ -1015,6 +1078,12 @@
             ],
             "description": "Statut du recalage OCR au moment de l'extraction — brut, ex: 'accepted', 'low_confidence(ecc=0.47)'. Permet au valideur de prioriser la revue des extractions issues d'un alignement dégradé.",
             "title": "Registration Status"
+          },
+          "validation_automatique": {
+            "default": false,
+            "description": "Validée automatiquement (toutes les cases sûres d'après des seuils mesurés) et jamais revue par un humain depuis. Corrigeable via /corriger.",
+            "title": "Validation Automatique",
+            "type": "boolean"
           },
           "valide": {
             "description": "True si `date_validation` est renseignée (validée OU rejetée). Pour distinguer rejet vs validation, voir `categorie_rejet`.",
