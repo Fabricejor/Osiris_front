@@ -592,10 +592,10 @@ export interface paths {
         };
         /**
          * Get Precision Ocr
-         * @description Précision RÉELLE de l'OCR : ce que Gemini a lu comparé à ce que les
+         * @description Précision RÉELLE de l'OCR : ce que l'OCR a lu comparé à ce que les
          *     valideurs ont retenu, case par case (lignes revues par un humain
          *     uniquement). Ventilée par registre, champ, structure, agent terrain, mois
-         *     et tranche de score Gemini. Un ADMIN ne voit que sa structure.
+         *     et tranche de score OCR. Un ADMIN ne voit que sa structure.
          */
         get: operations["get_precision_ocr_api_v1_dashboard_precision_ocr_get"];
         put?: never;
@@ -1691,7 +1691,7 @@ export interface components {
             nom_champ: string;
             /**
              * Seuil
-             * @description Score Gemini sous lequel la case est à vérifier.
+             * @description Score OCR sous lequel la case est à vérifier.
              */
             seuil: number;
             source: components["schemas"]["SourceSeuil"];
@@ -2196,8 +2196,8 @@ export interface components {
              */
             precision?: number | null;
             /**
-             * Score Gemini Moyen
-             * @description Score de confiance moyen annoncé par Gemini sur ces cases.
+             * Score OCR Moyen
+             * @description Score de confiance moyen annoncé par l'OCR sur ces cases.
              */
             score_gemini_moyen?: number | null;
             /**
@@ -2329,7 +2329,7 @@ export interface components {
         };
         /**
          * MesureOcrRead
-         * @description Précision mesurée sur les validations humaines (≠ score annoncé par Gemini).
+         * @description Précision mesurée sur les validations humaines (≠ score annoncé par l'OCR).
          */
         MesureOcrRead: {
             /**
@@ -2357,8 +2357,8 @@ export interface components {
              */
             precision?: number | null;
             /**
-             * Score Gemini Moyen
-             * @description Score de confiance moyen annoncé par Gemini sur ces cases.
+             * Score OCR Moyen
+             * @description Score de confiance moyen annoncé par l'OCR sur ces cases.
              */
             score_gemini_moyen?: number | null;
             /**
@@ -2567,12 +2567,12 @@ export interface components {
             saisie: boolean;
             /**
              * Score Confiance
-             * @description Confiance Gemini (0..1) sur `valeur_lue`. None = aucun score fourni.
+             * @description Confiance OCR (0..1) sur `valeur_lue`. None = aucun score fourni.
              */
             score_confiance?: number | null;
             /**
              * Valeur Lue
-             * @description Valeur extraite par l'OCR (Gemini) pour pré-remplissage.
+             * @description Valeur extraite par l'OCR pour pré-remplissage.
              */
             valeur_lue?: string | null;
             /** Valeur Saisie */
@@ -2617,7 +2617,7 @@ export interface components {
             par_structure: components["schemas"]["GroupeOcrRead"][];
             /**
              * Par Tranche Score
-             * @description Par tranche de score Gemini (clé « 90-95 ») : précision réelle vs score annoncé.
+             * @description Par tranche de score OCR (clé « 90-95 ») : précision réelle vs score annoncé.
              */
             par_tranche_score: components["schemas"]["GroupeOcrRead"][];
             /**

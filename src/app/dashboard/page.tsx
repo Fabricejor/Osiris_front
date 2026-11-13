@@ -61,7 +61,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Précision RÉELLE de l'OCR (lecture Gemini vs validation humaine). */}
+        {/* Précision RÉELLE de l'OCR (lecture OCR vs validation humaine). */}
         <div className="shrink-0">
           <OcrPrecisionPanel />
         </div>

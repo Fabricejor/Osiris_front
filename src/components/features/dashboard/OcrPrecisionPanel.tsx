@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Précision RÉELLE de l'OCR : ce que Gemini a lu comparé à ce que les
- * valideurs ont retenu (et non le score que Gemini s'attribue).
+ * Précision RÉELLE de l'OCR : ce que l'OCR a lu comparé à ce que les
+ * valideurs ont retenu (et non le score que l'OCR s'attribue).
  *
  * - Tuiles : précision réelle, score annoncé, cases oubliées, lignes rejetées.
- * - « Le score de Gemini est-il tenu ? » : par tranche de score, score annoncé
+ * - « Le score de l'OCR est-il tenu ? » : par tranche de score, score annoncé
  *   vs précision mesurée (même unité, un seul axe 0–100 %).
  * - Champs les plus souvent faux (taux d'erreur = corrigées + oubliées).
  * - Évolution mensuelle, et tableau par agent terrain (qualité des photos).

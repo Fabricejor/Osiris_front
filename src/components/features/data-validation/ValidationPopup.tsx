@@ -416,7 +416,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   const dejaTraitees =
     lignes.filter(({ donnee }) => donnee.valide && !donnee.categorie_rejet).length + piiData.filter((p) => p.saisie).length;
   // Champs à vérifier en priorité (lignes pas encore validées uniquement) :
-  // score Gemini faible, ou valeur lue sans aucun score (« Score inconnu »).
+  // score OCR faible, ou valeur lue sans aucun score (« Score inconnu »).
   // Cases douteuses restantes (score < 80 %, inconnu, ou alerte) : baisse au fil
   // des corrections et confirmations.
   const detailsAVerifier = nbAVerifier
