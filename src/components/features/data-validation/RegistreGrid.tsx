@@ -14,7 +14,9 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import {
   colonnesVisibles,
+  couleurCoche,
   etatCellule,
+  etatLigne,
   libellesSections,
   regrouperParSection,
   zoneRangee,
@@ -163,7 +165,8 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
           <tbody>
             {grille.rangees.map((r) => {
               const verrouillee = r.donnee?.valide ?? false;
-              const etat = r.donnee?.categorie_rejet ? (fr ? 'rejetée' : 'rejected') : (fr ? 'validée' : 'validated');
+              const etat = etatLigne(r.donnee, fr);
+              const coche = couleurCoche(r.donnee);
               return (
                 <tr
                   key={`${r.numeroOrdre}:${r.rang}`}
@@ -180,7 +183,7 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
                       className="sticky left-0 z-10 bg-gray-50 border border-gray-200 px-2 text-[12px] font-bold text-gray-700 text-center align-middle"
                     >
                       {r.numeroOrdre}
-                      {!multiVisites && verrouillee && <span className="ml-0.5 text-blue-600" title={fr ? `Ligne ${etat}` : `Row ${etat}`}>✓</span>}
+                      {!multiVisites && verrouillee && <span className={`ml-0.5 ${coche}`} title={fr ? `Ligne ${etat}` : `Row ${etat}`}>✓</span>}
                     </th>
                   )}
                   {multiVisites && (
@@ -190,7 +193,7 @@ export default function RegistreGrid(props: Readonly<RegistreGridProps>) {
                       title={verrouillee ? (fr ? `Visite ${etat}` : `Visit ${etat}`) : undefined}
                     >
                       {r.rang}
-                      {verrouillee && <span className="ml-0.5 text-blue-600">✓</span>}
+                      {verrouillee && <span className={`ml-0.5 ${coche}`}>✓</span>}
                     </th>
                   )}
                   {groupes.map((g) => {

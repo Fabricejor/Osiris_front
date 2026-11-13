@@ -10,13 +10,17 @@ import {
   XCircle,
   Pencil,
   AlertTriangle,
-  Clock
+  Clock,
+  Lock,
+  PlayCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SessionsService, formatDateHeure, toPageView, type PageView } from '@/services/sessions.service';
+import { SessionsService, formatDateHeure, heureCourte, toPageView, type PageView } from '@/services/sessions.service';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
+import AlertePhoto from '@/components/features/data-validation/AlertePhoto';
 import PageHeader from '@/components/ui/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -61,6 +65,48 @@ export default function OCRProcessingPage() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(null);
 
+  // Mode « file » : le serveur attribue la plus ancienne page libre (réservée
+  // pour moi), puis la suivante après chaque validation — jamais deux
+  // valideurs sur la même page.
+  const estValideur = useAuthStore((s) => s.user?.role === 'VALIDEUR_MEDICAL');
+  const [file, setFile] = useState<PageView[] | null>(null);
+  const [chargementSuivante, setChargementSuivante] = useState(false);
+
+  const prendrePageSuivante = async (): Promise<PageView | null> => {
+    const page = await SessionsService.pageSuivante();
+    return page ? toPageView(page) : null;
+  };
+
+  const demarrerFile = async () => {
+    setChargementSuivante(true);
+    try {
+      const page = await prendrePageSuivante();
+      if (!page) {
+        toast.info(language === 'fr' ? 'Aucune page libre à valider.' : 'No free page to validate.');
+        return;
+      }
+      setFile([page]);
+      setSelectedPageIndex(0);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error && err.message ? err.message : t('action_failed'));
+    } finally {
+      setChargementSuivante(false);
+    }
+  };
+
+  const ajouterPageSuivante = async (): Promise<boolean> => {
+    const page = await prendrePageSuivante();
+    if (!page) return false;
+    setFile((prev) => [...(prev ?? []), page]);
+    return true;
+  };
+
+  const fermerPopup = () => {
+    setSelectedPageIndex(null);
+    setFile(null);
+    queryClient.invalidateQueries({ queryKey: ['pages-queue'] });
+  };
+
   // Close dropdown when clicking outside
   const dropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -93,6 +139,8 @@ export default function OCRProcessingPage() {
       (filterType === 'Low Confidence' && page.confidence < 50);
     return matchSearch && matchFilter;
   });
+  // Pages parcourues dans le popup : la file attribuée par le serveur, sinon la liste filtrée.
+  const pagesPopup = file ?? filteredPages;
 
   return (
     <div className="h-full flex flex-col p-6 bg-gray-50/50 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
@@ -100,7 +148,20 @@ export default function OCRProcessingPage() {
       {/* Header */}
       <PageHeader title={t("ocr_processing")} />
       <div className="mb-6">
-        <p className="text-gray-500 text-sm">{t("ocr_hub_subtitle")}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-gray-500 text-sm">{t("ocr_hub_subtitle")}</p>
+          {estValideur && (
+            <button
+              type="button"
+              onClick={demarrerFile}
+              disabled={chargementSuivante}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+            >
+              <PlayCircle className="w-4 h-4" />
+              {language === 'fr' ? 'Valider la page suivante' : 'Validate next page'}
+            </button>
+          )}
+        </div>
 
         {/* Quick Stats */}
         <div className="flex gap-4 mt-6">
@@ -202,6 +263,17 @@ export default function OCRProcessingPage() {
                         }`}>
                         {pageStatusText}
                       </span>
+                      {page.reserveeParAutre && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-md shadow-sm bg-slate-800/85 text-white"
+                          title={language === 'fr'
+                            ? `En cours de validation par ${page.reserveeParAutre.nom} (jusqu'à ${heureCourte(page.reserveeParAutre.jusqua)} au plus tard)`
+                            : `Being validated by ${page.reserveeParAutre.nom} (until ${heureCourte(page.reserveeParAutre.jusqua)} at the latest)`}
+                        >
+                          <Lock className="w-3 h-3" />
+                          {page.reserveeParAutre.nom}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -211,6 +283,7 @@ export default function OCRProcessingPage() {
                       <div>
                         <h3 className="font-bold text-gray-900 leading-tight">{pageName}</h3>
                         <p className="text-xs font-medium text-gray-500 mt-0.5">{t('batch_label', { id: pageBatch })}</p>
+                        <AlertePhoto problemes={page.problemesPhoto} className="mt-1" />
                       </div>
 
                       {/* Actions Dropdown Trigger */}
@@ -263,10 +336,11 @@ export default function OCRProcessingPage() {
       {/* Full-Screen Validation Popup */}
       <ValidationPopup
         isOpen={selectedPageIndex !== null}
-        onClose={() => setSelectedPageIndex(null)}
-        pages={filteredPages}
+        onClose={fermerPopup}
+        pages={pagesPopup}
         initialPageIndex={selectedPageIndex || 0}
-        sessionId={selectedPageIndex !== null ? (filteredPages[selectedPageIndex]?.id_session_scan ?? '') : ''}
+        sessionId={selectedPageIndex !== null ? (pagesPopup[selectedPageIndex]?.id_session_scan ?? '') : ''}
+        onFinDeListe={file ? ajouterPageSuivante : undefined}
       />
     </div>
   );

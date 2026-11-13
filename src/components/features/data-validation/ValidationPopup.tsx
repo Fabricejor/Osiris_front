@@ -21,12 +21,13 @@ import {
   EyeOff,
   ShieldAlert,
   Loader2,
-  Crosshair
+  Crosshair,
+  Lock
 } from 'lucide-react';
 import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { SessionsService, type PageView } from '@/services/sessions.service';
+import { SessionsService, heureCourte, type PageView, type ReservationPage } from '@/services/sessions.service';
 import { DonneesExtraitesService } from '@/services/donnees-extraites.service';
 import { PiiCellulesService } from '@/services/pii-cellules.service';
 import { CataloguesService } from '@/services/catalogues.service';
@@ -52,6 +53,11 @@ interface ValidationPopupProps {
   pages: readonly PageView[];
   initialPageIndex: number;
   sessionId: string;
+  /**
+   * Mode « file » : appelé après validation de la dernière page de `pages`.
+   * Le parent y ajoute la page suivante (true) ou signale qu'il n'y en a plus (false).
+   */
+  onFinDeListe?: () => Promise<boolean>;
 }
 
 const BADGE_CONFIANCE = {
@@ -119,7 +125,10 @@ function BadgeConfiance({ champ }: Readonly<{ champ: ChampAffiche }>) {
   );
 }
 
-export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex, sessionId }: Readonly<ValidationPopupProps>) {
+/** Renouvellement de la réservation tant que la page reste ouverte (le back la garde 15 min). */
+const RENOUVELLEMENT_RESERVATION_MS = 5 * 60 * 1000;
+
+export default function ValidationPopup({ isOpen, onClose, pages, initialPageIndex, sessionId, onFinDeListe }: Readonly<ValidationPopupProps>) {
   const { t, language } = useTranslation();
   const queryClient = useQueryClient();
   // /donnees-extraites et /pii-cellules sont réservés aux valideurs médicaux
@@ -144,6 +153,33 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
   const currentPage = pages[currentIndex];
   const pageId = currentPage?.id;
+
+  // ── Réservation : la page ouverte est à moi tant qu'elle reste ouverte ──
+  // Un autre valideur qui l'ouvre la voit en lecture seule (nom + échéance).
+  // Renouvelée toutes les 5 min, libérée à la fermeture ou au changement de
+  // page ; un onglet fermé brutalement la libère à l'échéance (15 min).
+  const [reservation, setReservation] = useState<(ReservationPage & { pageId: string }) | null>(null);
+  const pageAReserver = isOpen && canValidate ? pageId : undefined;
+  useEffect(() => {
+    if (!pageAReserver) return;
+    let active = true;
+    const reserver = () =>
+      SessionsService.reserverPage(pageAReserver)
+        .then((r) => {
+          if (active) setReservation({ ...r, pageId: pageAReserver });
+        })
+        // Réseau / erreur : on n'empêche pas de travailler, le back tranchera à l'enregistrement.
+        .catch(() => undefined);
+    void reserver();
+    const minuteur = setInterval(reserver, RENOUVELLEMENT_RESERVATION_MS);
+    return () => {
+      active = false;
+      clearInterval(minuteur);
+      SessionsService.libererPage(pageAReserver).catch(() => undefined);
+    };
+  }, [pageAReserver]);
+  // Page ouverte par quelqu'un d'autre : lecture seule.
+  const reserveeParAutre = reservation?.pageId === pageId && !reservation.obtenue ? reservation : null;
 
   // ── Lien photo ↔ données ──
   // Zone survolée (surlignage) et zone « active » (focus : l'image est cadrée dessus),
@@ -197,7 +233,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     staleTime: 10 * 60 * 1000,
   });
 
-  const grille = construireGrille(catalogue, clinicalData, piiData);
+  const grille = construireGrille(catalogue, clinicalData, piiData, currentPage?.controleEntetes?.colonnes);
   const modifierClinique = (idDonnee: string, nomChamp: string, valeur: string) =>
     setSaisiesCliniques((prev) => ({ ...prev, [idDonnee]: { ...prev[idDonnee], [nomChamp]: valeur } }));
   const modifierPii = (idPii: string, valeur: string) =>
@@ -298,14 +334,26 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
               : `${piiVides.length} empty personal field(s) to fill in before validating (${qui}).`,
           );
         }
+        // Lignes à valider : UN seul appel pour toute la page (tout ou rien), au
+        // lieu d'un POST par ligne. Seules les lignes corrigées sont nommées ;
+        // `inclure_restantes` accepte les autres telles que lues par l'OCR.
+        const aValiderCorrigees: { id_donnee_extraite: string; corrections: Record<string, unknown> }[] = [];
+        let resteAValider = false;
         for (const { donnee, champs } of lignes) {
           const corrections = construireCorrections(champs, saisiesCliniques[donnee.id_donnee_extraite]);
           if (!donnee.valide) {
-            await DonneesExtraitesService.validerDonnee(donnee.id_donnee_extraite, corrections);
+            if (Object.keys(corrections).length > 0) {
+              aValiderCorrigees.push({ id_donnee_extraite: donnee.id_donnee_extraite, corrections });
+            } else {
+              resteAValider = true;
+            }
           } else if (!donnee.categorie_rejet && Object.keys(corrections).length > 0) {
             // Mode « Corriger » : ligne déjà validée, seuls les champs modifiés.
             await DonneesExtraitesService.corrigerDonnee(donnee.id_donnee_extraite, corrections);
           }
+        }
+        if (aValiderCorrigees.length > 0 || resteAValider) {
+          await DonneesExtraitesService.validerLot(currentPage.id, aValiderCorrigees, resteAValider);
         }
         for (const pii of piiData) {
           const valeur = (saisiesPii[pii.id_pii_cellule] ?? pii.valeur_saisie ?? pii.valeur_lue ?? '').trim();
@@ -339,6 +387,17 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
       if (currentIndex < pages.length - 1) {
         setCurrentIndex(currentIndex + 1);
+      } else if (onFinDeListe) {
+        // Mode « file » : le parent ajoute la page libre suivante, s'il en reste.
+        onFinDeListe()
+          .then((ajoutee) => {
+            if (ajoutee) setCurrentIndex((i) => i + 1);
+            else {
+              toast.info(language === 'fr' ? 'Plus aucune page à valider.' : 'No more pages to validate.');
+              onClose();
+            }
+          })
+          .catch(() => onClose());
       } else {
         onClose();
       }
@@ -660,6 +719,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                               onConfirmer={confirmerCase}
                               language={language}
                               onZone={onZone}
+                              image={imageNaturelle?.src === currentPage.image ? imageNaturelle : null}
                             />
                           )}
                           {vueEffective === 'fiche' && (
@@ -743,6 +803,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                                       deduit: false,
                                       manquant: !pii.valeur_lue,
                                       alertes: [],
+                                      raisons: null,
                                     }}
                                   />
                                 )}
@@ -872,7 +933,14 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
 
                 {/* Sticky Footer */}
                 <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
-                  {pageTerminee && !modeCorrection ? (
+                  {reserveeParAutre ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                      <Lock className="w-4 h-4 shrink-0" />
+                      {language === 'fr'
+                        ? `Page ouverte par ${reserveeParAutre.reserve_par_nom ?? 'un autre valideur'}${reserveeParAutre.reserve_jusqu_a ? ` (jusqu'à ${heureCourte(reserveeParAutre.reserve_jusqu_a)} au plus tard)` : ''} : lecture seule.`
+                        : `Page opened by ${reserveeParAutre.reserve_par_nom ?? 'another validator'}${reserveeParAutre.reserve_jusqu_a ? ` (until ${heureCourte(reserveeParAutre.reserve_jusqu_a)} at the latest)` : ''}: read-only.`}
+                    </div>
+                  ) : pageTerminee && !modeCorrection ? (
                     <div className="flex items-center gap-3">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${currentPage.status === 'VALIDE' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}
@@ -903,7 +971,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
                     </div>
                   )}
 
-                  {(!pageTerminee || modeCorrection) && (
+                  {(!pageTerminee || modeCorrection) && !reserveeParAutre && (
                     <div className="flex items-center gap-3">
                       {!modeCorrection && (
                         <button className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">

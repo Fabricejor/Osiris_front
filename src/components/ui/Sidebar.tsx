@@ -18,6 +18,7 @@ import {
   Building2,
   Library,
   Download,
+  Link2,
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -62,6 +63,15 @@ const mainNavItems: NavItem[] = [
     color: 'text-sky-300',
     iconBg: 'bg-sky-400/20',
     roles: BACK_OFFICE,
+  },
+  {
+    // Noms et adresses affichés : valideurs médicaux uniquement (comme le backend).
+    name: 'Patient Linking',
+    href: '/dashboard/liaison-patientes',
+    icon: Link2,
+    color: 'text-violet-300',
+    iconBg: 'bg-violet-400/20',
+    roles: ['VALIDEUR_MEDICAL'],
   },
 ];
 

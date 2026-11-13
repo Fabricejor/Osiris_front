@@ -14,11 +14,14 @@ import { ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-reac
 import {
   CHAMPS_SANS_COLONNE,
   casesAVerifier,
+  couleurCoche,
+  etatLigne,
   etatCellule,
   libellesSections,
   messagesAlertes,
   patientesDeGrille,
   regrouperParSection,
+  zoneCellule,
   zonePatiente,
   zoneRangee,
   type ColonneGrille,
@@ -219,9 +222,7 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
               {visites.map((v) => {
                 const periode = CHAMPS_PERIODE.map((n) => valeurDe(v, n, saisies)).find(Boolean);
                 const date = CHAMPS_DATE_VISITE.map((n) => valeurDe(v, n, saisies)).find(Boolean);
-                const etat = v.donnee?.valide
-                  ? (v.donnee.categorie_rejet ? (fr ? 'rejetée' : 'rejected') : (fr ? 'validée' : 'validated'))
-                  : null;
+                const etat = etatLigne(v.donnee, fr);
                 return (
                   <th
                     key={v.rang}
@@ -231,7 +232,7 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
                   >
                     <div className="font-bold">
                       {multiVisites ? `${fr ? 'Visite' : 'Visit'} ${v.rang}` : (fr ? 'Valeur' : 'Value')}
-                      {etat && <span className="ml-1 text-blue-600" title={fr ? `Ligne ${etat}` : `Row ${etat}`}>✓</span>}
+                      {etat && <span className={`ml-1 ${couleurCoche(v.donnee)}`} title={fr ? `Ligne ${etat}` : `Row ${etat}`}>✓</span>}
                     </div>
                     {(periode || date) && (
                       <div className="font-normal text-gray-500">{[periode, date].filter(Boolean).join(' · ')}</div>
@@ -289,9 +290,9 @@ export default function FichePatiente(props: Readonly<FichePatienteProps>) {
                             onChangeClinique={props.onChangeClinique}
                             onChangePii={props.onChangePii}
                             language={language}
-                            onMouseEnter={() => onZone?.({ zone: zoneRangee(v, grille), zoom: false })}
+                            onMouseEnter={() => onZone?.({ zone: zoneCellule(v, c, grille), zoom: false })}
                             onMouseLeave={() => onZone?.(null)}
-                            onFocus={() => onZone?.({ zone: zoneRangee(v, grille), zoom: true })}
+                            onFocus={() => onZone?.({ zone: zoneCellule(v, c, grille), zoom: true })}
                           />
                         ))}
                       </tr>

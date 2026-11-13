@@ -17,6 +17,7 @@ import {
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import ValidationPopup from '@/components/features/data-validation/ValidationPopup';
+import AlertePhoto from '@/components/features/data-validation/AlertePhoto';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
@@ -363,6 +364,7 @@ export default function BatchDetailsPage({ params }: Readonly<{ params: Promise<
                         <span className={`font-medium ${pageViewMode === 'grid' ? 'text-xs' : 'text-sm'} ${getStatusColorClass(pageCategory(page))}`}>
                           {t(page.statusKey)}
                         </span>
+                        <AlertePhoto problemes={page.problemesPhoto} className="mt-1" />
                         {(page.status === 'ECHEC_OCR' || page.ocrBloque) && (
                           <>
                             {page.erreurOcr && (

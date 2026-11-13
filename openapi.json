@@ -253,6 +253,217 @@
         "title": "AuditLogsListResponse",
         "type": "object"
       },
+      "AutoValidationRead": {
+        "additionalProperties": false,
+        "description": "Validation automatique : activation et mesure de sa qualité.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "n_echantillon_corrigees": {
+            "minimum": 0.0,
+            "title": "N Echantillon Corrigees",
+            "type": "integer"
+          },
+          "n_echantillon_rejetees": {
+            "minimum": 0.0,
+            "title": "N Echantillon Rejetees",
+            "type": "integer"
+          },
+          "n_echantillon_traitees": {
+            "description": "Lignes de l'échantillon de contrôle déjà traitées par un humain.",
+            "minimum": 0.0,
+            "title": "N Echantillon Traitees",
+            "type": "integer"
+          },
+          "n_validees_auto": {
+            "description": "Lignes validées sans humain.",
+            "minimum": 0.0,
+            "title": "N Validees Auto",
+            "type": "integer"
+          },
+          "taux_echantillon": {
+            "description": "Part des lignes auto-validables laissées à un humain (contrôle).",
+            "title": "Taux Echantillon",
+            "type": "number"
+          },
+          "taux_erreur_echantillon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part de l'échantillon corrigée ou rejetée par l'humain : estimation du taux d'erreur des lignes validées automatiquement. None tant qu'aucune n'est traitée.",
+            "title": "Taux Erreur Echantillon"
+          }
+        },
+        "required": [
+          "active",
+          "taux_echantillon",
+          "n_validees_auto",
+          "n_echantillon_traitees",
+          "n_echantillon_corrigees",
+          "n_echantillon_rejetees"
+        ],
+        "title": "AutoValidationRead",
+        "type": "object"
+      },
+      "BilanRapprochementRead": {
+        "additionalProperties": false,
+        "properties": {
+          "dossiers": {
+            "description": "Dossiers CPN / accouchement / CPON examinés.",
+            "title": "Dossiers",
+            "type": "integer"
+          },
+          "nouvelles_suggestions": {
+            "title": "Nouvelles Suggestions",
+            "type": "integer"
+          },
+          "suggestions_mises_a_jour": {
+            "title": "Suggestions Mises A Jour",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dossiers",
+          "nouvelles_suggestions",
+          "suggestions_mises_a_jour"
+        ],
+        "title": "BilanRapprochementRead",
+        "type": "object"
+      },
+      "CalibrationChampRead": {
+        "additionalProperties": false,
+        "description": "Seuil de confiance d'un champ, mesuré sur les validations passées.",
+        "properties": {
+          "n_lectures": {
+            "description": "Cases lues par l'OCR puis validées.",
+            "minimum": 0.0,
+            "title": "N Lectures",
+            "type": "integer"
+          },
+          "n_manquantes": {
+            "minimum": 0.0,
+            "title": "N Manquantes",
+            "type": "integer"
+          },
+          "nom_champ": {
+            "title": "Nom Champ",
+            "type": "string"
+          },
+          "seuil": {
+            "description": "Score Gemini sous lequel la case est à vérifier.",
+            "title": "Seuil",
+            "type": "number"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceSeuil"
+          },
+          "taux_correction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part de ces cases corrigées par les valideurs (tous scores).",
+            "title": "Taux Correction"
+          },
+          "taux_correction_au_dessus": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part corrigée au-dessus du seuil retenu (si MESURE).",
+            "title": "Taux Correction Au Dessus"
+          },
+          "taux_remplissage_manquantes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Part des cases vides que les valideurs ont complétées.",
+            "title": "Taux Remplissage Manquantes"
+          },
+          "type_registre": {
+            "title": "Type Registre",
+            "type": "string"
+          },
+          "verifier_manquantes": {
+            "description": "Les cases laissées vides par l'OCR sont-elles à vérifier ?",
+            "title": "Verifier Manquantes",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type_registre",
+          "nom_champ",
+          "seuil",
+          "source",
+          "n_lectures",
+          "verifier_manquantes",
+          "n_manquantes"
+        ],
+        "title": "CalibrationChampRead",
+        "type": "object"
+      },
+      "CalibrationResponse": {
+        "additionalProperties": false,
+        "description": "`GET /donnees-extraites/calibration` — seuils actuels de la revue par exception.",
+        "properties": {
+          "auto_validation": {
+            "$ref": "#/components/schemas/AutoValidationRead"
+          },
+          "champs": {
+            "items": {
+              "$ref": "#/components/schemas/CalibrationChampRead"
+            },
+            "title": "Champs",
+            "type": "array"
+          },
+          "min_echantillon": {
+            "title": "Min Echantillon",
+            "type": "integer"
+          },
+          "seuil_defaut": {
+            "title": "Seuil Defaut",
+            "type": "number"
+          },
+          "taux_controle_aleatoire": {
+            "title": "Taux Controle Aleatoire",
+            "type": "number"
+          },
+          "taux_erreur_cible": {
+            "title": "Taux Erreur Cible",
+            "type": "number"
+          }
+        },
+        "required": [
+          "seuil_defaut",
+          "taux_erreur_cible",
+          "min_echantillon",
+          "taux_controle_aleatoire",
+          "champs",
+          "auto_validation"
+        ],
+        "title": "CalibrationResponse",
+        "type": "object"
+      },
       "CatalogueRegistre": {
         "description": "Catalogue complet d'un (type_registre, année de version).",
         "properties": {
@@ -671,6 +882,25 @@
         "title": "DashboardStat",
         "type": "object"
       },
+      "DecisionLienRead": {
+        "additionalProperties": false,
+        "properties": {
+          "lien": {
+            "$ref": "#/components/schemas/LienPatienteRead"
+          },
+          "suggestions_retirees": {
+            "description": "Suggestions concurrentes supprimées (le même dossier ne peut être relié qu'une fois).",
+            "title": "Suggestions Retirees",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "lien",
+          "suggestions_retirees"
+        ],
+        "title": "DecisionLienRead",
+        "type": "object"
+      },
       "DeepHealthChecks": {
         "description": "État de chaque dépendance externe.",
         "properties": {
@@ -754,6 +984,17 @@
         "additionalProperties": false,
         "description": "Vue d'une `donnee_extraite` renvoyée aux valideurs médicaux.\n\nReprend les JSONB de la table tels quels (pas de re-typage via\nLigneExtraite pour éviter le coût runtime sur les listings).",
         "properties": {
+          "a_verifier": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/RaisonVerification"
+              },
+              "type": "array"
+            },
+            "description": "Revue par exception — cases à regarder, {nom_champ: [raisons]}. Les autres cases peuvent être validées sans être revues. Vide pour une ligne déjà validée ou rejetée. Une clé peut être une colonne non rattachée au catalogue (raison COLONNE_NON_RATTACHEE).",
+            "title": "A Verifier",
+            "type": "object"
+          },
           "alertes_coherence": {
             "anyOf": [
               {
@@ -881,6 +1122,12 @@
             ],
             "description": "Statut du recalage OCR au moment de l'extraction — brut, ex: 'accepted', 'low_confidence(ecc=0.47)'. Permet au valideur de prioriser la revue des extractions issues d'un alignement dégradé.",
             "title": "Registration Status"
+          },
+          "validation_automatique": {
+            "default": false,
+            "description": "Validée automatiquement (toutes les cases sûres d'après des seuils mesurés) et jamais revue par un humain depuis. Corrigeable via /corriger.",
+            "title": "Validation Automatique",
+            "type": "boolean"
           },
           "valide": {
             "description": "True si `date_validation` est renseignée (validée OU rejetée). Pour distinguer rejet vs validation, voir `categorie_rejet`.",
@@ -1258,6 +1505,100 @@
         "title": "FormatExport",
         "type": "string"
       },
+      "GroupeOcrRead": {
+        "properties": {
+          "cases_corrigees": {
+            "description": "Cases lues que le valideur a corrigées (erreurs de lecture).",
+            "title": "Cases Corrigees",
+            "type": "integer"
+          },
+          "cases_lues": {
+            "description": "Cases remplies par l'OCR, sur des lignes revues par un humain.",
+            "title": "Cases Lues",
+            "type": "integer"
+          },
+          "cases_oubliees": {
+            "description": "Cases laissées vides par l'OCR que le valideur a remplies.",
+            "title": "Cases Oubliees",
+            "type": "integer"
+          },
+          "cle": {
+            "title": "Cle",
+            "type": "string"
+          },
+          "libelle": {
+            "title": "Libelle",
+            "type": "string"
+          },
+          "lignes_rejetees": {
+            "title": "Lignes Rejetees",
+            "type": "integer"
+          },
+          "lignes_revues": {
+            "title": "Lignes Revues",
+            "type": "integer"
+          },
+          "precision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 − corrigées / lues.",
+            "title": "Precision"
+          },
+          "score_gemini_moyen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Score de confiance moyen annoncé par Gemini sur ces cases.",
+            "title": "Score Gemini Moyen"
+          },
+          "taux_erreur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "(Corrigées + oubliées) / (lues + oubliées).",
+            "title": "Taux Erreur"
+          },
+          "taux_oubli": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Oubliées / (lues + oubliées).",
+            "title": "Taux Oubli"
+          }
+        },
+        "required": [
+          "cases_lues",
+          "cases_corrigees",
+          "cases_oubliees",
+          "lignes_revues",
+          "lignes_rejetees",
+          "cle",
+          "libelle"
+        ],
+        "title": "GroupeOcrRead",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1269,6 +1610,99 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "IndicateurRead": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "definition": {
+            "description": "Ce qui est compté, en clair (à faire valider par l'équipe médicale).",
+            "title": "Definition",
+            "type": "string"
+          },
+          "libelle": {
+            "title": "Libelle",
+            "type": "string"
+          },
+          "niveau": {
+            "description": "visite (une ligne) | patiente (un n° d'ordre et ses visites)",
+            "title": "Niveau",
+            "type": "string"
+          },
+          "par_mois": {
+            "items": {
+              "$ref": "#/components/schemas/MoisIndicateurRead"
+            },
+            "title": "Par Mois",
+            "type": "array"
+          },
+          "registre": {
+            "title": "Registre",
+            "type": "string"
+          },
+          "sans_date": {
+            "$ref": "#/components/schemas/ValeurIndicateurRead",
+            "description": "Événements sans date lisible : hors total et hors mois, à corriger dans la validation."
+          },
+          "total": {
+            "$ref": "#/components/schemas/ValeurIndicateurRead",
+            "description": "Événements datés de la période."
+          },
+          "unite": {
+            "description": "nombre | pourcentage",
+            "title": "Unite",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "registre",
+          "libelle",
+          "definition",
+          "unite",
+          "niveau",
+          "total",
+          "sans_date",
+          "par_mois"
+        ],
+        "title": "IndicateurRead",
+        "type": "object"
+      },
+      "IndicateursResponse": {
+        "description": "`GET /dashboard/indicateurs`.",
+        "properties": {
+          "annee": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annee"
+          },
+          "indicateurs": {
+            "items": {
+              "$ref": "#/components/schemas/IndicateurRead"
+            },
+            "title": "Indicateurs",
+            "type": "array"
+          },
+          "statut_definitions": {
+            "description": "PROVISOIRE tant que l'équipe médicale n'a pas validé les définitions.",
+            "title": "Statut Definitions",
+            "type": "string"
+          }
+        },
+        "required": [
+          "statut_definitions",
+          "indicateurs"
+        ],
+        "title": "IndicateursResponse",
         "type": "object"
       },
       "JourActivite": {
@@ -1288,6 +1722,79 @@
           "nombre"
         ],
         "title": "JourActivite",
+        "type": "object"
+      },
+      "LienPatienteRead": {
+        "additionalProperties": false,
+        "properties": {
+          "criteres": {
+            "additionalProperties": true,
+            "description": "Détail du rapprochement (similarite_nom, ecart_jours, ecart_age, ecart_parite, similarite_adresse) et résumé des deux dossiers (`avant`, `apres` : registre, n° d'ordre, nom, adresse, âge, parité, date).",
+            "title": "Criteres",
+            "type": "object"
+          },
+          "date_creation": {
+            "format": "date-time",
+            "title": "Date Creation",
+            "type": "string"
+          },
+          "date_decision": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Decision"
+          },
+          "id_lien_patiente": {
+            "format": "uuid",
+            "title": "Id Lien Patiente",
+            "type": "string"
+          },
+          "score": {
+            "description": "0..1 : nom (½), dates, âge, parité, adresse.",
+            "title": "Score",
+            "type": "number"
+          },
+          "statut": {
+            "$ref": "#/components/schemas/StatutLienPatiente"
+          }
+        },
+        "required": [
+          "id_lien_patiente",
+          "statut",
+          "score",
+          "criteres",
+          "date_creation"
+        ],
+        "title": "LienPatienteRead",
+        "type": "object"
+      },
+      "LiensPatientesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LienPatienteRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "LiensPatientesResponse",
         "type": "object"
       },
       "LoginRequest": {
@@ -1337,6 +1844,127 @@
           }
         },
         "title": "LogoutRequest",
+        "type": "object"
+      },
+      "MesureOcrRead": {
+        "description": "Précision mesurée sur les validations humaines (≠ score annoncé par Gemini).",
+        "properties": {
+          "cases_corrigees": {
+            "description": "Cases lues que le valideur a corrigées (erreurs de lecture).",
+            "title": "Cases Corrigees",
+            "type": "integer"
+          },
+          "cases_lues": {
+            "description": "Cases remplies par l'OCR, sur des lignes revues par un humain.",
+            "title": "Cases Lues",
+            "type": "integer"
+          },
+          "cases_oubliees": {
+            "description": "Cases laissées vides par l'OCR que le valideur a remplies.",
+            "title": "Cases Oubliees",
+            "type": "integer"
+          },
+          "lignes_rejetees": {
+            "title": "Lignes Rejetees",
+            "type": "integer"
+          },
+          "lignes_revues": {
+            "title": "Lignes Revues",
+            "type": "integer"
+          },
+          "precision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 − corrigées / lues.",
+            "title": "Precision"
+          },
+          "score_gemini_moyen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Score de confiance moyen annoncé par Gemini sur ces cases.",
+            "title": "Score Gemini Moyen"
+          },
+          "taux_erreur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "(Corrigées + oubliées) / (lues + oubliées).",
+            "title": "Taux Erreur"
+          },
+          "taux_oubli": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Oubliées / (lues + oubliées).",
+            "title": "Taux Oubli"
+          }
+        },
+        "required": [
+          "cases_lues",
+          "cases_corrigees",
+          "cases_oubliees",
+          "lignes_revues",
+          "lignes_rejetees"
+        ],
+        "title": "MesureOcrRead",
+        "type": "object"
+      },
+      "MoisIndicateurRead": {
+        "properties": {
+          "denominateur": {
+            "title": "Denominateur",
+            "type": "integer"
+          },
+          "mois": {
+            "description": "AAAA-MM (mois de la date écrite sur le registre).",
+            "title": "Mois",
+            "type": "string"
+          },
+          "numerateur": {
+            "title": "Numerateur",
+            "type": "integer"
+          },
+          "valeur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.",
+            "title": "Valeur"
+          }
+        },
+        "required": [
+          "numerateur",
+          "denominateur",
+          "mois"
+        ],
+        "title": "MoisIndicateurRead",
         "type": "object"
       },
       "OcrConfidenceData": {
@@ -1755,6 +2383,82 @@
         "title": "PiiCellulesListResponse",
         "type": "object"
       },
+      "PrecisionOcrResponse": {
+        "description": "`GET /dashboard/precision-ocr`.",
+        "properties": {
+          "global": {
+            "$ref": "#/components/schemas/MesureOcrRead"
+          },
+          "min_cases": {
+            "title": "Min Cases",
+            "type": "integer"
+          },
+          "par_agent": {
+            "description": "Agents terrain avec au moins `min_cases` cases (qualité des photos), du plus fautif au moins fautif.",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Agent",
+            "type": "array"
+          },
+          "par_champ": {
+            "description": "Champs avec au moins `min_cases` cases, du plus au moins fautif.",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Champ",
+            "type": "array"
+          },
+          "par_mois": {
+            "description": "Ordre chronologique (clé AAAA-MM).",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Mois",
+            "type": "array"
+          },
+          "par_registre": {
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Registre",
+            "type": "array"
+          },
+          "par_structure": {
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Structure",
+            "type": "array"
+          },
+          "par_tranche_score": {
+            "description": "Par tranche de score Gemini (clé « 90-95 ») : précision réelle vs score annoncé.",
+            "items": {
+              "$ref": "#/components/schemas/GroupeOcrRead"
+            },
+            "title": "Par Tranche Score",
+            "type": "array"
+          },
+          "tronque": {
+            "description": "True si seules les validations les plus récentes ont été lues.",
+            "title": "Tronque",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "global",
+          "par_registre",
+          "par_champ",
+          "par_structure",
+          "par_agent",
+          "par_mois",
+          "par_tranche_score",
+          "min_cases",
+          "tronque"
+        ],
+        "title": "PrecisionOcrResponse",
+        "type": "object"
+      },
       "PresignUploadRequest": {
         "additionalProperties": false,
         "description": "Payload de demande d'URL pré-signée (POST /sessions/{id}/pages/presign-upload).",
@@ -1908,6 +2612,19 @@
         "title": "ProcessingVolumesData",
         "type": "object"
       },
+      "RaisonVerification": {
+        "description": "Pourquoi une case doit être regardée par le valideur (revue par exception).",
+        "enum": [
+          "ALERTE",
+          "SCORE_INCONNU",
+          "CONFIANCE_FAIBLE",
+          "VALEUR_MANQUANTE",
+          "COLONNE_NON_RATTACHEE",
+          "CONTROLE_ALEATOIRE"
+        ],
+        "title": "RaisonVerification",
+        "type": "string"
+      },
       "RefreshRequest": {
         "additionalProperties": false,
         "description": "Body du refresh Bearer (mobile) — refresh_token explicite.",
@@ -1928,6 +2645,12 @@
         "additionalProperties": false,
         "description": "Confirmation d'une page uploadée (POST /sessions/{id}/pages).",
         "properties": {
+          "forcer_qualite": {
+            "default": false,
+            "description": "Enregistrer malgré une photo jugée inutilisable (422 PHOTO_INUTILISABLE) : l'agent confirme que la photo est lisible. Les mesures restent conservées.",
+            "title": "Forcer Qualite",
+            "type": "boolean"
+          },
           "id_registre_scanne": {
             "format": "uuid",
             "title": "Id Registre Scanne",
@@ -2063,6 +2786,54 @@
             ],
             "title": "Numero Ordre Ligne"
           },
+          "qualite_photo": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualite Photo"
+          },
+          "reserve_jusqu_a": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Jusqu A"
+          },
+          "reserve_par": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "id_keycloak de l'utilisateur qui a la page ouverte.",
+            "title": "Reserve Par"
+          },
+          "reserve_par_nom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Par Nom"
+          },
           "score_confiance": {
             "anyOf": [
               {
@@ -2180,6 +2951,45 @@
           "categorie"
         ],
         "title": "RejetRequest",
+        "type": "object"
+      },
+      "ReservationRead": {
+        "additionalProperties": false,
+        "description": "Réponse de `POST /pages/{id}/reservation`.",
+        "properties": {
+          "obtenue": {
+            "description": "True : la page est à vous (réservée ou renouvelée). False : un autre la tient.",
+            "title": "Obtenue",
+            "type": "boolean"
+          },
+          "reserve_jusqu_a": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Jusqu A"
+          },
+          "reserve_par_nom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Par Nom"
+          }
+        },
+        "required": [
+          "obtenue"
+        ],
+        "title": "ReservationRead",
         "type": "object"
       },
       "SaisieRequest": {
@@ -2460,6 +3270,16 @@
         "title": "SessionsListResponse",
         "type": "object"
       },
+      "SourceSeuil": {
+        "description": "Origine du seuil de confiance d'un champ (revue par exception).",
+        "enum": [
+          "MESURE",
+          "DEFAUT",
+          "NON_DISCRIMINANT"
+        ],
+        "title": "SourceSeuil",
+        "type": "string"
+      },
       "StatusUtilisateur": {
         "description": "Statut du compte utilisateur.",
         "enum": [
@@ -2479,6 +3299,16 @@
           "ECHEC"
         ],
         "title": "StatutExport",
+        "type": "string"
+      },
+      "StatutLienPatiente": {
+        "description": "Lien entre deux dossiers d'une même femme dans deux registres différents.",
+        "enum": [
+          "SUGGERE",
+          "CONFIRME",
+          "REJETE"
+        ],
+        "title": "StatutLienPatiente",
         "type": "string"
       },
       "StatutSaisiePii": {
@@ -2695,6 +3525,51 @@
         "title": "StructuresListResponse",
         "type": "object"
       },
+      "SuggestionPiiRead": {
+        "additionalProperties": false,
+        "description": "Une proposition d'aide à la saisie (voir `src/services/suggestions_pii.py`).",
+        "properties": {
+          "occurrences": {
+            "description": "Nombre de saisies identiques dans la structure.",
+            "minimum": 0.0,
+            "title": "Occurrences",
+            "type": "integer"
+          },
+          "source": {
+            "description": "FREQUENT (adresse déjà saisie dans la structure), ORTHOGRAPHE (mots rapprochés de prénoms / noms courants), DEJA_SAISI (nom quasi identique déjà saisi).",
+            "title": "Source",
+            "type": "string"
+          },
+          "valeur": {
+            "title": "Valeur",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valeur",
+          "source",
+          "occurrences"
+        ],
+        "title": "SuggestionPiiRead",
+        "type": "object"
+      },
+      "SuggestionsPiiResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestionPiiRead"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "suggestions"
+        ],
+        "title": "SuggestionsPiiResponse",
+        "type": "object"
+      },
       "TokenResponse": {
         "additionalProperties": false,
         "description": "Réponse du flux Bearer (mobile) — tokens dans le body JSON.",
@@ -2757,7 +3632,9 @@
           "UPDATE_STRUCTURE",
           "CREATE_EXPORT",
           "DELETE_EXPORT",
-          "UPDATE_CATALOGUE"
+          "UPDATE_CATALOGUE",
+          "LIEN_PATIENTE_CONFIRME",
+          "LIEN_PATIENTE_REJETE"
         ],
         "title": "TypeActionAudit",
         "type": "string"
@@ -2808,7 +3685,8 @@
           "REGISTRE_SCANNE",
           "STRUCTURE_SANITAIRE",
           "EXPORT",
-          "CATALOGUE_CHAMP"
+          "CATALOGUE_CHAMP",
+          "LIEN_PATIENTE"
         ],
         "title": "TypeRessourceAudit",
         "type": "string"
@@ -3094,6 +3972,36 @@
         "title": "UtilisateursListResponse",
         "type": "object"
       },
+      "ValeurIndicateurRead": {
+        "properties": {
+          "denominateur": {
+            "title": "Denominateur",
+            "type": "integer"
+          },
+          "numerateur": {
+            "title": "Numerateur",
+            "type": "integer"
+          },
+          "valeur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.",
+            "title": "Valeur"
+          }
+        },
+        "required": [
+          "numerateur",
+          "denominateur"
+        ],
+        "title": "ValeurIndicateurRead",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -3132,6 +4040,125 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationLotLigne": {
+        "additionalProperties": false,
+        "description": "Une ligne nommée dans un lot, avec ses corrections éventuelles.",
+        "properties": {
+          "corrections": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Overrides {nom_champ: nouvelle_valeur}. Vide → OCR accepté tel quel.",
+            "title": "Corrections"
+          },
+          "id_donnee_extraite": {
+            "format": "uuid",
+            "title": "Id Donnee Extraite",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_donnee_extraite"
+        ],
+        "title": "ValidationLotLigne",
+        "type": "object"
+      },
+      "ValidationLotRequest": {
+        "additionalProperties": false,
+        "description": "Body de `POST /donnees-extraites/valider-lot` : valide plusieurs lignes\nd'une même page en un seul appel (tout ou rien).\n\n- `lignes` : lignes à valider, chacune avec ses corrections éventuelles ;\n- `inclure_restantes=true` : toutes les AUTRES lignes encore à valider de la\n  page sont acceptées telles que lues par l'OCR (« valider la page »).",
+        "examples": [
+          {
+            "id_registre_scanne": "44444444-4444-4444-8444-444444444444",
+            "inclure_restantes": true,
+            "lignes": [
+              {
+                "corrections": {
+                  "age": 32
+                },
+                "id_donnee_extraite": "33333333-3333-4333-8333-333333333333"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "id_registre_scanne": {
+            "description": "Page dont on valide les lignes.",
+            "format": "uuid",
+            "title": "Id Registre Scanne",
+            "type": "string"
+          },
+          "inclure_restantes": {
+            "default": false,
+            "description": "Valide aussi, sans correction, les autres lignes en attente de la page.",
+            "title": "Inclure Restantes",
+            "type": "boolean"
+          },
+          "lignes": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationLotLigne"
+            },
+            "maxItems": 500,
+            "title": "Lignes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id_registre_scanne"
+        ],
+        "title": "ValidationLotRequest",
+        "type": "object"
+      },
+      "ValidationLotResponse": {
+        "additionalProperties": false,
+        "description": "Résultat d'un lot : lignes validées + état de la page après coup.",
+        "properties": {
+          "id_registre_scanne": {
+            "format": "uuid",
+            "title": "Id Registre Scanne",
+            "type": "string"
+          },
+          "ids_valides": {
+            "description": "Lignes validées par cet appel.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Ids Valides",
+            "type": "array"
+          },
+          "lignes_restantes": {
+            "description": "Lignes encore à valider ou rejeter.",
+            "minimum": 0.0,
+            "title": "Lignes Restantes",
+            "type": "integer"
+          },
+          "pii_restantes": {
+            "description": "Données personnelles encore à saisir.",
+            "minimum": 0.0,
+            "title": "Pii Restantes",
+            "type": "integer"
+          },
+          "statut_page": {
+            "$ref": "#/components/schemas/StatutTraitement",
+            "description": "Statut de la page après le lot (`VALIDE` si plus rien à traiter)."
+          }
+        },
+        "required": [
+          "id_registre_scanne",
+          "ids_valides",
+          "statut_page",
+          "lignes_restantes",
+          "pii_restantes"
+        ],
+        "title": "ValidationLotResponse",
         "type": "object"
       },
       "ValidationRequest": {
@@ -4700,6 +5727,100 @@
         ]
       }
     },
+    "/api/v1/dashboard/indicateurs": {
+      "get": {
+        "description": "Indicateurs de santé (CPN, accouchements, CPON, SAA) calculés sur les\nlignes validées, par mois de la date écrite sur le registre. Définitions\nPROVISOIRES, décrites en clair dans chaque indicateur.",
+        "operationId": "get_indicateurs_api_v1_dashboard_indicateurs_get",
+        "parameters": [
+          {
+            "description": "Année des événements (date du registre).",
+            "in": "query",
+            "name": "annee",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2000,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Année des événements (date du registre).",
+              "title": "Annee"
+            }
+          },
+          {
+            "description": "Limiter à une structure (ignoré pour un ADMIN : toujours la sienne).",
+            "in": "query",
+            "name": "id_structure_sanitaire",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limiter à une structure (ignoré pour un ADMIN : toujours la sienne).",
+              "title": "Id Structure Sanitaire"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateursResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Indicateurs",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
     "/api/v1/dashboard/ocr-confidence": {
       "get": {
         "operationId": "get_ocr_confidence_api_v1_dashboard_ocr_confidence_get",
@@ -4943,6 +6064,115 @@
           }
         ],
         "summary": "Get Operator Efficiency",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/precision-ocr": {
+      "get": {
+        "description": "Précision RÉELLE de l'OCR : ce que Gemini a lu comparé à ce que les\nvalideurs ont retenu, case par case (lignes revues par un humain\nuniquement). Ventilée par registre, champ, structure, agent terrain, mois\net tranche de score Gemini. Un ADMIN ne voit que sa structure.",
+        "operationId": "get_precision_ocr_api_v1_dashboard_precision_ocr_get",
+        "parameters": [
+          {
+            "description": "Validations à partir de ce jour (inclus).",
+            "in": "query",
+            "name": "date_debut",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Validations à partir de ce jour (inclus).",
+              "title": "Date Debut"
+            }
+          },
+          {
+            "description": "Validations jusqu'à ce jour (inclus).",
+            "in": "query",
+            "name": "date_fin",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Validations jusqu'à ce jour (inclus).",
+              "title": "Date Fin"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type_registre",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TypeRegistre"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type Registre"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrecisionOcrResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Precision Ocr",
         "tags": [
           "Dashboard"
         ]
@@ -5330,6 +6560,144 @@
         ]
       }
     },
+    "/api/v1/donnees-extraites/calibration": {
+      "get": {
+        "description": "Pour chaque (type de registre, champ) : seuil de confiance en dessous\nduquel une case est « à vérifier », et d'où il vient (`MESURE` sur les\nvalidations passées, `DEFAUT` faute de données, `NON_DISCRIMINANT` si même\nles scores hauts sont souvent corrigés). Sert aussi de mesure de la\nprécision réelle de l'OCR, champ par champ.",
+        "operationId": "get_calibration_api_v1_donnees_extraites_calibration_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Rôle insuffisant"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Seuils de confiance par champ (revue par exception)",
+        "tags": [
+          "Validation clinique"
+        ]
+      }
+    },
+    "/api/v1/donnees-extraites/valider-lot": {
+      "post": {
+        "description": "Valide en une transaction les lignes nommées (avec leurs corrections) et,\nsi `inclure_restantes`, toutes les autres lignes en attente de la page.\n\nTout ou rien : une ligne nommée déjà traitée par un autre valideur → 409\n`LIGNES_DEJA_TRAITEES`, rien n'est écrit (recharger la page puis renvoyer).\nComme `/valider`, la page passe à `VALIDE` quand plus rien n'est à traiter.\n409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.",
+        "operationId": "post_valider_lot_api_v1_donnees_extraites_valider_lot_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationLotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationLotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Page introuvable, ou ligne hors de cette page"
+          },
+          "409": {
+            "description": "Ligne déjà traitée OU donnees_brutes_ocr manquantes"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : valider plusieurs lignes d'une page en un appel",
+        "tags": [
+          "Validation clinique"
+        ]
+      }
+    },
     "/api/v1/donnees-extraites/{id_donnee_extraite}": {
       "get": {
         "operationId": "get_donnee_api_v1_donnees_extraites__id_donnee_extraite__get",
@@ -5496,7 +6864,7 @@
     },
     "/api/v1/donnees-extraites/{id_donnee_extraite}/rejeter": {
       "post": {
-        "description": "Marque la ligne comme rejetée (non-exportée en CSV mais conservée en DB\npour traçabilité). `categorie` obligatoire (enum), `motif` texte libre\noptionnel (≤ 500 chars).\n\nComme pour `/valider` : si toutes les lignes du registre sont désormais\ntraitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.",
+        "description": "Marque la ligne comme rejetée (non-exportée en CSV mais conservée en DB\npour traçabilité). `categorie` obligatoire (enum), `motif` texte libre\noptionnel (≤ 500 chars).\n\nComme pour `/valider` : si toutes les lignes du registre sont désormais\ntraitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.\n409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.",
         "operationId": "post_rejeter_api_v1_donnees_extraites__id_donnee_extraite__rejeter_post",
         "parameters": [
           {
@@ -5585,7 +6953,7 @@
     },
     "/api/v1/donnees-extraites/{id_donnee_extraite}/valider": {
       "post": {
-        "description": "Écrit `donnees_validees` (merge brutes + corrections), met `id_valideur`\n+ `date_validation`, et si toutes les lignes du registre sont validées,\npasse le `RegistreScanne.statut_traitement` à `VALIDE`.",
+        "description": "Écrit `donnees_validees` (merge brutes + corrections), met `id_valideur`\n+ `date_validation`, et si toutes les lignes du registre sont validées,\npasse le `RegistreScanne.statut_traitement` à `VALIDE`. 409 `PAGE_RESERVEE`\nsi un autre utilisateur a la page ouverte.",
         "operationId": "post_valider_api_v1_donnees_extraites__id_donnee_extraite__valider_post",
         "parameters": [
           {
@@ -6019,6 +7387,314 @@
         ]
       }
     },
+    "/api/v1/liens-patientes": {
+      "get": {
+        "description": "Les plus probables d'abord (score décroissant).",
+        "operationId": "get_liens_api_v1_liens_patientes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "statut",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/StatutLienPatiente",
+              "default": "SUGGERE"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id_structure_sanitaire",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Id Structure Sanitaire"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiensPatientesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Liens à examiner (ou déjà décidés)",
+        "tags": [
+          "Liaison des patientes"
+        ]
+      }
+    },
+    "/api/v1/liens-patientes/calculer": {
+      "post": {
+        "description": "(Re)calcule les suggestions sur les données validées. Les liens déjà\nconfirmés ou rejetés ne sont jamais modifiés ni reproposés.",
+        "operationId": "post_calculer_api_v1_liens_patientes_calculer_post",
+        "parameters": [
+          {
+            "description": "Limiter à une structure.",
+            "in": "query",
+            "name": "id_structure_sanitaire",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limiter à une structure.",
+              "title": "Id Structure Sanitaire"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BilanRapprochementRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rechercher de nouveaux liens (rapprochement des registres)",
+        "tags": [
+          "Liaison des patientes"
+        ]
+      }
+    },
+    "/api/v1/liens-patientes/{id_lien_patiente}/confirmer": {
+      "post": {
+        "description": "Même femme : les deux dossiers partagent désormais l'ID patiente des exports.",
+        "operationId": "post_confirmer_api_v1_liens_patientes__id_lien_patiente__confirmer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_lien_patiente",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Id Lien Patiente",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionLienRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Confirmer",
+        "tags": [
+          "Liaison des patientes"
+        ]
+      }
+    },
+    "/api/v1/liens-patientes/{id_lien_patiente}/rejeter": {
+      "post": {
+        "description": "Femmes différentes : ce lien ne sera plus jamais proposé.",
+        "operationId": "post_rejeter_api_v1_liens_patientes__id_lien_patiente__rejeter_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_lien_patiente",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Id Lien Patiente",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionLienRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Rejeter",
+        "tags": [
+          "Liaison des patientes"
+        ]
+      }
+    },
     "/api/v1/pages/queue": {
       "get": {
         "description": "Pages `A_VALIDER` visibles par l'utilisateur (admin : sa structure uniquement).",
@@ -6097,9 +7773,67 @@
         ]
       }
     },
+    "/api/v1/pages/suivante": {
+      "post": {
+        "description": "Plus ancienne page « à valider » que personne d'autre n'a ouverte, réservée\npour vous (votre page déjà réservée d'abord, pour reprendre après un\nrechargement). 204 si aucune. Deux appels simultanés reçoivent deux pages\ndifférentes.",
+        "operationId": "get_page_suivante_api_v1_pages_suivante_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistreScanneRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "204": {
+            "description": "Aucune page à valider libre"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Page Suivante",
+        "tags": [
+          "Pages"
+        ]
+      }
+    },
     "/api/v1/pages/{page_id}/reject": {
       "post": {
-        "description": "`A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE` (audit log).",
+        "description": "`A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE`\n(audit log). 409 si un autre l'a ouverte.",
         "operationId": "reject_page_api_v1_pages__page_id__reject_post",
         "parameters": [
           {
@@ -6185,9 +7919,136 @@
         ]
       }
     },
+    "/api/v1/pages/{page_id}/reservation": {
+      "delete": {
+        "description": "Libère la page (fermeture). Sans effet si un autre la tient ou si elle est libre.",
+        "operationId": "liberer_api_v1_pages__page_id__reservation_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Page Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Liberer",
+        "tags": [
+          "Pages"
+        ]
+      },
+      "post": {
+        "description": "Réserve (ou renouvelle) la page ouverte. `obtenue=false` si un autre\nutilisateur l'a déjà ouverte : son nom et l'échéance sont renvoyés, la\npage doit être affichée en lecture seule.",
+        "operationId": "reserver_api_v1_pages__page_id__reservation_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Page Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Page introuvable (ou hors de votre structure)"
+          },
+          "409": {
+            "description": "Le statut actuel de la page n'autorise pas cette action"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reserver",
+        "tags": [
+          "Pages"
+        ]
+      }
+    },
     "/api/v1/pages/{page_id}/validate": {
       "post": {
-        "description": "`A_VALIDER` → `VALIDE` (tracé dans l'audit log).",
+        "description": "`A_VALIDER` → `VALIDE` (tracé dans l'audit log). 409 si un autre l'a ouverte.",
         "operationId": "validate_page_api_v1_pages__page_id__validate_post",
         "parameters": [
           {
@@ -6654,6 +8515,101 @@
           }
         ],
         "summary": "Valideur : saisir la valeur PII lue depuis le crop",
+        "tags": [
+          "Validation PII"
+        ]
+      }
+    },
+    "/api/v1/pii-cellules/{id_pii_cellule}/suggestions": {
+      "get": {
+        "description": "Propositions tirées des valeurs DÉJÀ SAISIES dans la même structure\nsanitaire, pour le même champ. Adresse : autocomplétion (préfixe, contenu,\nfaute de frappe), les plus fréquentes d'abord. Nom : jamais de liste par\npréfixe — seulement la correction orthographique vers des prénoms / noms\ncourants et un nom déjà saisi quasi identique (≥ 4 caractères).",
+        "operationId": "get_suggestions_api_v1_pii_cellules__id_pii_cellule__suggestions_get",
+        "parameters": [
+          {
+            "description": "UUID de la cellule PII",
+            "in": "path",
+            "name": "id_pii_cellule",
+            "required": true,
+            "schema": {
+              "description": "UUID de la cellule PII",
+              "format": "uuid",
+              "title": "Id Pii Cellule",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Saisie en cours. Absent : la lecture OCR de la cellule sert de point de départ.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Saisie en cours. Absent : la lecture OCR de la cellule sert de point de départ.",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "osiris_access",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Osiris Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionsPiiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "403": {
+            "description": "Profil valideur médical manquant"
+          },
+          "404": {
+            "description": "Cellule PII introuvable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Valideur : aide à la saisie (adresses fréquentes, orthographe des noms)",
         "tags": [
           "Validation PII"
         ]

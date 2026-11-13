@@ -17,7 +17,22 @@ export interface PiiFiltres {
   id_registre_scanne?: string;
 }
 
+export type SuggestionPii = components['schemas']['SuggestionPiiRead'];
+
 export const PiiCellulesService = {
+  /**
+   * Aide à la saisie : adresses fréquentes de la structure, orthographe des
+   * noms (jamais de liste de patientes par préfixe). `q` absent → lecture OCR.
+   */
+  async getSuggestions(idPii: string, q?: string): Promise<SuggestionPii[]> {
+    const params = q !== undefined ? `?${new URLSearchParams({ q })}` : '';
+    const r = await apiClient<{ suggestions: SuggestionPii[] }>(
+      `/v1/pii-cellules/${idPii}/suggestions${params}`,
+      { method: 'GET' },
+    );
+    return r.suggestions ?? [];
+  },
+
   /** Cellules PII (crop image + valeur pré-lue) à saisir par le valideur. */
   async getCellules(
     filtres: PiiFiltres = {},

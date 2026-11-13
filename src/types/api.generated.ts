@@ -490,6 +490,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard/indicateurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Indicateurs
+         * @description Indicateurs de santé (CPN, accouchements, CPON, SAA) calculés sur les
+         *     lignes validées, par mois de la date écrite sur le registre. Définitions
+         *     PROVISOIRES, décrites en clair dans chaque indicateur.
+         */
+        get: operations["get_indicateurs_api_v1_dashboard_indicateurs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dashboard/ocr-confidence": {
         parameters: {
             query?: never;
@@ -553,6 +575,29 @@ export interface paths {
         };
         /** Get Operator Efficiency */
         get: operations["get_operator_efficiency_api_v1_dashboard_operator_efficiency_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/precision-ocr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Precision Ocr
+         * @description Précision RÉELLE de l'OCR : ce que Gemini a lu comparé à ce que les
+         *     valideurs ont retenu, case par case (lignes revues par un humain
+         *     uniquement). Ventilée par registre, champ, structure, agent terrain, mois
+         *     et tranche de score Gemini. Un ADMIN ne voit que sa structure.
+         */
+        get: operations["get_precision_ocr_api_v1_dashboard_precision_ocr_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -657,6 +702,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/donnees-extraites/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Seuils de confiance par champ (revue par exception)
+         * @description Pour chaque (type de registre, champ) : seuil de confiance en dessous
+         *     duquel une case est « à vérifier », et d'où il vient (`MESURE` sur les
+         *     validations passées, `DEFAUT` faute de données, `NON_DISCRIMINANT` si même
+         *     les scores hauts sont souvent corrigés). Sert aussi de mesure de la
+         *     précision réelle de l'OCR, champ par champ.
+         */
+        get: operations["get_calibration_api_v1_donnees_extraites_calibration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/donnees-extraites/valider-lot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valideur : valider plusieurs lignes d'une page en un appel
+         * @description Valide en une transaction les lignes nommées (avec leurs corrections) et,
+         *     si `inclure_restantes`, toutes les autres lignes en attente de la page.
+         *
+         *     Tout ou rien : une ligne nommée déjà traitée par un autre valideur → 409
+         *     `LIGNES_DEJA_TRAITEES`, rien n'est écrit (recharger la page puis renvoyer).
+         *     Comme `/valider`, la page passe à `VALIDE` quand plus rien n'est à traiter.
+         *     409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.
+         */
+        post: operations["post_valider_lot_api_v1_donnees_extraites_valider_lot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/donnees-extraites/{id_donnee_extraite}": {
         parameters: {
             query?: never;
@@ -713,6 +808,7 @@ export interface paths {
          *
          *     Comme pour `/valider` : si toutes les lignes du registre sont désormais
          *     traitées (validées ou rejetées), le `RegistreScanne` passe à `VALIDE`.
+         *     409 `PAGE_RESERVEE` si un autre utilisateur a la page ouverte.
          */
         post: operations["post_rejeter_api_v1_donnees_extraites__id_donnee_extraite__rejeter_post"];
         delete?: never;
@@ -734,7 +830,8 @@ export interface paths {
          * Valideur : valider une ligne (avec ou sans corrections)
          * @description Écrit `donnees_validees` (merge brutes + corrections), met `id_valideur`
          *     + `date_validation`, et si toutes les lignes du registre sont validées,
-         *     passe le `RegistreScanne.statut_traitement` à `VALIDE`.
+         *     passe le `RegistreScanne.statut_traitement` à `VALIDE`. 409 `PAGE_RESERVEE`
+         *     si un autre utilisateur a la page ouverte.
          */
         post: operations["post_valider_api_v1_donnees_extraites__id_donnee_extraite__valider_post"];
         delete?: never;
@@ -849,6 +946,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/liens-patientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liens à examiner (ou déjà décidés)
+         * @description Les plus probables d'abord (score décroissant).
+         */
+        get: operations["get_liens_api_v1_liens_patientes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/liens-patientes/calculer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rechercher de nouveaux liens (rapprochement des registres)
+         * @description (Re)calcule les suggestions sur les données validées. Les liens déjà
+         *     confirmés ou rejetés ne sont jamais modifiés ni reproposés.
+         */
+        post: operations["post_calculer_api_v1_liens_patientes_calculer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/liens-patientes/{id_lien_patiente}/confirmer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Confirmer
+         * @description Même femme : les deux dossiers partagent désormais l'ID patiente des exports.
+         */
+        post: operations["post_confirmer_api_v1_liens_patientes__id_lien_patiente__confirmer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/liens-patientes/{id_lien_patiente}/rejeter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Rejeter
+         * @description Femmes différentes : ce lien ne sera plus jamais proposé.
+         */
+        post: operations["post_rejeter_api_v1_liens_patientes__id_lien_patiente__rejeter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pages/queue": {
         parameters: {
             query?: never;
@@ -869,6 +1047,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pages/suivante": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Page Suivante
+         * @description Plus ancienne page « à valider » que personne d'autre n'a ouverte, réservée
+         *     pour vous (votre page déjà réservée d'abord, pour reprendre après un
+         *     rechargement). 204 si aucune. Deux appels simultanés reçoivent deux pages
+         *     différentes.
+         */
+        post: operations["get_page_suivante_api_v1_pages_suivante_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pages/{page_id}/reject": {
         parameters: {
             query?: never;
@@ -880,10 +1081,37 @@ export interface paths {
         put?: never;
         /**
          * Reject Page
-         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE` (audit log).
+         * @description `A_VALIDER` / `FUSION_INCOMPLETE` / `ECHEC_RECALAGE` / `ECHEC_OCR` → `REJETEE`
+         *     (audit log). 409 si un autre l'a ouverte.
          */
         post: operations["reject_page_api_v1_pages__page_id__reject_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pages/{page_id}/reservation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reserver
+         * @description Réserve (ou renouvelle) la page ouverte. `obtenue=false` si un autre
+         *     utilisateur l'a déjà ouverte : son nom et l'échéance sont renvoyés, la
+         *     page doit être affichée en lecture seule.
+         */
+        post: operations["reserver_api_v1_pages__page_id__reservation_post"];
+        /**
+         * Liberer
+         * @description Libère la page (fermeture). Sans effet si un autre la tient ou si elle est libre.
+         */
+        delete: operations["liberer_api_v1_pages__page_id__reservation_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -900,7 +1128,7 @@ export interface paths {
         put?: never;
         /**
          * Validate Page
-         * @description `A_VALIDER` → `VALIDE` (tracé dans l'audit log).
+         * @description `A_VALIDER` → `VALIDE` (tracé dans l'audit log). 409 si un autre l'a ouverte.
          */
         post: operations["validate_page_api_v1_pages__page_id__validate_post"];
         delete?: never;
@@ -985,6 +1213,30 @@ export interface paths {
          *     la trace du 1er valideur (auditabilité).
          */
         post: operations["post_saisir_api_v1_pii_cellules__id_pii_cellule__saisir_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pii-cellules/{id_pii_cellule}/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Valideur : aide à la saisie (adresses fréquentes, orthographe des noms)
+         * @description Propositions tirées des valeurs DÉJÀ SAISIES dans la même structure
+         *     sanitaire, pour le même champ. Adresse : autocomplétion (préfixe, contenu,
+         *     faute de frappe), les plus fréquentes d'abord. Nom : jamais de liste par
+         *     préfixe — seulement la correction orthographique vers des prénoms / noms
+         *     courants et un nom déjà saisi quasi identique (≥ 4 caractères).
+         */
+        get: operations["get_suggestions_api_v1_pii_cellules__id_pii_cellule__suggestions_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1380,6 +1632,110 @@ export interface components {
             total: number;
         };
         /**
+         * AutoValidationRead
+         * @description Validation automatique : activation et mesure de sa qualité.
+         */
+        AutoValidationRead: {
+            /** Active */
+            active: boolean;
+            /** N Echantillon Corrigees */
+            n_echantillon_corrigees: number;
+            /** N Echantillon Rejetees */
+            n_echantillon_rejetees: number;
+            /**
+             * N Echantillon Traitees
+             * @description Lignes de l'échantillon de contrôle déjà traitées par un humain.
+             */
+            n_echantillon_traitees: number;
+            /**
+             * N Validees Auto
+             * @description Lignes validées sans humain.
+             */
+            n_validees_auto: number;
+            /**
+             * Taux Echantillon
+             * @description Part des lignes auto-validables laissées à un humain (contrôle).
+             */
+            taux_echantillon: number;
+            /**
+             * Taux Erreur Echantillon
+             * @description Part de l'échantillon corrigée ou rejetée par l'humain : estimation du taux d'erreur des lignes validées automatiquement. None tant qu'aucune n'est traitée.
+             */
+            taux_erreur_echantillon?: number | null;
+        };
+        /** BilanRapprochementRead */
+        BilanRapprochementRead: {
+            /**
+             * Dossiers
+             * @description Dossiers CPN / accouchement / CPON examinés.
+             */
+            dossiers: number;
+            /** Nouvelles Suggestions */
+            nouvelles_suggestions: number;
+            /** Suggestions Mises A Jour */
+            suggestions_mises_a_jour: number;
+        };
+        /**
+         * CalibrationChampRead
+         * @description Seuil de confiance d'un champ, mesuré sur les validations passées.
+         */
+        CalibrationChampRead: {
+            /**
+             * N Lectures
+             * @description Cases lues par l'OCR puis validées.
+             */
+            n_lectures: number;
+            /** N Manquantes */
+            n_manquantes: number;
+            /** Nom Champ */
+            nom_champ: string;
+            /**
+             * Seuil
+             * @description Score Gemini sous lequel la case est à vérifier.
+             */
+            seuil: number;
+            source: components["schemas"]["SourceSeuil"];
+            /**
+             * Taux Correction
+             * @description Part de ces cases corrigées par les valideurs (tous scores).
+             */
+            taux_correction?: number | null;
+            /**
+             * Taux Correction Au Dessus
+             * @description Part corrigée au-dessus du seuil retenu (si MESURE).
+             */
+            taux_correction_au_dessus?: number | null;
+            /**
+             * Taux Remplissage Manquantes
+             * @description Part des cases vides que les valideurs ont complétées.
+             */
+            taux_remplissage_manquantes?: number | null;
+            /** Type Registre */
+            type_registre: string;
+            /**
+             * Verifier Manquantes
+             * @description Les cases laissées vides par l'OCR sont-elles à vérifier ?
+             */
+            verifier_manquantes: boolean;
+        };
+        /**
+         * CalibrationResponse
+         * @description `GET /donnees-extraites/calibration` — seuils actuels de la revue par exception.
+         */
+        CalibrationResponse: {
+            auto_validation: components["schemas"]["AutoValidationRead"];
+            /** Champs */
+            champs: components["schemas"]["CalibrationChampRead"][];
+            /** Min Echantillon */
+            min_echantillon: number;
+            /** Seuil Defaut */
+            seuil_defaut: number;
+            /** Taux Controle Aleatoire */
+            taux_controle_aleatoire: number;
+            /** Taux Erreur Cible */
+            taux_erreur_cible: number;
+        };
+        /**
          * CatalogueRegistre
          * @description Catalogue complet d'un (type_registre, année de version).
          */
@@ -1561,6 +1917,15 @@ export interface components {
             /** Value */
             value: string | number;
         };
+        /** DecisionLienRead */
+        DecisionLienRead: {
+            lien: components["schemas"]["LienPatienteRead"];
+            /**
+             * Suggestions Retirees
+             * @description Suggestions concurrentes supprimées (le même dossier ne peut être relié qu'une fois).
+             */
+            suggestions_retirees: number;
+        };
         /**
          * DeepHealthChecks
          * @description État de chaque dépendance externe.
@@ -1616,6 +1981,13 @@ export interface components {
          *     LigneExtraite pour éviter le coût runtime sur les listings).
          */
         DonneeExtraiteRead: {
+            /**
+             * A Verifier
+             * @description Revue par exception — cases à regarder, {nom_champ: [raisons]}. Les autres cases peuvent être validées sans être revues. Vide pour une ligne déjà validée ou rejetée. Une clé peut être une colonne non rattachée au catalogue (raison COLONNE_NON_RATTACHEE).
+             */
+            a_verifier?: {
+                [key: string]: components["schemas"]["RaisonVerification"][];
+            };
             /** Alertes Coherence */
             alertes_coherence: unknown[] | null;
             /** @description Si non-null, la ligne a été rejetée (non-exportée en CSV). */
@@ -1665,6 +2037,12 @@ export interface components {
              * @description Statut du recalage OCR au moment de l'extraction — brut, ex: 'accepted', 'low_confidence(ecc=0.47)'. Permet au valideur de prioriser la revue des extractions issues d'un alignement dégradé.
              */
             registration_status?: string | null;
+            /**
+             * Validation Automatique
+             * @description Validée automatiquement (toutes les cases sûres d'après des seuils mesurés) et jamais revue par un humain depuis. Corrigeable via /corriger.
+             * @default false
+             */
+            validation_automatique: boolean;
             /**
              * Valide
              * @description True si `date_validation` est renseignée (validée OU rejetée). Pour distinguer rejet vs validation, voir `categorie_rejet`.
@@ -1787,10 +2165,101 @@ export interface components {
          * @enum {string}
          */
         FormatExport: "CSV" | "XLSX";
+        /** GroupeOcrRead */
+        GroupeOcrRead: {
+            /**
+             * Cases Corrigees
+             * @description Cases lues que le valideur a corrigées (erreurs de lecture).
+             */
+            cases_corrigees: number;
+            /**
+             * Cases Lues
+             * @description Cases remplies par l'OCR, sur des lignes revues par un humain.
+             */
+            cases_lues: number;
+            /**
+             * Cases Oubliees
+             * @description Cases laissées vides par l'OCR que le valideur a remplies.
+             */
+            cases_oubliees: number;
+            /** Cle */
+            cle: string;
+            /** Libelle */
+            libelle: string;
+            /** Lignes Rejetees */
+            lignes_rejetees: number;
+            /** Lignes Revues */
+            lignes_revues: number;
+            /**
+             * Precision
+             * @description 1 − corrigées / lues.
+             */
+            precision?: number | null;
+            /**
+             * Score Gemini Moyen
+             * @description Score de confiance moyen annoncé par Gemini sur ces cases.
+             */
+            score_gemini_moyen?: number | null;
+            /**
+             * Taux Erreur
+             * @description (Corrigées + oubliées) / (lues + oubliées).
+             */
+            taux_erreur?: number | null;
+            /**
+             * Taux Oubli
+             * @description Oubliées / (lues + oubliées).
+             */
+            taux_oubli?: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IndicateurRead */
+        IndicateurRead: {
+            /** Code */
+            code: string;
+            /**
+             * Definition
+             * @description Ce qui est compté, en clair (à faire valider par l'équipe médicale).
+             */
+            definition: string;
+            /** Libelle */
+            libelle: string;
+            /**
+             * Niveau
+             * @description visite (une ligne) | patiente (un n° d'ordre et ses visites)
+             */
+            niveau: string;
+            /** Par Mois */
+            par_mois: components["schemas"]["MoisIndicateurRead"][];
+            /** Registre */
+            registre: string;
+            /** @description Événements sans date lisible : hors total et hors mois, à corriger dans la validation. */
+            sans_date: components["schemas"]["ValeurIndicateurRead"];
+            /** @description Événements datés de la période. */
+            total: components["schemas"]["ValeurIndicateurRead"];
+            /**
+             * Unite
+             * @description nombre | pourcentage
+             */
+            unite: string;
+        };
+        /**
+         * IndicateursResponse
+         * @description `GET /dashboard/indicateurs`.
+         */
+        IndicateursResponse: {
+            /** Annee */
+            annee?: number | null;
+            /** Indicateurs */
+            indicateurs: components["schemas"]["IndicateurRead"][];
+            /**
+             * Statut Definitions
+             * @description PROVISOIRE tant que l'équipe médicale n'a pas validé les définitions.
+             */
+            statut_definitions: string;
         };
         /** JourActivite */
         JourActivite: {
@@ -1801,6 +2270,41 @@ export interface components {
             date: string;
             /** Nombre */
             nombre: number;
+        };
+        /** LienPatienteRead */
+        LienPatienteRead: {
+            /**
+             * Criteres
+             * @description Détail du rapprochement (similarite_nom, ecart_jours, ecart_age, ecart_parite, similarite_adresse) et résumé des deux dossiers (`avant`, `apres` : registre, n° d'ordre, nom, adresse, âge, parité, date).
+             */
+            criteres: {
+                [key: string]: unknown;
+            };
+            /**
+             * Date Creation
+             * Format: date-time
+             */
+            date_creation: string;
+            /** Date Decision */
+            date_decision?: string | null;
+            /**
+             * Id Lien Patiente
+             * Format: uuid
+             */
+            id_lien_patiente: string;
+            /**
+             * Score
+             * @description 0..1 : nom (½), dates, âge, parité, adresse.
+             */
+            score: number;
+            statut: components["schemas"]["StatutLienPatiente"];
+        };
+        /** LiensPatientesResponse */
+        LiensPatientesResponse: {
+            /** Items */
+            items: components["schemas"]["LienPatienteRead"][];
+            /** Total */
+            total: number;
         };
         /**
          * LoginRequest
@@ -1822,6 +2326,68 @@ export interface components {
         LogoutRequest: {
             /** Refresh Token */
             refresh_token?: string | null;
+        };
+        /**
+         * MesureOcrRead
+         * @description Précision mesurée sur les validations humaines (≠ score annoncé par Gemini).
+         */
+        MesureOcrRead: {
+            /**
+             * Cases Corrigees
+             * @description Cases lues que le valideur a corrigées (erreurs de lecture).
+             */
+            cases_corrigees: number;
+            /**
+             * Cases Lues
+             * @description Cases remplies par l'OCR, sur des lignes revues par un humain.
+             */
+            cases_lues: number;
+            /**
+             * Cases Oubliees
+             * @description Cases laissées vides par l'OCR que le valideur a remplies.
+             */
+            cases_oubliees: number;
+            /** Lignes Rejetees */
+            lignes_rejetees: number;
+            /** Lignes Revues */
+            lignes_revues: number;
+            /**
+             * Precision
+             * @description 1 − corrigées / lues.
+             */
+            precision?: number | null;
+            /**
+             * Score Gemini Moyen
+             * @description Score de confiance moyen annoncé par Gemini sur ces cases.
+             */
+            score_gemini_moyen?: number | null;
+            /**
+             * Taux Erreur
+             * @description (Corrigées + oubliées) / (lues + oubliées).
+             */
+            taux_erreur?: number | null;
+            /**
+             * Taux Oubli
+             * @description Oubliées / (lues + oubliées).
+             */
+            taux_oubli?: number | null;
+        };
+        /** MoisIndicateurRead */
+        MoisIndicateurRead: {
+            /** Denominateur */
+            denominateur: number;
+            /**
+             * Mois
+             * @description AAAA-MM (mois de la date écrite sur le registre).
+             */
+            mois: string;
+            /** Numerateur */
+            numerateur: number;
+            /**
+             * Valeur
+             * @description Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.
+             */
+            valeur?: number | null;
         };
         /**
          * OcrConfidenceData
@@ -2023,6 +2589,44 @@ export interface components {
             total: number;
         };
         /**
+         * PrecisionOcrResponse
+         * @description `GET /dashboard/precision-ocr`.
+         */
+        PrecisionOcrResponse: {
+            global: components["schemas"]["MesureOcrRead"];
+            /** Min Cases */
+            min_cases: number;
+            /**
+             * Par Agent
+             * @description Agents terrain avec au moins `min_cases` cases (qualité des photos), du plus fautif au moins fautif.
+             */
+            par_agent: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Par Champ
+             * @description Champs avec au moins `min_cases` cases, du plus au moins fautif.
+             */
+            par_champ: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Par Mois
+             * @description Ordre chronologique (clé AAAA-MM).
+             */
+            par_mois: components["schemas"]["GroupeOcrRead"][];
+            /** Par Registre */
+            par_registre: components["schemas"]["GroupeOcrRead"][];
+            /** Par Structure */
+            par_structure: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Par Tranche Score
+             * @description Par tranche de score Gemini (clé « 90-95 ») : précision réelle vs score annoncé.
+             */
+            par_tranche_score: components["schemas"]["GroupeOcrRead"][];
+            /**
+             * Tronque
+             * @description True si seules les validations les plus récentes ont été lues.
+             */
+            tronque: boolean;
+        };
+        /**
          * PresignUploadRequest
          * @description Payload de demande d'URL pré-signée (POST /sessions/{id}/pages/presign-upload).
          */
@@ -2089,6 +2693,12 @@ export interface components {
             records: number;
         };
         /**
+         * RaisonVerification
+         * @description Pourquoi une case doit être regardée par le valideur (revue par exception).
+         * @enum {string}
+         */
+        RaisonVerification: "ALERTE" | "SCORE_INCONNU" | "CONFIANCE_FAIBLE" | "VALEUR_MANQUANTE" | "COLONNE_NON_RATTACHEE" | "CONTROLE_ALEATOIRE";
+        /**
          * RefreshRequest
          * @description Body du refresh Bearer (mobile) — refresh_token explicite.
          */
@@ -2101,6 +2711,12 @@ export interface components {
          * @description Confirmation d'une page uploadée (POST /sessions/{id}/pages).
          */
         RegistreScanneCreate: {
+            /**
+             * Forcer Qualite
+             * @description Enregistrer malgré une photo jugée inutilisable (422 PHOTO_INUTILISABLE) : l'agent confirme que la photo est lisible. Les mesures restent conservées.
+             * @default false
+             */
+            forcer_qualite: boolean;
             /**
              * Id Registre Scanne
              * Format: uuid
@@ -2160,6 +2776,19 @@ export interface components {
             image_url_page_gauche?: string | null;
             /** Numero Ordre Ligne */
             numero_ordre_ligne: number | null;
+            /** Qualite Photo */
+            qualite_photo?: {
+                [key: string]: unknown;
+            } | null;
+            /** Reserve Jusqu A */
+            reserve_jusqu_a?: string | null;
+            /**
+             * Reserve Par
+             * @description id_keycloak de l'utilisateur qui a la page ouverte.
+             */
+            reserve_par?: string | null;
+            /** Reserve Par Nom */
+            reserve_par_nom?: string | null;
             /** Score Confiance */
             score_confiance: string | null;
             statut_traitement: components["schemas"]["StatutTraitement"];
@@ -2190,6 +2819,21 @@ export interface components {
              * @description Motif textuel libre — optionnel mais recommandé pour AUTRE.
              */
             motif?: string | null;
+        };
+        /**
+         * ReservationRead
+         * @description Réponse de `POST /pages/{id}/reservation`.
+         */
+        ReservationRead: {
+            /**
+             * Obtenue
+             * @description True : la page est à vous (réservée ou renouvelée). False : un autre la tient.
+             */
+            obtenue: boolean;
+            /** Reserve Jusqu A */
+            reserve_jusqu_a?: string | null;
+            /** Reserve Par Nom */
+            reserve_par_nom?: string | null;
         };
         /**
          * SaisieRequest
@@ -2330,6 +2974,12 @@ export interface components {
             total: number;
         };
         /**
+         * SourceSeuil
+         * @description Origine du seuil de confiance d'un champ (revue par exception).
+         * @enum {string}
+         */
+        SourceSeuil: "MESURE" | "DEFAUT" | "NON_DISCRIMINANT";
+        /**
          * StatusUtilisateur
          * @description Statut du compte utilisateur.
          * @enum {string}
@@ -2341,6 +2991,12 @@ export interface components {
          * @enum {string}
          */
         StatutExport: "EN_ATTENTE" | "EN_COURS" | "PRET" | "ECHEC";
+        /**
+         * StatutLienPatiente
+         * @description Lien entre deux dossiers d'une même femme dans deux registres différents.
+         * @enum {string}
+         */
+        StatutLienPatiente: "SUGGERE" | "CONFIRME" | "REJETE";
         /**
          * StatutSaisiePii
          * @description État de traitement humain d'une pii_cellule — query param uniquement.
@@ -2428,6 +3084,29 @@ export interface components {
             total: number;
         };
         /**
+         * SuggestionPiiRead
+         * @description Une proposition d'aide à la saisie (voir `src/services/suggestions_pii.py`).
+         */
+        SuggestionPiiRead: {
+            /**
+             * Occurrences
+             * @description Nombre de saisies identiques dans la structure.
+             */
+            occurrences: number;
+            /**
+             * Source
+             * @description FREQUENT (adresse déjà saisie dans la structure), ORTHOGRAPHE (mots rapprochés de prénoms / noms courants), DEJA_SAISI (nom quasi identique déjà saisi).
+             */
+            source: string;
+            /** Valeur */
+            valeur: string;
+        };
+        /** SuggestionsPiiResponse */
+        SuggestionsPiiResponse: {
+            /** Suggestions */
+            suggestions: components["schemas"]["SuggestionPiiRead"][];
+        };
+        /**
          * TokenResponse
          * @description Réponse du flux Bearer (mobile) — tokens dans le body JSON.
          */
@@ -2461,7 +3140,7 @@ export interface components {
          *     (contrainte enum PostgreSQL native).
          * @enum {string}
          */
-        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CORRECTION_CLINIQUE" | "CORRECTION_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT" | "UPDATE_CATALOGUE";
+        TypeActionAudit: "VALIDATION_CLINIQUE" | "REJET_CLINIQUE" | "SAISIE_PII" | "CORRECTION_CLINIQUE" | "CORRECTION_PII" | "CHANGE_PASSWORD" | "RESET_PASSWORD" | "CREATE_USER" | "UPDATE_USER" | "OUVRIR_SESSION" | "ENREGISTRER_PAGE" | "CLOTURER_SESSION" | "RETRAITER_PAGE" | "SUPPRIMER_PAGE" | "VALIDATION_PAGE" | "REJET_PAGE" | "CREATE_STRUCTURE" | "UPDATE_STRUCTURE" | "CREATE_EXPORT" | "DELETE_EXPORT" | "UPDATE_CATALOGUE" | "LIEN_PATIENTE_CONFIRME" | "LIEN_PATIENTE_REJETE";
         /**
          * TypeChamp
          * @description Types de champs OCR extraits d'un registre (voir ADR-004 §2).
@@ -2485,7 +3164,7 @@ export interface components {
          * @description Type de ressource ciblée par une action audit.
          * @enum {string}
          */
-        TypeRessourceAudit: "DONNEE_EXTRAITE" | "PII_CELLULE" | "UTILISATEUR" | "SESSION_SCAN" | "REGISTRE_SCANNE" | "STRUCTURE_SANITAIRE" | "EXPORT" | "CATALOGUE_CHAMP";
+        TypeRessourceAudit: "DONNEE_EXTRAITE" | "PII_CELLULE" | "UTILISATEUR" | "SESSION_SCAN" | "REGISTRE_SCANNE" | "STRUCTURE_SANITAIRE" | "EXPORT" | "CATALOGUE_CHAMP" | "LIEN_PATIENTE";
         /**
          * TypeUtilisateur
          * @description Rôle métier stocké en base (table utilisateur).
@@ -2626,6 +3305,18 @@ export interface components {
              */
             total: number;
         };
+        /** ValeurIndicateurRead */
+        ValeurIndicateurRead: {
+            /** Denominateur */
+            denominateur: number;
+            /** Numerateur */
+            numerateur: number;
+            /**
+             * Valeur
+             * @description Nombre : le numérateur. Pourcentage : numérateur / dénominateur (0..1), None si dénominateur nul.
+             */
+            valeur?: number | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -2638,6 +3329,77 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * ValidationLotLigne
+         * @description Une ligne nommée dans un lot, avec ses corrections éventuelles.
+         */
+        ValidationLotLigne: {
+            /**
+             * Corrections
+             * @description Overrides {nom_champ: nouvelle_valeur}. Vide → OCR accepté tel quel.
+             */
+            corrections?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Id Donnee Extraite
+             * Format: uuid
+             */
+            id_donnee_extraite: string;
+        };
+        /**
+         * ValidationLotRequest
+         * @description Body de `POST /donnees-extraites/valider-lot` : valide plusieurs lignes
+         *     d'une même page en un seul appel (tout ou rien).
+         *
+         *     - `lignes` : lignes à valider, chacune avec ses corrections éventuelles ;
+         *     - `inclure_restantes=true` : toutes les AUTRES lignes encore à valider de la
+         *       page sont acceptées telles que lues par l'OCR (« valider la page »).
+         */
+        ValidationLotRequest: {
+            /**
+             * Id Registre Scanne
+             * Format: uuid
+             * @description Page dont on valide les lignes.
+             */
+            id_registre_scanne: string;
+            /**
+             * Inclure Restantes
+             * @description Valide aussi, sans correction, les autres lignes en attente de la page.
+             * @default false
+             */
+            inclure_restantes: boolean;
+            /** Lignes */
+            lignes?: components["schemas"]["ValidationLotLigne"][];
+        };
+        /**
+         * ValidationLotResponse
+         * @description Résultat d'un lot : lignes validées + état de la page après coup.
+         */
+        ValidationLotResponse: {
+            /**
+             * Id Registre Scanne
+             * Format: uuid
+             */
+            id_registre_scanne: string;
+            /**
+             * Ids Valides
+             * @description Lignes validées par cet appel.
+             */
+            ids_valides: string[];
+            /**
+             * Lignes Restantes
+             * @description Lignes encore à valider ou rejeter.
+             */
+            lignes_restantes: number;
+            /**
+             * Pii Restantes
+             * @description Données personnelles encore à saisir.
+             */
+            pii_restantes: number;
+            /** @description Statut de la page après le lot (`VALIDE` si plus rien à traiter). */
+            statut_page: components["schemas"]["StatutTraitement"];
         };
         /**
          * ValidationRequest
@@ -3698,6 +4460,42 @@ export interface operations {
             };
         };
     };
+    get_indicateurs_api_v1_dashboard_indicateurs_get: {
+        parameters: {
+            query?: {
+                /** @description Année des événements (date du registre). */
+                annee?: number | null;
+                /** @description Limiter à une structure (ignoré pour un ADMIN : toujours la sienne). */
+                id_structure_sanitaire?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicateursResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_ocr_confidence_api_v1_dashboard_ocr_confidence_get: {
         parameters: {
             query?: never;
@@ -3812,6 +4610,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperatorEfficiencyData"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_precision_ocr_api_v1_dashboard_precision_ocr_get: {
+        parameters: {
+            query?: {
+                /** @description Validations à partir de ce jour (inclus). */
+                date_debut?: string | null;
+                /** @description Validations jusqu'à ce jour (inclus). */
+                date_fin?: string | null;
+                type_registre?: components["schemas"]["TypeRegistre"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrecisionOcrResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3988,6 +4823,114 @@ export interface operations {
             };
             /** @description Profil valideur médical manquant */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_calibration_api_v1_donnees_extraites_calibration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationResponse"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rôle insuffisant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_valider_lot_api_v1_donnees_extraites_valider_lot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationLotRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationLotResponse"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Page introuvable, ou ligne hors de cette page */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ligne déjà traitée OU donnees_brutes_ocr manquantes */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4518,6 +5461,142 @@ export interface operations {
             };
         };
     };
+    get_liens_api_v1_liens_patientes_get: {
+        parameters: {
+            query?: {
+                statut?: components["schemas"]["StatutLienPatiente"];
+                id_structure_sanitaire?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiensPatientesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_calculer_api_v1_liens_patientes_calculer_post: {
+        parameters: {
+            query?: {
+                /** @description Limiter à une structure. */
+                id_structure_sanitaire?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BilanRapprochementRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_confirmer_api_v1_liens_patientes__id_lien_patiente__confirmer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_lien_patiente: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionLienRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_rejeter_api_v1_liens_patientes__id_lien_patiente__rejeter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_lien_patiente: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionLienRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_pages_queue_api_v1_pages_queue_get: {
         parameters: {
             query?: {
@@ -4540,6 +5619,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagesListResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_page_suivante_api_v1_pages_suivante_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistreScanneRead"];
+                };
+            };
+            /** @description Aucune page à valider libre */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -4587,6 +5704,84 @@ export interface operations {
             };
             /** @description Le statut actuel de la page n'autorise pas cette action */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reserver_api_v1_pages__page_id__reservation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                page_id: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReservationRead"];
+                };
+            };
+            /** @description Page introuvable (ou hors de votre structure) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le statut actuel de la page n'autorise pas cette action */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    liberer_api_v1_pages__page_id__reservation_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                page_id: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4876,6 +6071,64 @@ export interface operations {
             };
             /** @description Déjà saisie (une seule saisie autorisée en V1) */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_suggestions_api_v1_pii_cellules__id_pii_cellule__suggestions_get: {
+        parameters: {
+            query?: {
+                /** @description Saisie en cours. Absent : la lecture OCR de la cellule sert de point de départ. */
+                q?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description UUID de la cellule PII */
+                id_pii_cellule: string;
+            };
+            cookie?: {
+                osiris_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionsPiiResponse"];
+                };
+            };
+            /** @description Non authentifié */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Profil valideur médical manquant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cellule PII introuvable */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
