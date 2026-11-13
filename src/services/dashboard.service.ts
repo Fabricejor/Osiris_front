@@ -57,7 +57,7 @@ export const DashboardService = {
   },
 
   /**
-   * Précision RÉELLE de l'OCR : lecture Gemini comparée à la validation
+   * Précision RÉELLE de l'OCR : lecture OCR comparée à la validation
    * humaine, ventilée par registre, champ, structure, agent, mois et tranche de score.
    */
   getPrecisionOcr: () => {

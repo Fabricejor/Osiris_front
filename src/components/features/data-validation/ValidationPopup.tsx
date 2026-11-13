@@ -179,7 +179,9 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
     };
   }, [pageAReserver]);
   // Page ouverte par quelqu'un d'autre : lecture seule.
-  const reserveeParAutre = reservation?.pageId === pageId && !reservation.obtenue ? reservation : null;
+  // `reservation` testé explicitement : sans page courante (popup fermée, liste
+  // vide), `pageId` est undefined et `reservation?.pageId === pageId` serait vrai.
+  const reserveeParAutre = reservation && reservation.pageId === pageId && !reservation.obtenue ? reservation : null;
 
   // ── Lien photo ↔ données ──
   // Zone survolée (surlignage) et zone « active » (focus : l'image est cadrée dessus),
@@ -416,7 +418,7 @@ export default function ValidationPopup({ isOpen, onClose, pages, initialPageInd
   const dejaTraitees =
     lignes.filter(({ donnee }) => donnee.valide && !donnee.categorie_rejet).length + piiData.filter((p) => p.saisie).length;
   // Champs à vérifier en priorité (lignes pas encore validées uniquement) :
-  // score Gemini faible, ou valeur lue sans aucun score (« Score inconnu »).
+  // score OCR faible, ou valeur lue sans aucun score (« Score inconnu »).
   // Cases douteuses restantes (score < 80 %, inconnu, ou alerte) : baisse au fil
   // des corrections et confirmations.
   const detailsAVerifier = nbAVerifier

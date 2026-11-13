@@ -357,7 +357,7 @@
             "type": "string"
           },
           "seuil": {
-            "description": "Score Gemini sous lequel la case est à vérifier.",
+            "description": "Score OCR sous lequel la case est à vérifier.",
             "title": "Seuil",
             "type": "number"
           },
@@ -1559,8 +1559,8 @@
                 "type": "null"
               }
             ],
-            "description": "Score de confiance moyen annoncé par Gemini sur ces cases.",
-            "title": "Score Gemini Moyen"
+            "description": "Score de confiance moyen annoncé par l'OCR sur ces cases.",
+            "title": "Score OCR Moyen"
           },
           "taux_erreur": {
             "anyOf": [
@@ -1847,7 +1847,7 @@
         "type": "object"
       },
       "MesureOcrRead": {
-        "description": "Précision mesurée sur les validations humaines (≠ score annoncé par Gemini).",
+        "description": "Précision mesurée sur les validations humaines (≠ score annoncé par l'OCR).",
         "properties": {
           "cases_corrigees": {
             "description": "Cases lues que le valideur a corrigées (erreurs de lecture).",
@@ -1893,8 +1893,8 @@
                 "type": "null"
               }
             ],
-            "description": "Score de confiance moyen annoncé par Gemini sur ces cases.",
-            "title": "Score Gemini Moyen"
+            "description": "Score de confiance moyen annoncé par l'OCR sur ces cases.",
+            "title": "Score OCR Moyen"
           },
           "taux_erreur": {
             "anyOf": [
@@ -2316,7 +2316,7 @@
                 "type": "null"
               }
             ],
-            "description": "Confiance Gemini (0..1) sur `valeur_lue`. None = aucun score fourni.",
+            "description": "Confiance OCR (0..1) sur `valeur_lue`. None = aucun score fourni.",
             "title": "Score Confiance"
           },
           "valeur_lue": {
@@ -2328,7 +2328,7 @@
                 "type": "null"
               }
             ],
-            "description": "Valeur extraite par l'OCR (Gemini) pour pré-remplissage.",
+            "description": "Valeur extraite par l'OCR pour pré-remplissage.",
             "title": "Valeur Lue"
           },
           "valeur_saisie": {
@@ -2432,7 +2432,7 @@
             "type": "array"
           },
           "par_tranche_score": {
-            "description": "Par tranche de score Gemini (clé « 90-95 ») : précision réelle vs score annoncé.",
+            "description": "Par tranche de score OCR (clé « 90-95 ») : précision réelle vs score annoncé.",
             "items": {
               "$ref": "#/components/schemas/GroupeOcrRead"
             },
@@ -6071,7 +6071,7 @@
     },
     "/api/v1/dashboard/precision-ocr": {
       "get": {
-        "description": "Précision RÉELLE de l'OCR : ce que Gemini a lu comparé à ce que les\nvalideurs ont retenu, case par case (lignes revues par un humain\nuniquement). Ventilée par registre, champ, structure, agent terrain, mois\net tranche de score Gemini. Un ADMIN ne voit que sa structure.",
+        "description": "Précision RÉELLE de l'OCR : ce que l'OCR a lu comparé à ce que les\nvalideurs ont retenu, case par case (lignes revues par un humain\nuniquement). Ventilée par registre, champ, structure, agent terrain, mois\net tranche de score OCR. Un ADMIN ne voit que sa structure.",
         "operationId": "get_precision_ocr_api_v1_dashboard_precision_ocr_get",
         "parameters": [
           {
@@ -9880,7 +9880,7 @@
       "name": "Validation clinique"
     },
     {
-      "description": "Valideurs médicaux : saisie des cellules PII (nom, prénom, adresse) depuis les crops locaux — jamais envoyées à Gemini.",
+      "description": "Valideurs médicaux : saisie des cellules PII (nom, prénom, adresse) depuis les crops locaux — jamais envoyées à l'OCR.",
       "name": "Validation PII"
     },
     {

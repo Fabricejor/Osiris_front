@@ -6,7 +6,7 @@
  *
  *   { numero_ordre, champs: { <nom_champ>: ValeurChamp }, missings_reels, … }
  *
- * où `ValeurChamp` = { type_champ, score_confiance (0..1, donné par Gemini),
+ * où `ValeurChamp` = { type_champ, score_confiance (0..1, donné par l'OCR),
  * origine, valeur_brute, + la valeur typée : `valeur` | `valeurs` (multi) |
  * `systolique`/`diastolique` (tension) }.
  */
@@ -18,7 +18,7 @@ type ChampCatalogue = components['schemas']['ChampCatalogue'];
 
 export interface ValeurChampOCR {
   type_champ?: string;
-  /** 0..1 ; null = Gemini n'a fourni aucun score (≠ 0). */
+  /** 0..1 ; null = l'OCR n'a fourni aucun score (≠ 0). */
   score_confiance?: number | null;
   origine?: string;
   valeur_brute?: string | null;
@@ -40,8 +40,8 @@ export interface ChampAffiche {
   /** true si l'OCR a produit une valeur pour ce champ. */
   lu: boolean;
   /**
-   * Confiance Gemini en % (0-100). null si le champ n'a pas été lu OU si
-   * Gemini n'a renvoyé aucun score (`score_confiance: null` côté backend).
+   * Confiance OCR en % (0-100). null si le champ n'a pas été lu OU si
+   * l'OCR n'a renvoyé aucun score (`score_confiance: null` côté backend).
    */
   confiance: number | null;
   /** true si la valeur a déjà été corrigée par un humain. */
@@ -118,7 +118,7 @@ export function couleurCoche(donnee: DonneeExtraite | null | undefined): string 
   return donnee?.validation_automatique ? 'text-amber-600' : 'text-blue-600';
 }
 
-/** Seuils d'affichage de la confiance Gemini. */
+/** Seuils d'affichage de la confiance OCR. */
 export const SEUIL_CONFIANCE_BASSE = 50;
 export const SEUIL_CONFIANCE_MOYENNE = 80;
 
@@ -715,7 +715,7 @@ export function elementsAVerifier(grille: Grille, saisies: SaisiesValideur = { c
 
 // ─── Lien photo ↔ données : zone de chaque ligne sur l'image ─────────────────
 
-/** [ymin, xmin, ymax, xmax], normalisés 0..1000 (convention Gemini). */
+/** [ymin, xmin, ymax, xmax], normalisés 0..1000 (convention OCR). */
 export type ZoneImage = [number, number, number, number];
 
 /** Zone de la ligne sur l'image, renvoyée par l'OCR (`position_ligne`), ou null. */
